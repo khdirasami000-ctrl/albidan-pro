@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مختبر البيظان | ALBIDAN AI LAB PRO — المرجع الرقمي للشعر الحساني وأزوان</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0D0B09;
+      --bg-soft: #161310;
+      --card: rgba(25, 21, 17, 0.88);
+      --card-solid: #191511;
+      --border: rgba(212, 175, 55, 0.22);
+      --border-strong: rgba(212, 175, 55, 0.5);
+      --gold: #D4AF37;
+      --gold-light: #F3D982;
+      --accent: #C86D3B;
+      --text: #F5EFE6;
+      --muted: #A99F91;
+      --shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+      --glass: rgba(13, 11, 9, 0.78);
+    }
+
+    [data-theme="light"] {
+      --bg: #F9F6F0;
+      --bg-soft: #F1ECE2;
+      --card: rgba(255, 255, 255, 0.94);
+      --card-solid: #FFFFFF;
+      --border: #E5DDD0;
+      --border-strong: #1B365D;
+      --gold: #1B365D;
+      --gold-light: #B47B09;
+      --accent: #B47B09;
+      --text: #162133;
+      --muted: #5A6577;
+      --shadow: 0 14px 34px rgba(22, 33, 51, 0.08);
+      --glass: rgba(249, 246, 240, 0.88);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      overflow-x: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .bg-glow {
+      position: fixed; inset: 0; pointer-events: none; z-index: -1;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(212, 175, 55, 0.13), transparent 40%),
+        radial-gradient(circle at 82% 80%, rgba(200, 109, 59, 0.10), transparent 42%);
+    }
+    [data-theme="light"] .bg-glow {
+      background:
+        radial-gradient(circle at 18% 12%, rgba(27, 54, 93, 0.06), transparent 42%),
+        radial-gradient(circle at 85% 82%, rgba(180, 123, 9, 0.07), transparent 42%);
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1.25rem; }
+
+    /* Navbar */
+    .navbar {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--glass); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; padding: 0.85rem 0; flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+    .brand-mark {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(135deg, #D4AF37, #8C6413);
+      color: #14100C; display: grid; place-items: center; font-size: 1.35rem; font-weight: 900;
+      box-shadow: 0 6px 18px rgba(212, 175, 55, 0.28);
+    }
+    .brand-name { font-size: 1.15rem; font-weight: 900; line-height: 1.15; }
+    .brand-sub { font-size: 0.72rem; color: var(--gold-light); font-weight: 700; letter-spacing: 0.8px; }
+    .nav-links { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+    .nav-links a {
+      text-decoration: none; color: var(--muted); font-weight: 700; font-size: 0.9rem;
+      padding: 6px 12px; border-radius: 10px; transition: 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); background: rgba(212, 175, 55, 0.12); }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+    .icon-btn {
+      background: var(--bg-soft); color: var(--text); border: 1px solid var(--border);
+      padding: 7px 12px; border-radius: 10px; cursor: pointer; font-family: inherit;
+      font-weight: 700; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;
+      transition: 0.2s;
+    }
+    .icon-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #22C55E;
+      display: inline-block; box-shadow: 0 0 8px #22C55E;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 0.72rem 1.35rem; border-radius: 12px; font-family: inherit;
+      font-weight: 800; font-size: 0.94rem; cursor: pointer; border: 1px solid transparent;
+      text-decoration: none; transition: transform 0.18s, box-shadow 0.2s, background 0.2s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: linear-gradient(135deg, #E2BE52, #B88A1F); color: #14100C;
+      box-shadow: 0 8px 22px rgba(212, 175, 55, 0.26);
+    }
+    [data-theme="light"] .btn-primary {
+      background: linear-gradient(135deg, #1B365D, #274D82); color: #FFFFFF;
+      box-shadow: 0 8px 22px rgba(27, 54, 93, 0.22);
+    }
+    .btn-primary:hover { transform: translateY(-2px); }
+    .btn-secondary {
+      background: var(--bg-soft); color: var(--text); border-color: var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--gold); color: var(--gold-light); }
+    .btn-sm { padding: 0.45rem 0.9rem; font-size: 0.82rem; border-radius: 9px; }
+
+    /* Hero */
+    .hero { padding: 3.2rem 0 2.4rem; }
+    .hero-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; align-items: center; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 14px; border-radius: 999px; font-size: 0.82rem; font-weight: 800;
+      background: rgba(212, 175, 55, 0.14); border: 1px solid var(--border); color: var(--gold-light);
+      margin-bottom: 1rem;
+    }
+    .hero h1 { font-size: clamp(1.9rem, 3.6vw, 2.85rem); font-weight: 900; line-height: 1.28; margin-bottom: 1rem; }
+    .hero h1 span { color: var(--gold-light); }
+    .hero p { color: var(--muted); font-size: 1.04rem; margin-bottom: 1.6rem; max-width: 600px; }
+    .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 1.8rem; }
+    .stats-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 480px; }
+    .stat-pill {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 0.85rem; text-align: center;
+    }
+    .stat-num { font-size: 1.55rem; font-weight: 900; color: var(--gold-light); line-height: 1.1; }
+    .stat-lbl { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+    /* Hero Poem Slider Card */
+    .poem-showcase {
+      background: var(--card); border: 1px solid var(--border); border-radius: 22px;
+      padding: 1.7rem; box-shadow: var(--shadow); position: relative;
+    }
+    .showcase-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .pill-tag {
+      font-size: 0.76rem; font-weight: 800; padding: 4px 12px; border-radius: 999px;
+      background: rgba(212, 175, 55, 0.15); color: var(--gold-light); border: 1px solid var(--border);
+    }
+    .poem-verses {
+      font-family: 'Amiri', serif; font-size: 1.55rem; line-height: 2.2;
+      padding: 1.1rem 1.3rem; border-radius: 14px; background: var(--bg-soft);
+      border-right: 4px solid var(--gold); min-height: 185px; white-space: pre-line;
+      transition: opacity 0.25s ease;
+    }
+    .showcase-foot {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 1rem; gap: 8px; flex-wrap: wrap;
+    }
+
+    /* Section Header */
+    section { padding: 2.8rem 0; }
+    .sec-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.6rem; }
+    .sec-head h2 { font-size: 1.75rem; font-weight: 900; }
+    .sec-head p { color: var(--muted); font-size: 0.96rem; margin-top: 0.2rem; }
+
+    /* Cards & Sliders */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; padding: 1.4rem; box-shadow: var(--shadow);
+    }
+    .azawan-slider {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    .azawan-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+      padding: 1.35rem; cursor: pointer; transition: 0.25s; position: relative;
+    }
+    .azawan-card:hover, .azawan-card.active {
+      transform: translateY(-4px); border-color: var(--gold);
+      box-shadow: 0 12px 30px rgba(212, 175, 55, 0.16);
+    }
+    .azawan-bpm { font-size: 0.78rem; color: var(--gold-light); font-weight: 800; }
+    .azawan-card h3 { font-size: 1.15rem; margin: 0.4rem 0 0.35rem; }
+    .azawan-card p { font-size: 0.86rem; color: var(--muted); margin-bottom: 1rem; }
+
+    /* Lab Editor */
+    .lab-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 1.4rem; align-items: start; }
+    textarea, input[type="text"], select {
+      width: 100%; background: var(--bg-soft); color: var(--text);
+      border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem 1rem;
+      font-family: inherit; font-size: 0.96rem; outline: none; transition: 0.2s;
+    }
+    textarea.poem-editor {
+      font-family: 'Amiri', serif; font-size: 1.42rem; line-height: 2.15; min-height: 190px; resize: vertical;
+    }
+    textarea:focus, input:focus, select:focus { border-color: var(--gold); }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 0.8rem; align-items: center; }
+    .upload-box {
+      border: 1.5px dashed var(--border-strong); border-radius: 14px; padding: 0.9rem 1rem;
+      background: rgba(212, 175, 55, 0.04); margin-bottom: 1rem;
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+    }
+
+    /* Tabs */
+    .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; background: var(--bg-soft); padding: 6px; border-radius: 13px; border: 1px solid var(--border); }
+    .tab-btn {
+      flex: 1; min-width: 110px; padding: 8px 12px; border: none; border-radius: 9px;
+      background: transparent; color: var(--muted); font-family: inherit; font-weight: 800;
+      cursor: pointer; transition: 0.2s; font-size: 0.86rem;
+    }
+    .tab-btn.active { background: var(--gold); color: #14100C; }
+    [data-theme="light"] .tab-btn.active { color: #FFFFFF; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn 0.25s ease; }
+
+    /* Prosody Visual Bars */
+    .line-row {
+      background: var(--bg-soft); border: 1px solid var(--border); border-radius: 13px;
+      padding: 0.9rem 1rem; margin-bottom: 0.7rem;
+    }
+    .line-orig { font-family: 'Amiri', serif; font-size: 1.32rem; font-weight: 700; }
+    .line-phon { font-family: 'Amiri', serif; font-size: 1.15rem; color: var(--gold-light); margin: 2px 0 8px; }
+    .beats { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .beat-dot {
+      width: 24px; height: 9px; border-radius: 999px;
+      background: linear-gradient(90deg, var(--gold), var(--accent));
+    }
+
+    .code-box {
+      direction: ltr; text-align: left; background: #0B0A08; color: #F5EFE6;
+      border: 1px solid var(--border); border-radius: 12px; padding: 1rem;
+      font-family: monospace; font-size: 0.88rem; white-space: pre-wrap; margin: 0.6rem 0 1rem;
+    }
+    .trans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .trans-card {
+      direction: ltr; text-align: left; background: var(--bg-soft);
+      border: 1px solid var(--border); border-radius: 13px; padding: 1rem;
+      white-space: pre-line; line-height: 1.8;
+    }
+
+    /* Archive & 3D Glossary */
+    .archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+    .archive-card {
+      background: var(--card); border: 1px solid var(--border); border-right: 4px solid var(--gold);
+      border-radius: 16px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.7rem;
+    }
+    .archive-poem { font-family: 'Amiri', serif; font-size: 1.25rem; line-height: 2; white-space: pre-line; color: var(--text); }
+
+    .glossary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+    .flip-card { perspective: 1000px; height: 175px; cursor: pointer; }
+    .flip-inner {
+      position: relative; width: 100%; height: 100%; transition: transform 0.55s;
+      transform-style: preserve-3d;
+    }
+    .flip-card.flipped .flip-inner { transform: rotateY(180deg); }
+    .flip-face {
+      position: absolute; inset: 0; backface-visibility: hidden;
+      border-radius: 16px; padding: 1.2rem; border: 1px solid var(--border);
+      display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+      background: var(--card);
+    }
+    .flip-front h3 { font-family: 'Amiri', serif; font-size: 1.75rem; color: var(--gold-light); margin-bottom: 6px; }
+    .flip-back { transform: rotateY(180deg); background: var(--bg-soft); border-color: var(--gold); }
+
+    /* Atlas */
+    .atlas-cities { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+    .city-chip {
+      padding: 8px 15px; border-radius: 999px; border: 1px solid var(--border);
+      background: var(--bg-soft); color: var(--text); cursor: pointer; font-family: inherit; font-weight: 700;
+    }
+    .city-chip.active { background: var(--gold); color: #14100C; border-color: var(--gold); }
+    [data-theme="light"] .city-chip.active { color: #FFFFFF; }
+
+    /* Founder */
+    .founder-card {
+      background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--gold);
+      border-radius: 22px; padding: 2rem; display: flex; gap: 2rem; align-items: center; box-shadow: var(--shadow);
+    }
+    .founder-avatar {
+      width: 165px; height: 165px; border-radius: 22px; flex-shrink: 0; overflow: hidden;
+      border: 3px solid var(--gold); display: grid; place-items: center;
+      background: linear-gradient(145deg, #1E3A5F, #13253D 65%, #3B2A1A); color: #FDE68A;
+    }
+    .founder-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .founder-monogram { font-family: 'Amiri', serif; font-size: 3.1rem; font-weight: 700; }
+    .social-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1.1rem; }
+    .social-fb { background: #1877F2; color: #fff; }
+    .social-wa { background: #16A34A; color: #fff; }
+
+    /* Modal Search (Ctrl+K) */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(6px);
+      display: none; place-items: center; z-index: 100; padding: 1rem;
+    }
+    .modal-backdrop.open { display: grid; }
+    .modal-box {
+      width: 100%; max-width: 620px; background: var(--card-solid);
+      border: 1px solid var(--border-strong); border-radius: 18px; padding: 1.3rem;
+      box-shadow: var(--shadow); max-height: 80vh; overflow-y: auto;
+    }
+    .search-item {
+      padding: 0.75rem; border-radius: 10px; border: 1px solid var(--border);
+      margin-top: 8px; cursor: pointer; background: var(--bg-soft);
+    }
+    .search-item:hover { border-color: var(--gold); }
+
+    .toast {
+      position: fixed; bottom: 20px; left: 20px; z-index: 120;
+      background: #162133; color: #FDE68A; border: 1px solid var(--gold);
+      padding: 0.8rem 1.2rem; border-radius: 12px; font-weight: 700;
+      display: none; box-shadow: var(--shadow);
+    }
+    .toast.show { display: block; animation: fadeIn 0.2s ease; }
+
+    footer {
+      margin-top: 3rem; padding: 2rem 1rem; border-top: 1px solid var(--border);
+      text-align: center; color: var(--muted); font-size: 0.9rem;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 960px) {
+      .hero-grid, .lab-grid, .trans-grid { grid-template-columns: 1fr; }
+      .azawan-slider { grid-template-columns: 1fr 1fr; }
+      .founder-card { flex-direction: column; text-align: center; }
+      .social-row { justify-content: center; }
+    }
+    @media (max-width: 600px) {
+      .azawan-slider { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <!-- شريط التنقل العلوي -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="#top" class="brand">
+        <div class="brand-mark">🐪</div>
+        <div>
+          <div class="brand-name">مختبر البيظان</div>
+          <div class="brand-sub">ALBIDAN AI LAB • PRO</div>
+        </div>
+      </a>
+
+      <nav class="nav-links">
+        <a href="#lab">المختبر العروضي</a>
+        <a href="#azawan">مقامات أزوان</a>
+        <a href="#archive">المدونة</a>
+        <a href="#glossary">المعجم</a>
+        <a href="#atlas">الأطلس</a>
+        <a href="#founder">المؤسس</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="icon-btn" onclick="openSearchModal()" title="بحث شامل (Ctrl+K)">🔍 بحث <kbd style="opacity:.7;font-size:.75rem">Ctrl+K</kbd></button>
+        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()">☀️ النهاري</button>
+        <span class="icon-btn" id="serverBadge"><span class="status-dot"></span> جاري الاتصال...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- القسم الافتتاحي -->
+  <main id="top" class="container">
+    <section class="hero">
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow">✨ المرجع الرقمي العالمي للشعر الحساني وهندسة أزوان</div>
+          <h1>صون <span>التراث الحساني</span> بذكاء اصطناعي يخدم الباحثين والشعراء</h1>
+          <p>
+            منصة علمية وإبداعية متكاملة للتقطيع العروضي الدقيق لبحور لغنى والتبراع، التفريغ الصوتي للتسجيلات التراثية، المعجم الحساني المتنامي، وتوليد التوزيعات الموسيقية بمقامات أزوان الأصيلة.
+          </p>
+          <div class="hero-cta">
+            <a href="#lab" class="btn btn-primary">🚀 ابدأ التحليل العروضي</a>
+            <a href="#archive" class="btn btn-secondary">📚 تصفح المدونة الحية</a>
+          </div>
+          <div class="stats-strip">
+            <div class="stat-pill">
+              <div class="stat-num" id="statPoems">—</div>
+              <div class="stat-lbl">قصيدة موثقة</div>
+            </div>
+            <div class="stat-pill">
+              <div class="stat-num" id="statLines">—</div>
+              <div class="stat-lbl">شطر (تافلويت)</div>
+            </div>
+            <div class="stat-pill">
+              <div class="stat-num" id="statTerms">—</div>
+              <div class="stat-lbl">مفردة معجمية</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="poem-showcase">
+          <div class="showcase-head">
+            <span class="pill-tag" id="slideTag">كاف • لبتيت التام</span>
+            <span style="font-size:0.82rem;color:var(--muted)" id="slideRegion">الصحراء المغربية</span>
+          </div>
+          <div class="poem-verses" id="slideVerses"></div>
+          <div class="showcase-foot">
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-secondary btn-sm" onclick="changeSlide(-1)">→ السابق</button>
+              <button class="btn btn-secondary btn-sm" onclick="changeSlide(1)">التالي ←</button>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="useCurrentSlideInLab()">🔬 حلّل هذه الأبيات</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- سلايدر مقامات أزوان مع معاينة صوتية -->
+    <section id="azawan">
+      <div class="sec-head">
+        <div>
+          <h2>🎵 مقامات أزوان التفاعلية</h2>
+          <p>استمع لنبض المقام الموسيقي واختره مباشرة لتوجيه استوديو الغناء التوليدي</p>
+        </div>
+      </div>
+      <div class="azawan-slider" id="azawanSlider"></div>
+    </section>
+
+    <!-- المختبر العروضي والتفريغ الصوتي -->
+    <section id="lab">
+      <div class="sec-head">
+        <div>
+          <h2>🔬 المختبر العروضي والتفريغ الصوتي (Gemini AI)</h2>
+          <p>ارفع تسجيلاً صوتياً أو اكتب الأبيات لتحصل على التقطيع العروضي والترجمة والمعجم وأوامر Suno AI</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="modelSelect" style="width:auto">
+            <option value="gemini-3.8-flash">gemini-3.8-flash (الأحدث)</option>
+            <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (سريع)</option>
+            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (عميق)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="lab-grid">
+        <!-- المحرر والرفع الصوتي -->
+        <div class="card">
+          <div class="upload-box">
+            <div>
+              <strong>🎙️ تفريغ تسجيل صوتي تلقائياً</strong>
+              <div style="font-size:0.82rem;color:var(--muted)">MP3, WAV, M4A (الحد الأقصى 20MB)</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.ogg,.flac" style="max-width:210px;padding:6px" />
+              <button class="btn btn-secondary btn-sm" id="transcribeBtn" onclick="transcribeAudio()">📝 تفريغ الصوت</button>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <button class="btn btn-secondary btn-sm" onclick="fillSample('gaf')">✨ نموذج كاف</button>
+            <button class="btn btn-secondary btn-sm" onclick="fillSample('tebraa')">✨ نموذج تبراع</button>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('poemInput').value=''">🧹 مسح</button>
+            <span style="margin-right:auto;font-size:0.82rem;color:var(--muted)" id="liveCounter">0 أشطر</span>
+          </div>
+
+          <textarea id="poemInput" class="poem-editor" oninput="updateLiveCounter()" placeholder="اكتب الكاف أو الطلعة أو التبراع هنا (كل تافلويت في سطر مستقل)..."></textarea>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0.9rem 0">
+            <select id="fusionSelect">
+              <option>World Music Fusion</option>
+              <option>Desert Blues & Acoustic</option>
+              <option>Cinematic Orchestral</option>
+              <option>Modern Afro-Saharan</option>
+              <option>Chill Lo-Fi Desert</option>
+            </select>
+            <select id="vocalSelect">
+              <option>Deep soulful male Hassaniya vocals</option>
+              <option>Expressive traditional female Hassaniya vocals</option>
+              <option>Duet male and female traditional vocals</option>
+              <option>Traditional chorus with lead vocalist</option>
+            </select>
+          </div>
+
+          <button class="btn btn-primary" style="width:100%" id="analyzeBtn" onclick="runAnalysis()">
+            🚀 تحليل القصيدة وتوليد العمل العالمي
+          </button>
+        </div>
+
+        <!-- لوحة النتائج -->
+        <div class="card">
+          <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('prosody', this)">📊 العروض</button>
+            <button class="tab-btn" onclick="switchTab('trans', this)">🌍 الترجمة والمعجم</button>
+            <button class="tab-btn" onclick="switchTab('studio', this)">🎵 أزوان Suno</button>
+            <button class="tab-btn" onclick="switchTab('save', this)">💾 التوثيق والاستشهاد</button>
+          </div>
+
+          <div id="resultsEmpty" style="text-align:center;padding:3rem 1rem;color:var(--muted)">
+            أدخل أبياتاً حسانية واضغط <strong>«تحليل القصيدة»</strong> لعرض التقطيع الصوتي، المتحركات، الترجمة الأدبية، وهندسة أزوان هنا.
+          </div>
+
+          <div id="resultsContent" style="display:none">
+            <div id="tab-prosody" class="tab-panel active">
+              <div class="stats-strip" style="max-width:100%;margin-bottom:1rem">
+                <div class="stat-pill"><div class="stat-num" style="font-size:1.05rem" id="resType">—</div><div class="stat-lbl">النوع</div></div>
+                <div class="stat-pill"><div class="stat-num" style="font-size:1.05rem" id="resMeter">—</div><div class="stat-lbl">البحر السائد</div></div>
+                <div class="stat-pill"><div class="stat-num" style="font-size:1.05rem" id="resAzawan">—</div><div class="stat-lbl">المقام المرشح</div></div>
+              </div>
+              <div class="line-row" style="border-right:3px solid var(--gold)">
+                <div style="font-size:0.8rem;color:var(--gold-light);font-weight:800">🏜️ السياق الثقافي</div>
+                <div id="resContext" style="font-size:0.93rem;margin-top:4px"></div>
+              </div>
+              <div id="resLines"></div>
+            </div>
+
+            <div id="tab-trans" class="tab-panel">
+              <div class="trans-grid">
+                <div class="trans-card">
+                  <div style="color:var(--gold-light);font-weight:800;font-size:0.8rem;margin-bottom:6px">🇬🇧 ENGLISH POETIC TRANSLATION</div>
+                  <div id="resEn"></div>
+                </div>
+                <div class="trans-card">
+                  <div style="color:var(--gold-light);font-weight:800;font-size:0.8rem;margin-bottom:6px">🇫🇷 TRADUCTION POÉTIQUE</div>
+                  <div id="resFr"></div>
+                </div>
+              </div>
+              <h4 style="margin:1rem 0 0.6rem">📖 المفردات المستخرجة</h4>
+              <div id="resGlossary"></div>
+            </div>
+
+            <div id="tab-studio" class="tab-panel">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <strong>Style Prompt (Suno / Udio)</strong>
+                <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('resStylePrompt').innerText)">📋 نسخ</button>
+              </div>
+              <div class="code-box" id="resStylePrompt"></div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <strong>Formatted Lyrics</strong>
+                <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('resLyrics').innerText)">📋 نسخ</button>
+              </div>
+              <div class="code-box" id="resLyrics"></div>
+            </div>
+
+            <div id="tab-save" class="tab-panel">
+              <h4 style="margin-bottom:0.7rem">💾 حفظ في المدونة السحابية (MongoDB Atlas)</h4>
+              <div style="display:grid;gap:8px;margin-bottom:0.9rem">
+                <input type="text" id="saveTitle" placeholder="عنوان القصيدة (مثال: كاف في مدح الصحراء)" />
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <input type="text" id="savePoet" placeholder="الشاعر / الراوي" />
+                  <input type="text" id="saveRegion" value="بوجدور — الصحراء المغربية" placeholder="المدينة / المنطقة" />
+                </div>
+                <button class="btn btn-primary" onclick="savePoemToArchive()">📥 حفظ في المدونة وتحديث المعجم</button>
+              </div>
+              <hr style="border:none;border-top:1px solid var(--border);margin:1rem 0" />
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <strong>🎓 الاستشهاد الأكاديمي التلقائي (APA)</strong>
+                <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('citeBox').innerText)">📋 نسخ المرجع</button>
+              </div>
+              <div class="code-box" id="citeBox"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- المدونة والأرشيف -->
+    <section id="archive">
+      <div class="sec-head">
+        <div>
+          <h2>📚 المدونة الحسانية المفتوحة</h2>
+          <p>أرشيف سحابي حي للقصائد المحللة مع التصدير المباشر للباحثين بصيغة JSONL</p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" id="archiveSearch" placeholder="🔍 ابحث في القصائد..." style="width:220px" oninput="loadArchive()" />
+          <select id="archiveFilter" style="width:auto" onchange="loadArchive()">
+            <option value="الكل">الكل</option>
+            <option value="كاف">كاف</option>
+            <option value="تبراع">تبراع</option>
+            <option value="طلعة">طلعة</option>
+          </select>
+          <a href="/api/export/jsonl" class="btn btn-secondary btn-sm">🤖 تصدير JSONL</a>
+        </div>
+      </div>
+      <div class="archive-grid" id="archiveGrid"></div>
+    </section>
+
+    <!-- المعجم التفاعلي ثلاثي الأبعاد -->
+    <section id="glossary">
+      <div class="sec-head">
+        <div>
+          <h2>📖 المعجم الحساني المتنامي (بطاقات ثلاثية الأبعاد)</h2>
+          <p>اضغط على أي بطاقة لتنقلب وتكشف معناها بالعربية الفصحى والإنجليزية</p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" id="glossarySearch" placeholder="🔍 ابحث عن مفردة..." style="width:220px" oninput="loadGlossary()" />
+          <a href="/api/export/glossary.csv" class="btn btn-secondary btn-sm">📥 تصدير CSV</a>
+        </div>
+      </div>
+      <div class="glossary-grid" id="glossaryGrid"></div>
+    </section>
+
+    <!-- الأطلس الجغرافي للشعر الحساني -->
+    <section id="atlas">
+      <div class="sec-head">
+        <div>
+          <h2>🗺️ الأطلس الجغرافي لثقافة البيظان</h2>
+          <p>استكشف حواضر الشعر الحساني ومواطن الإبداع الشفهي وفلتر المدونة حسب المنطقة</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="atlas-cities" id="atlasCities"></div>
+        <div id="atlasDetail" style="padding:0.8rem 0 0.3rem"></div>
+      </div>
+    </section>
+
+    <!-- قسم مؤسس المشروع -->
+    <section id="founder">
+      <div class="founder-card">
+        <div class="founder-avatar" id="founderAvatar">
+          <img src="/static/founder.jpg" alt="أڭــار الحبيب" onerror="this.remove(); document.getElementById('founderFallback').style.display='block';" />
+          <div id="founderFallback" class="founder-monogram" style="display:none">أ ح</div>
+        </div>
+        <div>
+          <span class="pill-tag">مؤسس المشروع</span>
+          <h2 style="font-size:1.8rem;margin:0.5rem 0 0.15rem">أڭــار الحبيب</h2>
+          <div style="color:var(--gold-light);font-weight:700;font-size:0.92rem;margin-bottom:0.8rem">Aggar Lahbib • مؤسس ومطور مختبر البيظان</div>
+          <p style="color:var(--muted);max-width:740px">
+            مؤسس ومطور «مختبر البيظان للذكاء الاصطناعي». يعمل على رقمنة التراث الثقافي الحساني، تحليل العروض الشعري آلياً، وتطوير منصات إبداعية للغناء التوليدي بمقامات أزوان الأصيلة.
+          </p>
+          <div class="social-row">
+            <a class="btn btn-sm social-fb" href="https://web.facebook.com/aggarlahbib/?locale=ar_AR" target="_blank" rel="noopener noreferrer">فيسبوك</a>
+            <a class="btn btn-sm social-wa" href="https://wa.me/212668208797" target="_blank" rel="noopener noreferrer">واتساب</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <strong style="color:var(--gold-light)">🐪 مختبر البيظان للذكاء الاصطناعي — ALBIDAN AI LAB</strong><br />
+      © 2026 فكرة وتطوير أڭــار الحبيب • منصة مفتوحة لخدمة التراث الحساني والباحثين والشعراء حول العالم.
+    </div>
+  </footer>
+
+  <!-- نافذة البحث الشامل Ctrl+K -->
+  <div class="modal-backdrop" id="searchModal" onclick="if(event.target===this) closeSearchModal()">
+    <div class="modal-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
+        <strong>🔍 البحث الشامل في المدونة والمعجم</strong>
+        <button class="btn btn-secondary btn-sm" onclick="closeSearchModal()">إغلاق</button>
+      </div>
+      <input type="text" id="globalSearchInput" placeholder="اكتب كلمة حسانية، اسم شاعر، بحر، أو منطقة..." oninput="runGlobalSearch()" />
+      <div id="globalSearchResults" style="margin-top:0.8rem"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SAMPLES = {
+      gaf: "الصحرا دار الكرم والجود\nفيها الخيمة والگلب الصافي\nتاريخ أجدادنا المعهود\nيبقى في كل زمن وافي",
+      tebraa: "يا گلب اصبر لا تلوم\nالزين يبان ف كل يوم"
+    };
+
+    const SLIDES = [
+      { tag: "كاف • بحر لبتيت التام", region: "بوجدور — الصحراء المغربية", text: SAMPLES.gaf },
+      { tag: "تبراع • غزل وعاطفة", region: "العيون — الساقية الحمراء", text: SAMPLES.tebraa },
+      { tag: "كاف • الحكمة والأصالة", region: "الداخلة — وادي الذهب", text: "لخيام تبقى عامرة بالضيف\nوالشاي يجمع گلب لخيار\nما يغيّر الزمان لو جاء صيف\nأهل الكرم معروفين الدار" }
+    ];
+
+    const AZAWAN_MODES = [
+      { key: "كر (Karr) — الفخر والوقار", title: "كر (Karr)", bpm: "85 BPM", desc: "مقام الهيبة والفخر والوقار بعمق التيدينيت والطبل.", notes: [220, 261.6, 293.7, 329.6, 261.6] },
+      { key: "فاغو (Faghu) — الحماس والإيقاع", title: "فاغو (Faghu)", bpm: "115 BPM", desc: "مقام الحماسة والإيقاع السريع والاحتفاء الجماعي.", notes: [293.7, 349.2, 392.0, 440.0, 523.2] },
+      { key: "لبياظ (Labyad) — الحنين والغزل", title: "لبياظ (Labyad)", bpm: "75 BPM", desc: "مقام الشجن العذب والغزل الصحراوي على أوتار الآردين.", notes: [261.6, 293.7, 329.6, 392.0, 329.6] },
+      { key: "لكحال (Lakhhal) — العمق والروحانية", title: "لكحال (Lakhhal)", bpm: "70 BPM", desc: "مقام الليل والتأمل والروحانية الصحراوية العميقة.", notes: [196.0, 233.1, 261.6, 293.7, 233.1] }
+    ];
+
+    const ATLAS = [
+      { city: "بوجدور", region: "إقليم بوجدور", note: "منارة ساحلية وحاضنة إبداعية للشعر الحساني المعاصر ومقر إطلاق مختبر البيظان." },
+      { city: "العيون", region: "الساقية الحمراء", note: "مركز ثقافي وفني بارز يحتضن مهرجانات الشعر الحساني وملتقيات أدباء البيظان." },
+      { city: "السمارة", region: "العاصمة الروحية", note: "حاضرة علمية وتاريخية عريقة ارتبطت بالمحاظر والشعر المديحي والوطني." },
+      { city: "الداخلة", region: "وادي الذهب", note: "ملتقى البحر والصحراء وموطن غني بالتبراع وكافان الغزل والسفر." },
+      { city: "طانطان", region: "وادي نون", note: "موسمها التراثي العالمي يجمع شعراء لغنى وفرق أزوان من مختلف الأقاليم." },
+      { city: "شنقيط", region: "آدرار — موريتانيا", note: "قلب المخطوطات التاريخية ومدارس العروض الحساني الكلاسيكي." }
+    ];
+
+    let currentSlide = 0;
+    let selectedAzawan = AZAWAN_MODES[2].key;
+    let lastPayload = null;
+    let cachedPoems = [];
+    let cachedGlossary = [];
+
+    function escapeHtml(str) {
+      return String(str ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 3200);
+    }
+
+    function toggleTheme() {
+      const root = document.documentElement;
+      const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      document.getElementById("themeBtn").textContent = next === "dark" ? "☀️ النهاري" : "🌙 الليلي";
+      localStorage.setItem("albidan_theme", next);
+    }
+
+    function renderSlide() {
+      const s = SLIDES[currentSlide];
+      document.getElementById("slideTag").textContent = s.tag;
+      document.getElementById("slideRegion").textContent = s.region;
+      document.getElementById("slideVerses").textContent = s.text;
+    }
+
+    function changeSlide(dir) {
+      currentSlide = (currentSlide + dir + SLIDES.length) % SLIDES.length;
+      renderSlide();
+    }
+
+    function useCurrentSlideInLab() {
+      document.getElementById("poemInput").value = SLIDES[currentSlide].text;
+      updateLiveCounter();
+      document.getElementById("lab").scrollIntoView({ behavior: "smooth" });
+    }
+
+    function fillSample(key) {
+      document.getElementById("poemInput").value = SAMPLES[key];
+      updateLiveCounter();
+    }
+
+    function updateLiveCounter() {
+      const lines = document.getElementById("poemInput").value.split("\n").filter(l => l.trim()).length;
+      document.getElementById("liveCounter").textContent = `${lines} أشطر`;
+    }
+
+    function playAzawanPreview(notes) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.001, ctx.currentTime + idx * 0.28);
+          gain.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime + idx * 0.28 + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.28 + 0.32);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.28);
+          osc.stop(ctx.currentTime + idx * 0.28 + 0.35);
+        });
+      } catch (e) {}
+    }
+
+    function renderAzawanSlider() {
+      const wrap = document.getElementById("azawanSlider");
+      wrap.innerHTML = AZAWAN_MODES.map((m, i) => `
+        <div class="azawan-card ${m.key === selectedAzawan ? 'active' : ''}" onclick="selectAzawan(${i})">
+          <div class="azawan-bpm">${m.bpm}</div>
+          <h3>${m.title}</h3>
+          <p>${m.desc}</p>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); playAzawanPreview(AZAWAN_MODES[${i}].notes)">🔊 معاينة المقام</button>
+        </div>
+      `).join("");
+    }
+
+    function selectAzawan(idx) {
+      selectedAzawan = AZAWAN_MODES[idx].key;
+      renderAzawanSlider();
+      showToast(`تم اختيار مقام: ${AZAWAN_MODES[idx].title}`);
+      if (lastPayload) refreshMusicPrompt();
+    }
+
+    async function refreshMusicPrompt() {
+      const poem_text = document.getElementById("poemInput").value.trim();
+      if (!poem_text) return;
+      const res = await fetch("/api/azawan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          poem_text,
+          mode: selectedAzawan,
+          fusion_style: document.getElementById("fusionSelect").value,
+          vocal_type: document.getElementById("vocalSelect").value
+        })
+      });
+      if (res.ok) {
+        const music = await res.json();
+        lastPayload.music = music;
+        document.getElementById("resStylePrompt").textContent = music.style_prompt;
+        document.getElementById("resLyrics").textContent = music.formatted_lyrics;
+      }
+    }
+
+    function switchTab(name, btn) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(`tab-${name}`).classList.add("active");
+    }
+
+    async function transcribeAudio() {
+      const fileInput = document.getElementById("audioFile");
+      if (!fileInput.files.length) return showToast("اختر ملفاً صوتياً أولاً.");
+      const btn = document.getElementById("transcribeBtn");
+      btn.disabled = true; btn.textContent = "⏳ جاري التفريغ...";
+      try {
+        const fd = new FormData();
+        fd.append("file", fileInput.files[0]);
+        fd.append("model_name", document.getElementById("modelSelect").value);
+        const res = await fetch("/api/transcribe", { method: "POST", body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "فشل التفريغ");
+        document.getElementById("poemInput").value = data.text || "";
+        updateLiveCounter();
+        showToast("تم تفريغ الصوت بنجاح!");
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.disabled = false; btn.textContent = "📝 تفريغ الصوت";
+      }
+    }
+
+    async function runAnalysis() {
+      const poem_text = document.getElementById("poemInput").value.trim();
+      if (!poem_text) return showToast("يرجى إدخال بيت شعري واحد على الأقل.");
+      const btn = document.getElementById("analyzeBtn");
+      btn.disabled = true; btn.textContent = "⏳ جاري التحليل العروضي والترجمة...";
+      try {
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            poem_text,
+            model_name: document.getElementById("modelSelect").value,
+            use_ai: true,
+            azawan_mode: selectedAzawan,
+            fusion_style: document.getElementById("fusionSelect").value,
+            vocal_type: document.getElementById("vocalSelect").value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "حدث خطأ في التحليل");
+        lastPayload = { ...data, poem_text };
+        renderResults(data);
+        if (data.warning) showToast(data.warning);
+        else showToast("اكتمل التحليل بنجاح!");
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.disabled = false; btn.textContent = "🚀 تحليل القصيدة وتوليد العمل العالمي";
+      }
+    }
+
+    function renderResults(data) {
+      const a = data.analysis;
+      document.getElementById("resultsEmpty").style.display = "none";
+      document.getElementById("resultsContent").style.display = "block";
+      document.getElementById("resType").textContent = a.poem_type;
+      document.getElementById("resMeter").textContent = a.dominant_meter;
+      document.getElementById("resAzawan").textContent = a.recommended_azawan;
+      document.getElementById("resContext").textContent = a.cultural_context;
+
+      document.getElementById("resLines").innerHTML = (a.lines || []).map(l => {
+        const beats = Array.from({ length: Math.min(12, Math.max(1, l.mutaharrikat_count || 0)) })
+          .map(() => '<span class="beat-dot"></span>').join("");
+        return `
+          <div class="line-row">
+            <div class="line-orig">${escapeHtml(l.original_line)}</div>
+            <div class="line-phon">${escapeHtml(l.phonetic_diacritized)}</div>
+            <div class="beats">
+              ${beats}
+              <span class="pill-tag">${l.mutaharrikat_count} متحرك • ${escapeHtml(l.estimated_meter)} • روي: ${escapeHtml(l.rhyme_ending)}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      document.getElementById("resEn").textContent = a.english_translation || "";
+      document.getElementById("resFr").textContent = a.french_translation || "";
+      document.getElementById("resGlossary").innerHTML = (a.glossary && a.glossary.length)
+        ? a.glossary.map(g => `
+            <div class="line-row">
+              <strong>${escapeHtml(g.term)}</strong> — ${escapeHtml(g.arabic_meaning)}
+              <span style="color:var(--muted)"> (${escapeHtml(g.english_meaning)})</span>
+            </div>`).join("")
+        : '<div style="color:var(--muted)">لا توجد مفردات مستخرجة في هذا التحليل.</div>';
+
+      document.getElementById("resStylePrompt").textContent = data.music.style_prompt;
+      document.getElementById("resLyrics").textContent = data.music.formatted_lyrics;
+      updateCitation();
+    }
+
+    function updateCitation() {
+      const title = document.getElementById("saveTitle").value.trim() || "قصيدة حسانية موثقة";
+      const poet = document.getElementById("savePoet").value.trim() || "تراث شفهي حساني";
+      const year = new Date().getFullYear();
+      document.getElementById("citeBox").textContent =
+        `${poet}. (${year}). "${title}". ALBIDAN AI Lab — Hassaniya Digital Poetry Corpus. Retrieved from ${window.location.origin}`;
+    }
+
+    async function savePoemToArchive() {
+      if (!lastPayload) return showToast("حلّل قصيدة أولاً قبل الحفظ.");
+      updateCitation();
+      try {
+        const res = await fetch("/api/poems", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: document.getElementById("saveTitle").value || "قصيدة بدون عنوان",
+            poet: document.getElementById("savePoet").value || "تراث شفهي / غير معروف",
+            region: document.getElementById("saveRegion").value || "الصحراء المغربية",
+            poem_text: lastPayload.poem_text,
+            analysis: lastPayload.analysis,
+            music: lastPayload.music,
+            azawan_mode: selectedAzawan,
+            source_engine: lastPayload.source_engine
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "تعذر الحفظ");
+        showToast(`تم التوثيق بنجاح (المعرّف: ${data.id})!`);
+        document.getElementById("saveTitle").value = "";
+        await Promise.all([loadStats(), loadArchive(), loadGlossary()]);
+      } catch (e) {
+        showToast(e.message);
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch("/api/stats");
+        const s = await res.json();
+        document.getElementById("statPoems").textContent = s.poems_count;
+        document.getElementById("statLines").textContent = s.lines_count;
+        document.getElementById("statTerms").textContent = s.terms_count;
+        document.getElementById("serverBadge").innerHTML =
+          `<span class="status-dot"></span> ${s.db_mode === "mongodb" ? "MongoDB سحابي" : "SQLite محلي"}`;
+      } catch (e) {
+        document.getElementById("serverBadge").textContent = "⚠️ غير متصل";
+      }
+    }
+
+    async function loadArchive() {
+      const q = encodeURIComponent(document.getElementById("archiveSearch").value || "");
+      const t = encodeURIComponent(document.getElementById("archiveFilter").value || "الكل");
+      const res = await fetch(`/api/poems?q=${q}&poem_type=${t}`);
+      const data = await res.json();
+      cachedPoems = data.items || [];
+      const grid = document.getElementById("archiveGrid");
+      if (!cachedPoems.length) {
+        grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;color:var(--muted)">لا توجد قصائد مطابقة حالياً.</div>';
+        return;
+      }
+      grid.innerHTML = cachedPoems.map((p, idx) => `
+        <div class="archive-card">
+          <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+            <strong>📜 ${escapeHtml(p.title)}</strong>
+            <span class="pill-tag">${escapeHtml(p.poem_type)}</span>
+          </div>
+          <div style="font-size:0.82rem;color:var(--muted)">✍️ ${escapeHtml(p.poet)} • 📍 ${escapeHtml(p.region)} • ⚖️ ${escapeHtml(p.dominant_meter)}</div>
+          <div class="archive-poem">${escapeHtml(p.poem_text)}</div>
+          <div style="display:flex;gap:8px;margin-top:auto">
+            <button class="btn btn-primary btn-sm" style="flex:1" onclick="openArchivePoem(${idx})">🔄 فتح في المختبر</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function openArchivePoem(idx) {
+      const rec = cachedPoems[idx];
+      if (!rec) return;
+      document.getElementById("poemInput").value = rec.poem_text;
+      updateLiveCounter();
+      lastPayload = { poem_text: rec.poem_text, analysis: rec.analysis, music: rec.music, source_engine: rec.source_engine };
+      renderResults(lastPayload);
+      document.getElementById("lab").scrollIntoView({ behavior: "smooth" });
+    }
+
+    async function loadGlossary() {
+      const q = encodeURIComponent(document.getElementById("glossarySearch").value || "");
+      const res = await fetch(`/api/glossary?q=${q}`);
+      const data = await res.json();
+      cachedGlossary = data.items || [];
+      const grid = document.getElementById("glossaryGrid");
+      if (!cachedGlossary.length) {
+        grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;color:var(--muted)">المعجم بانتظار أول قصيدة موثقة بالذكاء الاصطناعي.</div>';
+        return;
+      }
+      grid.innerHTML = cachedGlossary.map(g => `
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="flip-inner">
+            <div class="flip-face flip-front">
+              <h3>${escapeHtml(g.term)}</h3>
+              <span style="font-size:0.78rem;color:var(--muted)">اضغط لمعرفة المعنى ↺</span>
+            </div>
+            <div class="flip-face flip-back">
+              <strong style="margin-bottom:6px">${escapeHtml(g.arabic_meaning)}</strong>
+              <div style="font-size:0.86rem;color:var(--gold-light)">${escapeHtml(g.english_meaning)}</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:8px">المصدر: ${escapeHtml(g.source_poem_title || "المدونة")}</div>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderAtlas(activeIdx = 0) {
+      document.getElementById("atlasCities").innerHTML = ATLAS.map((a, i) =>
+        `<button class="city-chip ${i === activeIdx ? 'active' : ''}" onclick="renderAtlas(${i})">📍 ${a.city}</button>`
+      ).join("");
+      const cur = ATLAS[activeIdx];
+      document.getElementById("atlasDetail").innerHTML = `
+        <h3 style="color:var(--gold-light);margin-bottom:4px">${cur.city} — ${cur.region}</h3>
+        <p style="color:var(--muted);margin-bottom:0.8rem">${cur.note}</p>
+        <button class="btn btn-secondary btn-sm" onclick="filterByCity('${cur.city}')">🔎 عرض قصائد ${cur.city} في المدونة</button>
+      `;
+    }
+
+    function filterByCity(city) {
+      document.getElementById("archiveSearch").value = city;
+      loadArchive();
+      document.getElementById("archive").scrollIntoView({ behavior: "smooth" });
+    }
+
+    function openSearchModal() {
+      document.getElementById("searchModal").classList.add("open");
+      document.getElementById("globalSearchInput").focus();
+      runGlobalSearch();
+    }
+    function closeSearchModal() { document.getElementById("searchModal").classList.remove("open"); }
+
+    function runGlobalSearch() {
+      const q = (document.getElementById("globalSearchInput").value || "").trim().toLowerCase();
+      const poems = cachedPoems.filter(p => !q || `${p.title} ${p.poem_text} ${p.poet} ${p.region}`.toLowerCase().includes(q)).slice(0, 5);
+      const terms = cachedGlossary.filter(g => !q || `${g.term} ${g.arabic_meaning} ${g.english_meaning}`.toLowerCase().includes(q)).slice(0, 5);
+      const html = [
+        ...poems.map(p => `<div class="search-item" onclick="closeSearchModal();document.getElementById('archiveSearch').value='${escapeHtml(p.title)}';loadArchive();document.getElementById('archive').scrollIntoView({behavior:'smooth'})">📜 <strong>${escapeHtml(p.title)}</strong> — <span style="color:var(--muted)">${escapeHtml(p.poet)}</span></div>`),
+        ...terms.map(g => `<div class="search-item" onclick="closeSearchModal();document.getElementById('glossarySearch').value='${escapeHtml(g.term)}';loadGlossary();document.getElementById('glossary').scrollIntoView({behavior:'smooth'})">📖 <strong>${escapeHtml(g.term)}</strong> — ${escapeHtml(g.arabic_meaning)}</div>`)
+      ].join("");
+      document.getElementById("globalSearchResults").innerHTML = html || '<div style="color:var(--muted);text-align:center;padding:1rem">لا توجد نتائج مطابقة.</div>';
+    }
+
+    function copyText(txt) {
+      navigator.clipboard.writeText(txt).then(() => showToast("تم النسخ إلى الحافظة!"));
+    }
+
+    document.addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault(); openSearchModal();
+      } else if (e.key === "Escape") closeSearchModal();
+    });
+
+    (function init() {
+      const savedTheme = localStorage.getItem("albidan_theme");
+      if (savedTheme === "light") toggleTheme();
+      renderSlide();
+      renderAzawanSlider();
+      renderAtlas(0);
+      loadStats();
+      loadArchive();
+      loadGlossary();
+      document.getElementById("fusionSelect").addEventListener("change", () => lastPayload && refreshMusicPrompt());
+      document.getElementById("vocalSelect").addEventListener("change", () => lastPayload && refreshMusicPrompt());
+    })();
+  </script>
+</body>
+</html>
