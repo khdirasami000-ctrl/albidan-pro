@@ -71,11 +71,21 @@ class AIPoemAnalysis(BaseModel):
     dominant_meter: str = Field(description="البحر العروضي السائد في القصيدة")
     dominant_rhyme: str = Field(description="بنية القافية والروي العام في القطعة")
     cultural_context: str = Field(description="تحليل موجز للغرض الشعري والسياق الثقافي الحساني")
-    linguistic_notes: str = Field(description="ملاحظات لغوية وعروضية منهجية حول النص (الابتداء بالساكن، الظواهر الصوتية)")
+    linguistic_notes: str = Field(description="ملاحظات لغوية وعروضية منهجية حول النص")
     lines: List[AILineAnalysis]
     glossary: List[GlossaryTerm] = Field(description="المفردات الحسانية التراثية الواردة في النص وشرحها")
-    english_translation: str = Field(description="ترجمة أدبية دقيقة للإنجليزية تحافظ على المعنى والروح")
-    french_translation: str = Field(description="ترجمة أدبية دقيقة للفرنسية تحافظ على المعنى والروح")
+    english_translation: str = Field(description="ترجمة أدبية دقيقة للإنجليزية")
+    french_translation: str = Field(description="ترجمة أدبية دقيقة للفرنسية")
+
+
+class BatchPoemItem(BaseModel):
+    title: str = Field(description="عنوان القصيدة")
+    poet: str = Field(default="", description="اسم الشاعر أو الراوي إن ذُكر، وإلا فارغ")
+    poem_text: str = Field(description="نص الأبيات الحسانية مرتباً كل شطر في سطر")
+
+
+class BatchSplitResult(BaseModel):
+    poems: List[BatchPoemItem]
 
 
 class AnalyzeRequest(BaseModel):
@@ -91,6 +101,19 @@ class SavePoemRequest(BaseModel):
     poem_text: str
     analysis: Dict
     source_engine: str = "AI"
+
+
+class BatchSaveItem(BaseModel):
+    title: str = ""
+    poet: str = "تراث شفهي / غير معروف"
+    region: str = "الصحراء المغربية"
+    poem_text: str
+    analysis: Optional[Dict] = None
+    source_engine: str = "Local (Batch Word)"
+
+
+class BatchSaveRequest(BaseModel):
+    items: List[BatchSaveItem]
 
 
 class UpdatePoemRequest(BaseModel):
@@ -116,8 +139,70 @@ class ContactMessageRequest(BaseModel):
 
 
 # ==========================================
-# 2. أدوات إنشاء ملفات Word عربية احترافية (RTL)
+# 2. أدوات Word (قراءة وتقسيم وتصدير RTL)
 # ==========================================
+def extract_docx_plain_text(raw: bytes) -> str:
+    doc = Document(io.BytesIO(raw))
+    lines = [p.text.strip() for p in doc.paragraphs]
+    return "\n".join(lines).strip()
+
+
+def split_docx_structurally(raw: bytes, default_poet: str, default_region: str) -> List[Dict]:
+    """تقسيم هيكلي سريع لملفات Word الطويلة اعتماداً على العناوين والفواصل والأسطر الفارغة."""
+    doc = Document(io.BytesIO(raw))
+    poems: List[Dict] = []
+    cur_title = ""
+    cur_lines: List[str] = []
+
+    def flush_block():
+        nonlocal cur_title, cur_lines
+        clean = [l.strip() for l in cur_lines if l.strip()]
+        if not clean:
+            cur_title = ""
+            cur_lines = []
+            return
+        title = cur_title.strip()
+        body_lines = clean
+        if not title and len(clean) >= 2 and (
+            clean[0].startswith(("قصيدة", "عنوان", "كاف", "طلعة", "تبراع", "#"))
+            or len(clean[0]) <= 36 and clean[0].endswith(":")
+        ):
+            title = re.sub(r"^[#\s]+|[:\s]+$", "", clean[0])
+            body_lines = clean[1:]
+        if body_lines:
+            poems.append({
+                "title": title or f"قصيدة {len(poems) + 1}",
+                "poet": default_poet.strip() or "تراث شفهي / غير معروف",
+                "region": default_region.strip() or "الصحراء المغربية",
+                "poem_text": "\n".join(body_lines),
+            })
+        cur_title = ""
+        cur_lines = []
+
+    for p in doc.paragraphs:
+        txt = p.text.strip()
+        style_name = (p.style.name if p.style else "") or ""
+        is_sep = bool(re.match(r"^[-_*=•]{3,}$", txt))
+        is_heading = style_name.lower().startswith("heading") or txt.startswith("#")
+
+        if not txt or is_sep:
+            if cur_lines:
+                flush_block()
+            continue
+
+        if is_heading:
+            if cur_lines:
+                flush_block()
+            cur_title = txt.lstrip("#").strip()
+            continue
+
+        cur_lines.append(txt)
+
+    if cur_lines:
+        flush_block()
+    return poems
+
+
 def set_paragraph_rtl(paragraph):
     paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     pPr = paragraph._p.get_or_add_pPr()
@@ -284,7 +369,7 @@ def doc_to_stream(doc: Document, filename: str) -> StreamingResponse:
 
 
 # ==========================================
-# 3. مدير قاعدة البيانات (MongoDB Atlas + SQLite احتياطي)
+# 3. مدير قاعدة البيانات (MongoDB Atlas + SQLite)
 # ==========================================
 class ArchiveManager:
     def __init__(self, mongo_uri: str, db_name: str, sqlite_path: str = "albidan_archive.db"):
@@ -394,17 +479,10 @@ class ArchiveManager:
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
-                        record["id"],
-                        record["title"],
-                        record["poet"],
-                        record["region"],
-                        record["poem_text"],
-                        record["poem_type"],
-                        record["dominant_meter"],
-                        "",
-                        record["source_engine"],
-                        json.dumps(record["analysis"], ensure_ascii=False),
-                        "{}",
+                        record["id"], record["title"], record["poet"], record["region"],
+                        record["poem_text"], record["poem_type"], record["dominant_meter"],
+                        "", record["source_engine"],
+                        json.dumps(record["analysis"], ensure_ascii=False), "{}",
                         record["created_at"],
                     ),
                 )
@@ -417,16 +495,90 @@ class ArchiveManager:
                                 term, arabic_meaning, english_meaning, source_poem_title, updated_at
                             ) VALUES (?, ?, ?, ?, ?)
                             """,
-                            (
-                                term,
-                                g.get("arabic_meaning", ""),
-                                g.get("english_meaning", ""),
-                                record["title"],
-                                now_iso,
-                            ),
+                            (term, g.get("arabic_meaning", ""), g.get("english_meaning", ""), record["title"], now_iso),
                         )
                 conn.commit()
         return record_id
+
+    def save_poems_batch(self, items: List[SavePoemRequest]) -> List[str]:
+        saved_ids: List[str] = []
+        now_iso = datetime.now().strftime("%Y-%m-%d %H:%M")
+        docs_to_insert = []
+        glossary_updates = []
+
+        for payload in items:
+            if not payload.poem_text.strip():
+                continue
+            record_id = str(uuid.uuid4())[:8]
+            saved_ids.append(record_id)
+            record = {
+                "id": record_id,
+                "title": payload.title.strip() or f"قصيدة {len(saved_ids)}",
+                "poet": payload.poet.strip() or "تراث شفهي / غير معروف",
+                "region": payload.region.strip() or "الصحراء المغربية",
+                "poem_text": payload.poem_text.strip(),
+                "poem_type": payload.analysis.get("poem_type", "غير محدد"),
+                "dominant_meter": payload.analysis.get("dominant_meter", "غير محدد"),
+                "source_engine": payload.source_engine,
+                "analysis": payload.analysis,
+                "created_at": now_iso,
+            }
+            docs_to_insert.append(record)
+            for g in payload.analysis.get("glossary", []):
+                term = str(g.get("term", "")).strip()
+                if term:
+                    glossary_updates.append({
+                        "term": term,
+                        "arabic_meaning": g.get("arabic_meaning", ""),
+                        "english_meaning": g.get("english_meaning", ""),
+                        "source_poem_title": record["title"],
+                        "updated_at": now_iso,
+                    })
+
+        if not docs_to_insert:
+            return []
+
+        if self.active_mode == "mongodb":
+            mongo_docs = []
+            for d in docs_to_insert:
+                m = dict(d)
+                m["_id"] = d["id"]
+                mongo_docs.append(m)
+            self.mongo_db["poems"].insert_many(mongo_docs)
+            for g in glossary_updates:
+                self.mongo_db["glossary"].update_one({"term": g["term"]}, {"$set": g}, upsert=True)
+        else:
+            with sqlite3.connect(self.sqlite_path) as conn:
+                conn.executemany(
+                    """
+                    INSERT INTO poems (
+                        id, title, poet, region, poem_text, poem_type, dominant_meter,
+                        azawan_mode, source_engine, analysis_json, music_json, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    [
+                        (
+                            d["id"], d["title"], d["poet"], d["region"], d["poem_text"],
+                            d["poem_type"], d["dominant_meter"], "", d["source_engine"],
+                            json.dumps(d["analysis"], ensure_ascii=False), "{}", d["created_at"],
+                        )
+                        for d in docs_to_insert
+                    ],
+                )
+                if glossary_updates:
+                    conn.executemany(
+                        """
+                        INSERT OR REPLACE INTO glossary (
+                            term, arabic_meaning, english_meaning, source_poem_title, updated_at
+                        ) VALUES (?, ?, ?, ?, ?)
+                        """,
+                        [
+                            (g["term"], g["arabic_meaning"], g["english_meaning"], g["source_poem_title"], g["updated_at"])
+                            for g in glossary_updates
+                        ],
+                    )
+                conn.commit()
+        return saved_ids
 
     def get_poem(self, record_id: str) -> Optional[Dict]:
         if self.active_mode == "mongodb":
@@ -443,15 +595,10 @@ class ArchiveManager:
             if not row:
                 return None
             return {
-                "id": row["id"],
-                "title": row["title"],
-                "poet": row["poet"],
-                "region": row["region"],
-                "poem_text": row["poem_text"],
-                "poem_type": row["poem_type"],
-                "dominant_meter": row["dominant_meter"],
-                "source_engine": row["source_engine"],
-                "analysis": json.loads(row["analysis_json"]),
+                "id": row["id"], "title": row["title"], "poet": row["poet"],
+                "region": row["region"], "poem_text": row["poem_text"],
+                "poem_type": row["poem_type"], "dominant_meter": row["dominant_meter"],
+                "source_engine": row["source_engine"], "analysis": json.loads(row["analysis_json"]),
                 "created_at": row["created_at"],
             }
 
@@ -463,10 +610,7 @@ class ArchiveManager:
             "poem_text": payload.poem_text.strip(),
         }
         if self.active_mode == "mongodb":
-            res = self.mongo_db["poems"].update_one(
-                {"$or": [{"_id": record_id}, {"id": record_id}]},
-                {"$set": updates},
-            )
+            res = self.mongo_db["poems"].update_one({"$or": [{"_id": record_id}, {"id": record_id}]}, {"$set": updates})
             return res.matched_count > 0
         with sqlite3.connect(self.sqlite_path) as conn:
             cur = conn.execute(
@@ -487,24 +631,17 @@ class ArchiveManager:
         else:
             with sqlite3.connect(self.sqlite_path) as conn:
                 conn.row_factory = sqlite3.Row
-                rows = conn.execute("SELECT * FROM poems ORDER BY created_at DESC").fetchall()
-                for row in rows:
+                for row in conn.execute("SELECT * FROM poems ORDER BY created_at DESC").fetchall():
                     records.append({
-                        "id": row["id"],
-                        "title": row["title"],
-                        "poet": row["poet"],
-                        "region": row["region"],
-                        "poem_text": row["poem_text"],
-                        "poem_type": row["poem_type"],
-                        "dominant_meter": row["dominant_meter"],
-                        "source_engine": row["source_engine"],
-                        "analysis": json.loads(row["analysis_json"]),
+                        "id": row["id"], "title": row["title"], "poet": row["poet"],
+                        "region": row["region"], "poem_text": row["poem_text"],
+                        "poem_type": row["poem_type"], "dominant_meter": row["dominant_meter"],
+                        "source_engine": row["source_engine"], "analysis": json.loads(row["analysis_json"]),
                         "created_at": row["created_at"],
                     })
 
         if poem_type and poem_type != "الكل":
             records = [r for r in records if poem_type in str(r.get("poem_type", ""))]
-
         if q.strip():
             ql = q.strip().lower()
             records = [
@@ -536,7 +673,6 @@ class ArchiveManager:
             with sqlite3.connect(self.sqlite_path) as conn:
                 conn.row_factory = sqlite3.Row
                 items = [dict(r) for r in conn.execute("SELECT * FROM glossary ORDER BY updated_at DESC").fetchall()]
-
         if q.strip():
             ql = q.strip().lower()
             items = [
@@ -549,8 +685,7 @@ class ArchiveManager:
 
     def delete_glossary_term(self, term: str) -> bool:
         if self.active_mode == "mongodb":
-            res = self.mongo_db["glossary"].delete_one({"term": term})
-            return res.deleted_count > 0
+            return self.mongo_db["glossary"].delete_one({"term": term}).deleted_count > 0
         with sqlite3.connect(self.sqlite_path) as conn:
             cur = conn.execute("DELETE FROM glossary WHERE term = ?", (term,))
             conn.commit()
@@ -560,11 +695,8 @@ class ArchiveManager:
         msg_id = str(uuid.uuid4())[:8]
         now_iso = datetime.now().strftime("%Y-%m-%d %H:%M")
         doc = {
-            "id": msg_id,
-            "name": payload.name.strip(),
-            "contact": payload.contact.strip(),
-            "category": payload.category.strip() or "تواصل بحثي",
-            "message": payload.message.strip(),
+            "id": msg_id, "name": payload.name.strip(), "contact": payload.contact.strip(),
+            "category": payload.category.strip() or "تواصل بحثي", "message": payload.message.strip(),
             "created_at": now_iso,
         }
         if self.active_mode == "mongodb":
@@ -596,8 +728,7 @@ class ArchiveManager:
 
     def delete_message(self, msg_id: str) -> bool:
         if self.active_mode == "mongodb":
-            res = self.mongo_db["messages"].delete_one({"$or": [{"_id": msg_id}, {"id": msg_id}]})
-            return res.deleted_count > 0
+            return self.mongo_db["messages"].delete_one({"$or": [{"_id": msg_id}, {"id": msg_id}]}).deleted_count > 0
         with sqlite3.connect(self.sqlite_path) as conn:
             cur = conn.execute("DELETE FROM messages WHERE id = ?", (msg_id,))
             conn.commit()
@@ -612,27 +743,21 @@ class ArchiveManager:
             total_lines = sum(len(doc.get("analysis", {}).get("lines", [])) for doc in cursor)
         else:
             poems = self.list_poems()
-            glossary = self.list_glossary()
-            messages = self.list_messages()
             poems_count = len(poems)
-            terms_count = len(glossary)
-            messages_count = len(messages)
+            terms_count = len(self.list_glossary())
+            messages_count = len(self.list_messages())
             total_lines = sum(len(p.get("analysis", {}).get("lines", [])) for p in poems)
 
         return {
-            "poems_count": poems_count,
-            "lines_count": total_lines,
-            "terms_count": terms_count,
-            "messages_count": messages_count,
-            "db_mode": self.active_mode,
-            "db_status": self.status_message,
-            "ai_ready": bool(GEMINI_API_KEY),
-            "default_model": DEFAULT_GEMINI_MODEL,
+            "poems_count": poems_count, "lines_count": total_lines,
+            "terms_count": terms_count, "messages_count": messages_count,
+            "db_mode": self.active_mode, "db_status": self.status_message,
+            "ai_ready": bool(GEMINI_API_KEY), "default_model": DEFAULT_GEMINI_MODEL,
         }
 
 
 # ==========================================
-# 4. المحلل الاحتياطي وخدمات Gemini (تحليل + صوت + OCR صور وPDF)
+# 4. المحلل المحلي وخدمات Gemini
 # ==========================================
 class LocalHassaniyaEngine:
     short_vowels = set("َُِ")
@@ -662,7 +787,7 @@ class LocalHassaniyaEngine:
             rhyme = clean[-2:] if len(clean) >= 2 else clean
             details.append({
                 "original_line": line,
-                "phonetic_diacritized": "يتطلب تفعيل Gemini API للتشكيل الصوتي الدقيق",
+                "phonetic_diacritized": "تحليل أولي — افتح القصيدة في المختبر للتشكيل الصوتي الكامل",
                 "mutaharrikat_count": count,
                 "estimated_meter": self.meters_map.get(count, f"وزن تقديري ({count} متحرك)"),
                 "rhyme_ending": rhyme,
@@ -680,12 +805,10 @@ class LocalHassaniyaEngine:
             "poem_type": poem_type,
             "dominant_meter": details[0]["estimated_meter"] if details else "غير محدد",
             "dominant_rhyme": details[0]["rhyme_ending"] if details else "—",
-            "cultural_context": "تحليل أولي بالمحرك المحلي. فعّل Gemini API في الخادم للحصول على التحليل الأكاديمي والترجمة.",
-            "linguistic_notes": "تحليل محلي تقديري لعدد المتحركات.",
-            "lines": details,
-            "glossary": [],
-            "english_translation": "Configure GEMINI_API_KEY on the server for literary translation.",
-            "french_translation": "Configurez GEMINI_API_KEY sur le serveur pour la traduction littéraire.",
+            "cultural_context": "قصيدة محفوظة بالتحليل العروضي الأولي؛ يمكنك فتحها في المختبر لاحقاً للتحليل الأكاديمي الكامل.",
+            "linguistic_notes": "تقطيع محلي تقديري لعدد المتحركات.",
+            "lines": details, "glossary": [],
+            "english_translation": "", "french_translation": "",
         }
 
 
@@ -710,6 +833,40 @@ def analyze_with_gemini(poem_text: str, model_name: str) -> Dict:
         ),
     )
     return AIPoemAnalysis.model_validate_json(response.text).model_dump()
+
+
+def split_poems_with_gemini(raw_text: str, model_name: str, default_poet: str, default_region: str) -> List[Dict]:
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    system_instruction = """
+    أنت باحث متخصص في تحرير وفهرسة دواوين الشعر الحساني (الكاف، الطلعة، التبراع).
+    مهمتك قراءة مستند طويل يحتوي على عدة قصائد حسانية وفصل كل قصيدة في عنصر مستقل بدقة:
+    1. استخرج عنوان كل قصيدة إن ذُكر، وإلا اقترح عنواناً موجزاً ودقيقاً من مضمونها.
+    2. استخرج اسم الشاعر أو الراوي إن ذُكر بجانب القصيدة، وإلا اترك حقل الشاعر فارغاً.
+    3. حافظ على النص الشعري الحساني حرفياً دون تعديل لغوي أو حذف، وضع كل شطر (تافلويت) في سطر مستقل.
+    4. تجاهل الفهارس وأرقام الصفحات والعناوين العامة للكتاب إن وجدت.
+    """
+    response = client.models.generate_content(
+        model=model_name,
+        contents=f"افصل جميع القصائد الحسانية في هذا النص إلى قائمة مهيكلة:\n\n{raw_text}",
+        config=types.GenerateContentConfig(
+            system_instruction=system_instruction,
+            response_mime_type="application/json",
+            response_schema=BatchSplitResult,
+        ),
+    )
+    parsed = BatchSplitResult.model_validate_json(response.text).model_dump()
+    result = []
+    for idx, p in enumerate(parsed.get("poems", []), start=1):
+        txt = (p.get("poem_text") or "").strip()
+        if not txt:
+            continue
+        result.append({
+            "title": (p.get("title") or "").strip() or f"قصيدة {idx}",
+            "poet": (p.get("poet") or "").strip() or default_poet.strip() or "تراث شفهي / غير معروف",
+            "region": default_region.strip() or "الصحراء المغربية",
+            "poem_text": txt,
+        })
+    return result
 
 
 def transcribe_with_gemini(audio_bytes: bytes, mime_type: str, model_name: str) -> str:
@@ -737,10 +894,7 @@ def extract_poems_from_media_gemini(parts_list: List[types.Part], model_name: st
     3. إذا احتوى الملف على أكثر من قصيدة، افصل بين كل قصيدة وأخرى بسطر فارغ.
     4. أخرج النصوص الشعرية فقط بدون شروحات أو مقدمات إضافية.
     """
-    response = client.models.generate_content(
-        model=model_name,
-        contents=[*parts_list, prompt],
-    )
+    response = client.models.generate_content(model=model_name, contents=[*parts_list, prompt])
     return (response.text or "").strip()
 
 
@@ -752,7 +906,7 @@ def require_admin(x_admin_pin: Optional[str]):
 # ==========================================
 # 5. تطبيق FastAPI ونقاط الاتصال (API Routes)
 # ==========================================
-app = FastAPI(title="ALBIDAN AI Lab — Academic API", version="3.0.0")
+app = FastAPI(title="ALBIDAN AI Lab — Academic API", version="3.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -815,18 +969,11 @@ def api_analyze(req: AnalyzeRequest):
         analysis = local_engine.analyze(text)
         source_engine = "Local"
 
-    return {
-        "source_engine": source_engine,
-        "warning": warning,
-        "analysis": analysis,
-    }
+    return {"source_engine": source_engine, "warning": warning, "analysis": analysis}
 
 
 @app.post("/api/transcribe")
-async def api_transcribe(
-    file: UploadFile = File(...),
-    model_name: str = Form(DEFAULT_GEMINI_MODEL),
-):
+async def api_transcribe(file: UploadFile = File(...), model_name: str = Form(DEFAULT_GEMINI_MODEL)):
     if not GEMINI_API_KEY:
         raise HTTPException(status_code=400, detail="مفتاح GEMINI_API_KEY غير مضبوط في الخادم.")
     audio_bytes = await file.read()
@@ -846,10 +993,7 @@ async def api_transcribe(
 
 
 @app.post("/api/ocr")
-async def api_ocr_images(
-    files: List[UploadFile] = File(...),
-    model_name: str = Form(DEFAULT_GEMINI_MODEL),
-):
+async def api_ocr_images(files: List[UploadFile] = File(...), model_name: str = Form(DEFAULT_GEMINI_MODEL)):
     if not GEMINI_API_KEY:
         raise HTTPException(status_code=400, detail="يتطلب استخراج النص من الصور تفعيل مفتاح GEMINI_API_KEY.")
     if not files or len(files) > 6:
@@ -873,10 +1017,7 @@ async def api_ocr_images(
 
 
 @app.post("/api/import-file")
-async def api_import_file(
-    file: UploadFile = File(...),
-    model_name: str = Form(DEFAULT_GEMINI_MODEL),
-):
+async def api_import_file(file: UploadFile = File(...), model_name: str = Form(DEFAULT_GEMINI_MODEL)):
     raw = await file.read()
     if len(raw) > 20 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="حجم الملف يتجاوز 20 ميجابايت.")
@@ -897,10 +1038,8 @@ async def api_import_file(
             extracted = "\n".join((page.extract_text() or "").strip() for page in reader.pages).strip()
         except Exception:
             extracted = ""
-
         if len(extracted) >= 15:
             return {"text": extracted, "method": "pdf-text"}
-
         if GEMINI_API_KEY:
             model = model_name if model_name in ALLOWED_MODELS else DEFAULT_GEMINI_MODEL
             try:
@@ -918,6 +1057,63 @@ async def api_import_file(
     raise HTTPException(status_code=400, detail="الصيغ المدعومة للاستيراد هي: Word (.docx) و PDF (.pdf) و TXT.")
 
 
+@app.post("/api/import-batch-docx")
+async def api_import_batch_docx(
+    file: UploadFile = File(...),
+    use_ai_split: bool = Form(True),
+    default_poet: str = Form(""),
+    default_region: str = Form("الصحراء المغربية"),
+    model_name: str = Form(DEFAULT_GEMINI_MODEL),
+):
+    raw = await file.read()
+    if len(raw) > 25 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="حجم الملف يتجاوز 25 ميجابايت.")
+
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in (".docx", ".txt"):
+        raise HTTPException(status_code=400, detail="يدعم الاستيراد الجماعي ملفات Word (.docx) أو TXT فقط.")
+
+    try:
+        plain_text = extract_docx_plain_text(raw) if ext == ".docx" else raw.decode("utf-8", errors="ignore").strip()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"تعذر قراءة الملف: {exc}")
+
+    if not plain_text.strip():
+        raise HTTPException(status_code=400, detail="الملف فارغ ولا يحتوي على نصوص.")
+
+    model = model_name if model_name in ALLOWED_MODELS else DEFAULT_GEMINI_MODEL
+    warning = None
+    items: List[Dict] = []
+    method = "structural"
+
+    if use_ai_split and GEMINI_API_KEY and len(plain_text) <= 35000:
+        try:
+            items = split_poems_with_gemini(plain_text, model, default_poet, default_region)
+            method = f"ai ({model})"
+        except Exception as exc:
+            warning = f"تعذر التقسيم الذكي ({exc})، تم التحويل للتقسيم الهيكلي السريع."
+            items = []
+
+    if not items:
+        if ext == ".docx":
+            items = split_docx_structurally(raw, default_poet, default_region)
+        else:
+            blocks = [b.strip() for b in re.split(r"\n\s*\n", plain_text) if b.strip()]
+            items = [
+                {
+                    "title": f"قصيدة {i}",
+                    "poet": default_poet.strip() or "تراث شفهي / غير معروف",
+                    "region": default_region.strip() or "الصحراء المغربية",
+                    "poem_text": b,
+                }
+                for i, b in enumerate(blocks, start=1)
+            ]
+        if use_ai_split and len(plain_text) > 35000:
+            warning = "الملف طويل جداً، تم استخدام التقسيم الهيكلي السريع لضمان عدم فقدان أي قصيدة."
+
+    return {"count": len(items), "method": method, "warning": warning, "items": items}
+
+
 @app.get("/api/poems")
 def api_list_poems(q: str = Query(""), poem_type: str = Query("الكل")):
     return {"items": archive.list_poems(q=q, poem_type=poem_type)}
@@ -929,6 +1125,31 @@ def api_save_poem(req: SavePoemRequest):
         raise HTTPException(status_code=400, detail="نص القصيدة فارغ.")
     new_id = archive.save_poem(req)
     return {"id": new_id, "message": "تم التوثيق في المدونة وتحديث المعجم بنجاح."}
+
+
+@app.post("/api/poems/batch")
+def api_save_poems_batch(req: BatchSaveRequest):
+    if not req.items:
+        raise HTTPException(status_code=400, detail="لم يتم تحديد أي قصيدة للحفظ.")
+
+    prepared: List[SavePoemRequest] = []
+    for item in req.items:
+        text = item.poem_text.strip()
+        if not text:
+            continue
+        analysis = item.analysis if item.analysis else local_engine.analyze(text)
+        prepared.append(
+            SavePoemRequest(
+                title=item.title, poet=item.poet, region=item.region,
+                poem_text=text, analysis=analysis, source_engine=item.source_engine,
+            )
+        )
+
+    if not prepared:
+        raise HTTPException(status_code=400, detail="جميع القصائد المحددة فارغة.")
+
+    ids = archive.save_poems_batch(prepared)
+    return {"saved_count": len(ids), "ids": ids, "message": f"تم حفظ {len(ids)} قصيدة دفعة واحدة بنجاح!"}
 
 
 @app.put("/api/poems/{record_id}")
