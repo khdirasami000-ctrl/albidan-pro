@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" data-theme="dark">
 <head>
@@ -8,20 +9,19 @@
   <meta name="author" content="أڭــار الحبيب — Aggar Lahbib" />
   <meta name="theme-color" content="#0D0B09" />
 
-  <!-- Open Graph لفيسبوك وواتساب -->
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="ar_AR" />
   <meta property="og:site_name" content="مختبر البيظان — ALBIDAN AI LAB" />
   <meta property="og:title" content="مختبر البيظان | المرجع العلمي الرقمي للشعر الحساني" />
-  <meta property="og:description" content="التقطيع العروضي الحساني، رقمنة القصائد من الصور وملفات Word/PDF، المدونة المفتوحة، والمعجم المتنامي." />
+  <meta property="og:description" content="التقطيع العروضي الحساني، رقمنة القصائد من الصور وملفات Word/PDF، الاستيراد الجماعي للدواوين، المدونة المفتوحة، والمعجم المتنامي." />
   <meta property="og:url" content="__BASE_URL__/" />
   <meta property="og:image" content="__BASE_URL__/static/founder.jpg" />
 
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D0B09'/%3E%3Crect x='4' y='4' width='56' height='56' rx='11' fill='none' stroke='%23D4AF37' stroke-width='3'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-size='30' fill='%23D4AF37'%3E%F0%9F%90%AA%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D0B09'/%3E%3Crect x='4' y='4' width='56' height='56' rx='11' fill='none' stroke='%23D4AF37' stroke-width='3'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-size='30' fill='%23D4AF37'%3E%F0%9F%90%AA%3C/text%3E%3C/svg%3E" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)" />
+  <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin />
+  <link href="[https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap](https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap)" rel="stylesheet" />
 
   <style>
     :root {
@@ -69,7 +69,7 @@
 
     .container { max-width: 1140px; margin: 0 auto; padding: 0 1.15rem; }
 
-    /* شريط التنقل العلوي النظيف */
+    /* شريط التنقل العلوي */
     .navbar {
       position: sticky; top: 0; z-index: 60;
       background: var(--glass); backdrop-filter: blur(14px);
@@ -123,19 +123,18 @@
       padding: 8px 12px; border-radius: 8px; cursor: pointer;
     }
 
-    /* شريط الملخص الهادئ أسفل الهيدر */
+    /* شريط الملخص الهادئ */
     .summary-bar {
       display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
       gap: 0.8rem; padding: 0.9rem 1.1rem; margin: 1.2rem 0 1.4rem;
       background: var(--card); border: 1px solid var(--border); border-radius: 12px;
     }
-    .summary-title h1 { font-size: 1.22rem; font-weight: 800; line-height: 1.3; }
+    .summary-title h1 { font-size: 1.2rem; font-weight: 800; line-height: 1.3; }
     .summary-title p { font-size: 0.84rem; color: var(--muted); }
     .mini-stats { display: flex; gap: 14px; flex-wrap: wrap; }
     .mini-stat { display: flex; align-items: baseline; gap: 5px; font-size: 0.82rem; color: var(--muted); }
     .mini-stat strong { font-size: 1.05rem; color: var(--gold-light); font-weight: 800; }
 
-    /* النوافذ المنفصلة لعدم التكدس */
     .view-section { display: none; animation: fadeIn 0.22s ease; }
     .view-section.active { display: block; }
 
@@ -143,10 +142,9 @@
       display: flex; justify-content: space-between; align-items: flex-end;
       gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1.1rem;
     }
-    .page-head h2 { font-size: 1.25rem; font-weight: 800; }
-    .page-head p { font-size: 0.86rem; color: var(--muted); }
+    .page-head h2 { font-size: 1.22rem; font-weight: 800; }
+    .page-head p { font-size: 0.85rem; color: var(--muted); }
 
-    /* البطاقات والأزرار */
     .card {
       background: var(--card); border: 1px solid var(--border);
       border-radius: 13px; padding: 1.15rem; box-shadow: var(--shadow);
@@ -154,36 +152,36 @@
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       padding: 0.56rem 1.05rem; border-radius: 9px; font-family: inherit;
-      font-weight: 700; font-size: 0.85rem; cursor: pointer; border: 1px solid transparent;
+      font-weight: 700; font-size: 0.84rem; cursor: pointer; border: 1px solid transparent;
       text-decoration: none; transition: 0.18s;
     }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
     .btn-primary { background: linear-gradient(135deg, #DEC05E, #B4861C); color: #14100C; }
     [data-theme="light"] .btn-primary { background: #1B365D; color: #FFFFFF; }
-    .btn-primary:hover { filter: brightness(1.06); }
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
     .btn-secondary { background: var(--bg-soft); color: var(--text); border-color: var(--border); }
-    .btn-secondary:hover { border-color: var(--gold); color: var(--gold-light); }
+    .btn-secondary:hover:not(:disabled) { border-color: var(--gold); color: var(--gold-light); }
     .btn-danger { background: rgba(239, 68, 68, 0.12); color: #F87171; border-color: rgba(239, 68, 68, 0.32); }
-    .btn-danger:hover { background: #EF4444; color: #FFFFFF; }
+    .btn-danger:hover:not(:disabled) { background: #EF4444; color: #FFFFFF; }
     .btn-sm { padding: 0.38rem 0.72rem; font-size: 0.78rem; border-radius: 7px; }
 
-    /* المختبر وأدوات الإدخال (صور + ملفات + صوت) */
+    /* المختبر وأدوات الإدخال */
     .lab-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 1.15rem; align-items: start; }
-    .ingest-bar {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 0.9rem;
-    }
+    .ingest-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 0.9rem; }
     .ingest-btn {
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-      padding: 0.65rem 0.5rem; border-radius: 10px; border: 1px dashed var(--border-strong);
+      padding: 0.6rem 0.4rem; border-radius: 10px; border: 1px dashed var(--border-strong);
       background: var(--bg-soft); color: var(--text); cursor: pointer; font-family: inherit;
-      font-size: 0.8rem; font-weight: 700; transition: 0.2s; text-align: center;
+      font-size: 0.78rem; font-weight: 700; transition: 0.2s; text-align: center;
     }
     .ingest-btn:hover { border-color: var(--gold); background: rgba(212, 175, 55, 0.08); }
-    .ingest-btn span { font-size: 0.7rem; color: var(--muted); font-weight: 400; }
+    .ingest-btn.highlight { border-style: solid; border-color: var(--gold); background: rgba(212, 175, 55, 0.10); }
+    .ingest-btn span { font-size: 0.68rem; color: var(--muted); font-weight: 400; }
 
     textarea, input[type="text"], input[type="password"], input[type="number"], select {
       width: 100%; background: var(--bg-soft); color: var(--text);
-      border: 1px solid var(--border); border-radius: 9px; padding: 0.62rem 0.85rem;
-      font-family: inherit; font-size: 0.88rem; outline: none;
+      border: 1px solid var(--border); border-radius: 9px; padding: 0.6rem 0.82rem;
+      font-family: inherit; font-size: 0.86rem; outline: none;
     }
     textarea.poem-editor {
       font-family: 'Amiri', serif; font-size: 1.18rem; line-height: 1.95; min-height: 195px; resize: vertical;
@@ -240,16 +238,14 @@
       font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; margin-top: 6px; word-break: break-word;
     }
 
-    /* الجداول الأكاديمية (المعجم والمرجع المنهجي) */
+    /* الجداول الأكاديمية */
     .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 11px; }
     table.academic-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; background: var(--card); }
     table.academic-table th {
       background: var(--bg-soft); color: var(--gold-light); font-weight: 800;
       text-align: right; padding: 0.7rem 0.85rem; border-bottom: 1px solid var(--border);
     }
-    table.academic-table td {
-      padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border); vertical-align: top;
-    }
+    table.academic-table td { padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border); vertical-align: top; }
     table.academic-table tr:last-child td { border-bottom: none; }
     table.academic-table tr:hover td { background: rgba(212, 175, 55, 0.04); }
     .term-cell { font-family: 'Amiri', serif; font-size: 1.15rem; font-weight: 700; color: var(--gold-light); }
@@ -286,7 +282,7 @@
     .social-fb { background: #1877F2; color: #fff; }
     .social-wa { background: #16A34A; color: #fff; }
 
-    /* النوافذ المنبثقة */
+    /* النوافذ المنبثقة والاستيراد الجماعي */
     .modal-backdrop {
       position: fixed; inset: 0; background: rgba(0, 0, 0, 0.72); backdrop-filter: blur(5px);
       display: none; place-items: center; z-index: 100; padding: 1rem;
@@ -295,13 +291,28 @@
     .modal-box {
       width: 100%; max-width: 560px; background: var(--card);
       border: 1px solid var(--border-strong); border-radius: 14px; padding: 1.2rem;
-      max-height: 82vh; overflow-y: auto;
+      max-height: 86vh; overflow-y: auto;
     }
+    .modal-box.modal-wide { max-width: 860px; }
     .search-item {
       padding: 0.65rem; border-radius: 8px; border: 1px solid var(--border);
       margin-top: 7px; cursor: pointer; background: var(--bg-soft); font-size: 0.86rem;
     }
     .search-item:hover { border-color: var(--gold); }
+
+    .batch-poem-item {
+      background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.85rem; margin-bottom: 0.7rem;
+    }
+    .batch-poem-item.unchecked { opacity: 0.45; }
+    .batch-row-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 7px; margin: 6px 0; }
+    .progress-wrap {
+      display: none; background: var(--bg-soft); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.75rem; margin: 0.75rem 0;
+    }
+    .progress-track { width: 100%; height: 9px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 6px; }
+    [data-theme="light"] .progress-track { background: #E2DBD0; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--gold), var(--accent)); transition: width 0.25s ease; }
 
     .toast {
       position: fixed; bottom: 18px; left: 18px; z-index: 130;
@@ -322,8 +333,9 @@
       .nav-views { display: none; }
       .menu-toggle { display: inline-flex; }
     }
-    @media (max-width: 600px) {
-      .ingest-bar { grid-template-columns: 1fr; }
+    @media (max-width: 680px) {
+      .ingest-bar { grid-template-columns: 1fr 1fr; }
+      .batch-row-grid { grid-template-columns: 1fr; }
       .founder-card { flex-direction: column; text-align: center; }
       .social-row { justify-content: center; }
       .hide-xs { display: none; }
@@ -332,7 +344,6 @@
 </head>
 <body>
 
-  <!-- شريط التنقل العلوي -->
   <header class="navbar">
     <div class="container nav-inner">
       <div class="brand" onclick="switchView('lab')">
@@ -343,7 +354,7 @@
         </div>
       </div>
 
-      <nav class="nav-views" id="navViews">
+      <nav class="nav-views">
         <button class="nav-tab active" data-view="lab" onclick="switchView('lab')">🔬 المختبر والرقمنة</button>
         <button class="nav-tab" data-view="archive" onclick="switchView('archive')">📚 المدونة الحسانية</button>
         <button class="nav-tab" data-view="glossary" onclick="switchView('glossary')">📖 المعجم المتنامي</button>
@@ -371,11 +382,10 @@
   </header>
 
   <main class="container">
-    <!-- شريط تعريفي مختصر وإحصائيات حية -->
     <div class="summary-bar">
       <div class="summary-title">
         <h1>المرجع العلمي الرقمي للشعر الشعبي الحساني</h1>
-        <p>تحليل عروضي صوتي، رقمنة الصور والمخطوطات والملفات، وتوثيق مرجعي مفتوح للباحثين والشعراء</p>
+        <p>تحليل عروضي صوتي، رقمنة الصور والمخطوطات والدواوين، وتوثيق مرجعي مفتوح للباحثين والشعراء</p>
       </div>
       <div class="mini-stats">
         <div class="mini-stat"><strong id="statPoems">—</strong> <span>قصيدة</span></div>
@@ -384,17 +394,14 @@
       </div>
     </div>
 
-    <!-- ===================================================
-         النافذة 1: المختبر العروضي ورقمنة الصور والملفات
-         =================================================== -->
+    <!-- النافذة 1: المختبر والرقمنة -->
     <section id="view-lab" class="view-section active">
       <div class="lab-grid">
-        <!-- عمود الإدخال والرقمنة -->
         <div class="card">
           <div class="page-head" style="margin-bottom:0.8rem">
             <div>
-              <h2>إدخال أو رقمنة قصيدة</h2>
-              <p>اكتب النص مباشرة أو استخرجه من صورة، ملف Word/PDF، أو تسجيل صوتي</p>
+              <h2>إدخال أو رقمنة قصائد</h2>
+              <p>اكتب قصيدة واحدة، صوّر مخطوطاً، أو استورد ديوان Word كاملاً دفعة واحدة</p>
             </div>
             <select id="modelSelect" style="width:auto;padding:5px 8px;font-size:0.8rem">
               <option value="gemini-3.8-flash">gemini-3.8-flash</option>
@@ -403,19 +410,22 @@
             </select>
           </div>
 
-          <!-- مدخلات خفية للرفع السريع -->
           <input type="file" id="ocrImageInput" accept="image/*" multiple style="display:none" onchange="handleImageOCR()" />
           <input type="file" id="docFileInput" accept=".docx,.pdf,.txt" style="display:none" onchange="handleDocImport()" />
           <input type="file" id="audioFileInput" accept=".mp3,.wav,.m4a,.ogg,.flac" style="display:none" onchange="handleAudioTranscribe()" />
 
           <div class="ingest-bar">
+            <button class="ingest-btn highlight" onclick="openBatchModal()">
+              📚 عدة قصائد (Word)
+              <span>حفظ ديوان دفعة واحدة</span>
+            </button>
             <button class="ingest-btn" id="ocrBtn" onclick="document.getElementById('ocrImageInput').click()">
-              📷 تصوير / رفع صورة
-              <span>مخطوط أو صفحة كتاب</span>
+              📷 تصوير / صورة
+              <span>مخطوط أو صفحة</span>
             </button>
             <button class="ingest-btn" id="docBtn" onclick="document.getElementById('docFileInput').click()">
-              📄 استيراد ملف
-              <span>Word (.docx) أو PDF</span>
+              📄 ملف واحد
+              <span>Word أو PDF</span>
             </button>
             <button class="ingest-btn" id="audioBtn" onclick="document.getElementById('audioFileInput').click()">
               🎙️ تفريغ صوتي
@@ -437,7 +447,6 @@
           </button>
         </div>
 
-        <!-- عمود النتائج والتصدير -->
         <div class="card">
           <div class="tabs">
             <button class="tab-btn active" onclick="switchLabTab('prosody', this)">العروض والتقطيع</button>
@@ -520,34 +529,31 @@
       </div>
     </section>
 
-    <!-- ===================================================
-         النافذة 2: المدونة الحسانية المفتوحة
-         =================================================== -->
+    <!-- النافذة 2: المدونة الحسانية -->
     <section id="view-archive" class="view-section">
       <div class="page-head">
         <div>
           <h2>📚 المدونة الحسانية المفتوحة</h2>
-          <p>تصفح القصائد الموثقة أو نزّلها بصيغ Word وPDF وJSONL للأغراض البحثية</p>
+          <p>تصفح القصائد الموثقة، استورد دواوين Word جماعياً، أو نزّل المدونة بصيغ Word وPDF</p>
         </div>
         <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
-          <input type="text" id="archiveSearch" placeholder="🔍 ابحث في القصائد..." style="width:190px" oninput="loadArchive()" />
+          <input type="text" id="archiveSearch" placeholder="🔍 ابحث في القصائد..." style="width:180px" oninput="loadArchive()" />
           <select id="archiveFilter" style="width:auto" onchange="loadArchive()">
             <option value="الكل">الكل</option>
             <option value="كاف">كاف</option>
             <option value="تبراع">تبراع</option>
             <option value="طلعة">طلعة</option>
           </select>
-          <button class="btn btn-primary btn-sm" onclick="exportArchiveDocx()">📘 تصدير الكل Word</button>
-          <button class="btn btn-secondary btn-sm" onclick="exportArchivePDF()">📕 تصدير الكل PDF</button>
+          <button class="btn btn-primary btn-sm" onclick="openBatchModal()">📚 استيراد جماعي Word</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportArchiveDocx()">📘 تصدير Word</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportArchivePDF()">📕 تصدير PDF</button>
           <a href="/api/export/jsonl" class="btn btn-secondary btn-sm">JSONL</a>
         </div>
       </div>
       <div class="archive-grid" id="archiveGrid"></div>
     </section>
 
-    <!-- ===================================================
-         النافذة 3: المعجم الحساني المتنامي (تصدير Word + PDF)
-         =================================================== -->
+    <!-- النافذة 3: المعجم المتنامي -->
     <section id="view-glossary" class="view-section">
       <div class="page-head">
         <div>
@@ -577,9 +583,7 @@
       </div>
     </section>
 
-    <!-- ===================================================
-         النافذة 4: المرجع العروضي والمنهجي للباحثين
-         =================================================== -->
+    <!-- النافذة 4: المرجع العروضي والمنهجي -->
     <section id="view-methodology" class="view-section">
       <div class="page-head">
         <div>
@@ -647,19 +651,16 @@
           </ul>
         </div>
         <div class="ref-card">
-          <h3>3. منهجية التوثيق والاستشهاد</h3>
+          <h3>3. منهجية التوثيق والاستيراد الجماعي</h3>
           <ul>
-            <li>يُنسب كل نص إلى شاعره أو راويه ومنطقته الجغرافية وتاريخ توثيقه.</li>
-            <li>تُصدَّر المدونة بصيغتين: <strong>Word (.docx)</strong> للتحرير الأكاديمي و<strong>JSONL</strong> لأبحاث اللسانيات الحاسوبية.</li>
-            <li>تُراجع جميع المساهمات الواردة من الباحثين قبل اعتمادها النهائي في الأرشيف.</li>
+            <li>لتفريغ ديوان طويل من ملف Word بدقة عالية، اترك <strong>سطراً فارغاً</strong> أو علامة <code>---</code> بين كل قصيدة وأخرى، أو استخدم عناوين Word.</li>
+            <li>تُصدَّر المدونة والمعجم بصيغ <strong>Word (.docx)</strong> و<strong>PDF</strong> و<strong>JSONL</strong>.</li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- ===================================================
-         النافذة 5: المؤسس والتواصل ومساهمات الباحثين
-         =================================================== -->
+    <!-- النافذة 5: المؤسس والتواصل -->
     <section id="view-about" class="view-section">
       <div class="about-grid">
         <div class="founder-card">
@@ -675,8 +676,8 @@
               مؤسس ومطور «مختبر البيظان للذكاء الاصطناعي». يعمل على رقمنة التراث الثقافي الحساني، تحليل العروض الشعري آلياً، وبناء مرجع علمي ومعجمي مفتوح لخدمة الباحثين والشعراء.
             </p>
             <div class="social-row">
-              <a class="btn btn-sm social-fb" href="https://web.facebook.com/aggarlahbib/?locale=ar_AR" target="_blank" rel="noopener noreferrer">فيسبوك</a>
-              <a class="btn btn-sm social-wa" href="https://wa.me/212668208797" target="_blank" rel="noopener noreferrer">واتساب</a>
+              <a class="btn btn-sm social-fb" href="[https://web.facebook.com/aggarlahbib/?locale=ar_AR](https://web.facebook.com/aggarlahbib/?locale=ar_AR)" target="_blank" rel="noopener noreferrer">فيسبوك</a>
+              <a class="btn btn-sm social-wa" href="[https://wa.me/212668208797](https://wa.me/212668208797)" target="_blank" rel="noopener noreferrer">واتساب</a>
             </div>
           </div>
         </div>
@@ -712,6 +713,66 @@
       <strong style="color:var(--gold-light)">مختبر البيظان للذكاء الاصطناعي — ALBIDAN AI LAB</strong> • © 2026 فكرة وتطوير أڭــار الحبيب
     </div>
   </footer>
+
+  <!-- نافذة الاستيراد والحفظ الجماعي لملفات Word الطويلة -->
+  <div class="modal-backdrop" id="batchModal" onclick="if(event.target===this) closeModal('batchModal')">
+    <div class="modal-box modal-wide">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
+        <div>
+          <strong style="font-size:1.05rem">📚 استيراد وحفظ عدة قصائد دفعة واحدة (Word)</strong>
+          <div style="font-size:0.78rem;color:var(--muted)">ارفع ملف Word طويل (`.docx`) وسيقوم المختبر بفصل القصائد ومعاينتها قبل حفظها جميعاً في المدونة.</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('batchModal')">إغلاق</button>
+      </div>
+
+      <!-- المرحلة 1: اختيار الملف وإعدادات التقسيم -->
+      <div class="line-row" style="margin-bottom:0.9rem">
+        <div class="batch-row-grid">
+          <input type="file" id="batchDocxFile" accept=".docx,.txt" style="padding:5px" />
+          <input type="text" id="batchDefaultPoet" placeholder="الشاعر الافتراضي (اختياري)" />
+          <input type="text" id="batchDefaultRegion" value="الصحراء المغربية" placeholder="المنطقة الافتراضية" />
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer">
+            <input type="checkbox" id="batchUseAiSplit" checked style="width:auto" />
+            تقسيم ذكي بـ Gemini AI (يستخرج العناوين وأسماء الشعراء تلقائياً)
+          </label>
+          <button class="btn btn-primary btn-sm" id="batchParseBtn" onclick="parseBatchDocx()">🔍 فحص وتقسيم الملف</button>
+        </div>
+      </div>
+
+      <!-- المرحلة 2: المعاينة والتعديل والحفظ الدفعي -->
+      <div id="batchPreviewArea" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:0.7rem">
+          <span class="pill-tag" id="batchCountBadge">0 قصيدة</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" onclick="toggleAllBatch(true)">تحديد الكل</button>
+            <button class="btn btn-secondary btn-sm" onclick="toggleAllBatch(false)">إلغاء التحديد</button>
+            <button class="btn btn-secondary btn-sm" onclick="applyBatchDefaults()">تطبيق الشاعر والمنطقة على الكل</button>
+          </div>
+        </div>
+
+        <div id="batchItemsList" style="max-height:330px;overflow-y:auto;padding-left:4px"></div>
+
+        <div class="line-row" style="margin-top:0.8rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <select id="batchSaveMode" style="flex:1;min-width:250px">
+              <option value="fast">⚡ حفظ سريع فوري (تحليل عروضي محلي — مثالي لعدد كبير من القصائد)</option>
+              <option value="ai">🧠 تحليل أكاديمي بـ Gemini AI + تحديث المعجم لكل قصيدة بالتتابع</option>
+            </select>
+            <button class="btn btn-primary" id="batchSaveBtn" onclick="saveBatchPoems()">💾 حفظ القصائد المحددة دفعة واحدة</button>
+          </div>
+          <div class="progress-wrap" id="batchProgressWrap">
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem">
+              <span id="batchProgressText">جاري الحفظ...</span>
+              <strong id="batchProgressPct">0%</strong>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="batchProgressFill"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- نافذة البحث الشامل -->
   <div class="modal-backdrop" id="searchModal" onclick="if(event.target===this) closeModal('searchModal')">
@@ -779,6 +840,7 @@
     let cachedPoems = [];
     let cachedGlossary = [];
     let cachedMessages = [];
+    let batchItems = [];
     let citeFormat = "APA";
     let adminPin = sessionStorage.getItem("albidan_admin_pin") || "";
     let editingPoemId = null;
@@ -793,7 +855,7 @@
       t.textContent = msg;
       t.classList.add("show");
       clearTimeout(window._toastTimer);
-      window._toastTimer = setTimeout(() => t.classList.remove("show"), 3400);
+      window._toastTimer = setTimeout(() => t.classList.remove("show"), 3600);
     }
 
     function closeModal(id) { document.getElementById(id).classList.remove("open"); }
@@ -832,13 +894,173 @@
       document.getElementById(`lab-tab-${name}`).classList.add("active");
     }
 
-    /* ============ استيراد الصور (OCR) والملفات والصوت ============ */
+    /* ============ الاستيراد والحفظ الجماعي لملفات Word ============ */
+    function openBatchModal() {
+      document.getElementById("batchModal").classList.add("open");
+      document.getElementById("batchProgressWrap").style.display = "none";
+    }
+
+    async function parseBatchDocx() {
+      const fileInput = document.getElementById("batchDocxFile");
+      if (!fileInput.files.length) return showToast("اختر ملف Word (.docx) أولاً.");
+      const btn = document.getElementById("batchParseBtn");
+      btn.disabled = true; btn.textContent = "⏳ جاري الفحص والتقسيم...";
+      try {
+        const fd = new FormData();
+        fd.append("file", fileInput.files[0]);
+        fd.append("use_ai_split", document.getElementById("batchUseAiSplit").checked ? "true" : "false");
+        fd.append("default_poet", document.getElementById("batchDefaultPoet").value.trim());
+        fd.append("default_region", document.getElementById("batchDefaultRegion").value.trim());
+        fd.append("model_name", document.getElementById("modelSelect").value);
+
+        const res = await fetch("/api/import-batch-docx", { method: "POST", body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "تعذر تقسيم الملف");
+
+        batchItems = (data.items || []).map(item => ({ ...item, selected: true }));
+        if (!batchItems.length) throw new Error("لم يتم العثور على قصائد في الملف.");
+
+        document.getElementById("batchPreviewArea").style.display = "block";
+        renderBatchItems();
+        showToast(data.warning || `تم استخراج ${batchItems.length} قصيدة بنجاح!`);
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.disabled = false; btn.textContent = "🔍 فحص وتقسيم الملف";
+      }
+    }
+
+    function renderBatchItems() {
+      const selectedCount = batchItems.filter(i => i.selected).length;
+      document.getElementById("batchCountBadge").textContent = `المستخرج: ${batchItems.length} قصيدة • المحدد للحفظ: ${selectedCount}`;
+      document.getElementById("batchItemsList").innerHTML = batchItems.map((item, idx) => `
+        <div class="batch-poem-item ${item.selected ? "" : "unchecked"}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <label style="display:flex;align-items:center;gap:7px;font-weight:800;font-size:0.84rem;cursor:pointer">
+              <input type="checkbox" ${item.selected ? "checked" : ""} style="width:auto" onchange="batchItems[${idx}].selected=this.checked;renderBatchItems()" />
+              قصيدة #${idx + 1}
+            </label>
+            <button class="btn btn-danger btn-sm" onclick="batchItems.splice(${idx},1);renderBatchItems()">حذف</button>
+          </div>
+          <div class="batch-row-grid">
+            <input type="text" value="${escapeHtml(item.title)}" placeholder="العنوان" oninput="batchItems[${idx}].title=this.value" />
+            <input type="text" value="${escapeHtml(item.poet)}" placeholder="الشاعر / الراوي" oninput="batchItems[${idx}].poet=this.value" />
+            <input type="text" value="${escapeHtml(item.region)}" placeholder="المنطقة" oninput="batchItems[${idx}].region=this.value" />
+          </div>
+          <textarea class="poem-editor" style="min-height:85px;font-size:1.05rem" oninput="batchItems[${idx}].poem_text=this.value">${escapeHtml(item.poem_text)}</textarea>
+        </div>
+      `).join("");
+    }
+
+    function toggleAllBatch(state) {
+      batchItems.forEach(i => i.selected = state);
+      renderBatchItems();
+    }
+
+    function applyBatchDefaults() {
+      const poet = document.getElementById("batchDefaultPoet").value.trim();
+      const region = document.getElementById("batchDefaultRegion").value.trim();
+      batchItems.forEach(i => {
+        if (poet) i.poet = poet;
+        if (region) i.region = region;
+      });
+      renderBatchItems();
+      showToast("تم تطبيق الشاعر والمنطقة على جميع القصائد.");
+    }
+
+    function updateBatchProgress(done, total, text) {
+      const wrap = document.getElementById("batchProgressWrap");
+      wrap.style.display = "block";
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      document.getElementById("batchProgressText").textContent = text;
+      document.getElementById("batchProgressPct").textContent = `${pct}%`;
+      document.getElementById("batchProgressFill").style.width = `${pct}%`;
+    }
+
+    async function saveBatchPoems() {
+      const selected = batchItems.filter(i => i.selected && i.poem_text.trim());
+      if (!selected.length) return showToast("حدد قصيدة واحدة على الأقل للحفظ.");
+
+      const mode = document.getElementById("batchSaveMode").value;
+      const btn = document.getElementById("batchSaveBtn");
+      btn.disabled = true;
+
+      try {
+        if (mode === "fast") {
+          updateBatchProgress(1, 2, `جاري حفظ ${selected.length} قصيدة دفعة واحدة...`);
+          const res = await fetch("/api/poems/batch", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              items: selected.map(s => ({
+                title: s.title, poet: s.poet, region: s.region,
+                poem_text: s.poem_text, source_engine: "Local (Batch Word)"
+              }))
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "تعذر الحفظ الجماعي");
+          updateBatchProgress(selected.length, selected.length, `تم حفظ ${data.saved_count} قصيدة بنجاح!`);
+          showToast(data.message);
+        } else {
+          // الحفظ المتتابع مع التحليل بـ Gemini AI لتجنب انتهاء مهلة Render
+          let saved = 0;
+          const model = document.getElementById("modelSelect").value;
+          for (let i = 0; i < selected.length; i++) {
+            const p = selected[i];
+            updateBatchProgress(i, selected.length, `جاري تحليل وحفظ (${i + 1} / ${selected.length}): ${p.title}...`);
+            try {
+              const aRes = await fetch("/api/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ poem_text: p.poem_text, model_name: model, use_ai: true })
+              });
+              const aData = await aRes.json();
+              if (!aRes.ok) throw new Error(aData.detail || "خطأ تحليل");
+
+              const sRes = await fetch("/api/poems", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  title: p.title, poet: p.poet, region: p.region,
+                  poem_text: p.poem_text, analysis: aData.analysis,
+                  source_engine: aData.source_engine
+                })
+              });
+              if (sRes.ok) saved++;
+            } catch (err) {
+              // حفظ احتياطي محلي إذا تعثّر تحليل قصيدة واحدة
+              const fallbackRes = await fetch("/api/poems/batch", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ items: [{ title: p.title, poet: p.poet, region: p.region, poem_text: p.poem_text, source_engine: "Local (Fallback)" }] })
+              });
+              if (fallbackRes.ok) saved++;
+            }
+          }
+          updateBatchProgress(selected.length, selected.length, `اكتمل تحليل وحفظ ${saved} من أصل ${selected.length} قصيدة!`);
+          showToast(`تم حفظ ${saved} قصيدة وتحديث المعجم بنجاح!`);
+        }
+
+        await Promise.all([loadStats(), loadArchive(), loadGlossary()]);
+        setTimeout(() => {
+          closeModal("batchModal");
+          switchView("archive");
+        }, 700);
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    /* ============ استيراد الصور (OCR) والملف الواحد والصوت ============ */
     async function handleImageOCR() {
       const input = document.getElementById("ocrImageInput");
       if (!input.files.length) return;
       const btn = document.getElementById("ocrBtn");
       const oldHtml = btn.innerHTML;
-      btn.disabled = true; btn.innerHTML = "⏳ جاري قراءة الصورة...<span>يرجى الانتظار</span>";
+      btn.disabled = true; btn.innerHTML = "⏳ جاري القراءة...<span>يرجى الانتظار</span>";
       try {
         const fd = new FormData();
         for (const f of input.files) fd.append("files", f);
@@ -858,7 +1080,7 @@
       if (!input.files.length) return;
       const btn = document.getElementById("docBtn");
       const oldHtml = btn.innerHTML;
-      btn.disabled = true; btn.innerHTML = "⏳ جاري قراءة الملف...<span>Word / PDF</span>";
+      btn.disabled = true; btn.innerHTML = "⏳ جاري القراءة...<span>Word / PDF</span>";
       try {
         const fd = new FormData();
         fd.append("file", input.files[0]);
@@ -993,7 +1215,7 @@
       } catch (e) { showToast(e.message); }
     }
 
-    /* ============ التصدير بصيغ Word (.docx) و PDF أكاديمي ============ */
+    /* ============ التصدير بصيغ Word و PDF ============ */
     async function exportCurrentAnalysisDocx() {
       if (!lastPayload) return showToast("حلّل قصيدة أولاً.");
       try {
@@ -1034,7 +1256,7 @@
       iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
       document.body.appendChild(iframe);
       const htmlDoc = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>${escapeHtml(docTitle)}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
+        <link href="[https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;700;800&display=swap](https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;700;800&display=swap)" rel="stylesheet">
         <style>
           @page { size: A4; margin: 16mm; }
           body { font-family: 'Cairo', sans-serif; color: #162133; line-height: 1.7; font-size: 12.5px; }
@@ -1115,7 +1337,6 @@
       printAcademicPDF("المرجع العروضي والمنهجي للشعر الحساني", el.innerHTML);
     }
 
-    /* ============ بطاقة القصيدة المصورة PNG ============ */
     function generatePoemCardPNG(idx) {
       const rec = cachedPoems[idx];
       if (!rec) return;
@@ -1390,7 +1611,7 @@
 
     document.addEventListener("keydown", e => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openSearchModal(); }
-      else if (e.key === "Escape") ["searchModal", "adminModal", "editModal", "inboxModal"].forEach(closeModal);
+      else if (e.key === "Escape") ["searchModal", "adminModal", "editModal", "inboxModal", "batchModal"].forEach(closeModal);
     });
 
     (function init() {
