@@ -1,7 +1,6 @@
 import os
 import re
 import io
-import csv
 import json
 import uuid
 import sqlite3
@@ -17,6 +16,13 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from google import genai
 from google.genai import types
+
+from docx import Document
+from docx.shared import Pt, RGBColor, Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from pypdf import PdfReader
 
 try:
     from pymongo import MongoClient
@@ -44,47 +50,38 @@ ALLOWED_MODELS = {
 
 
 # ==========================================
-# 1. هياكل البيانات (Pydantic Schemas)
+# 1. هياكل البيانات البحثية (Pydantic Schemas)
 # ==========================================
 class AILineAnalysis(BaseModel):
-    original_line: str = Field(description="الشطر الأصلي كما أدخله المستخدم")
-    phonetic_diacritized: str = Field(description="الشطر مضبوطاً بالشكل الصوتي الحساني")
-    mutaharrikat_count: int = Field(description="العدد الدقيق للمتحركات في الشطر")
+    original_line: str = Field(description="الشطر الأصلي كما أدخله الباحث")
+    phonetic_diacritized: str = Field(description="الشطر مضبوطاً بالشكل الصوتي الحساني مع بيان السواكن")
+    mutaharrikat_count: int = Field(description="العدد الدقيق للمتحركات في الشطر وفق العروض الحساني")
     estimated_meter: str = Field(description="اسم البحر الحساني")
     rhyme_ending: str = Field(description="الروي أو القافية الصوتية للشطر")
 
 
 class GlossaryTerm(BaseModel):
     term: str = Field(description="المفردة الحسانية")
-    arabic_meaning: str = Field(description="معناها بالعربية الفصحى")
+    arabic_meaning: str = Field(description="معناها بالعربية الفصحى وجذرها إن وُجد")
     english_meaning: str = Field(description="معناها المختصر بالإنجليزية")
 
 
 class AIPoemAnalysis(BaseModel):
-    poem_type: str = Field(description="نوع القطعة: تبراع، كاف، طلعة، أو شعر حر")
-    dominant_meter: str = Field(description="البحر السائد في القصيدة")
-    cultural_context: str = Field(description="شرح موجز للغرض الشعري والرمزية الثقافية الحسانية")
-    recommended_azawan: str = Field(description="المقام الموسيقي الأنسب من أزوان مع السبب")
+    poem_type: str = Field(description="الجنس الشعري: تبراع، كاف، طلعة، بت، أو نص حر")
+    dominant_meter: str = Field(description="البحر العروضي السائد في القصيدة")
+    dominant_rhyme: str = Field(description="بنية القافية والروي العام في القطعة")
+    cultural_context: str = Field(description="تحليل موجز للغرض الشعري والسياق الثقافي الحساني")
+    linguistic_notes: str = Field(description="ملاحظات لغوية وعروضية منهجية حول النص (الابتداء بالساكن، الظواهر الصوتية)")
     lines: List[AILineAnalysis]
-    glossary: List[GlossaryTerm] = Field(description="شرح لأهم المفردات الحسانية التراثية")
-    english_translation: str = Field(description="ترجمة شعرية وأدبية رفيعة للإنجليزية")
-    french_translation: str = Field(description="ترجمة شعرية وأدبية رفيعة للفرنسية")
+    glossary: List[GlossaryTerm] = Field(description="المفردات الحسانية التراثية الواردة في النص وشرحها")
+    english_translation: str = Field(description="ترجمة أدبية دقيقة للإنجليزية تحافظ على المعنى والروح")
+    french_translation: str = Field(description="ترجمة أدبية دقيقة للفرنسية تحافظ على المعنى والروح")
 
 
 class AnalyzeRequest(BaseModel):
     poem_text: str
     model_name: str = DEFAULT_GEMINI_MODEL
     use_ai: bool = True
-    azawan_mode: str = "لبياظ (Labyad) — الحنين والغزل"
-    fusion_style: str = "World Music Fusion"
-    vocal_type: str = "Deep soulful male Hassaniya vocals"
-
-
-class AzawanRequest(BaseModel):
-    poem_text: str
-    mode: str = "لبياظ (Labyad) — الحنين والغزل"
-    fusion_style: str = "World Music Fusion"
-    vocal_type: str = "Deep soulful male Hassaniya vocals"
 
 
 class SavePoemRequest(BaseModel):
@@ -93,8 +90,6 @@ class SavePoemRequest(BaseModel):
     region: str = "الصحراء المغربية"
     poem_text: str
     analysis: Dict
-    music: Dict
-    azawan_mode: str = "لبياظ (Labyad) — الحنين والغزل"
     source_engine: str = "AI"
 
 
@@ -105,15 +100,191 @@ class UpdatePoemRequest(BaseModel):
     poem_text: str
 
 
+class ExportAnalysisDocxRequest(BaseModel):
+    title: str = "تقرير تحليل عروضي حساني"
+    poet: str = "تراث شفهي / غير معروف"
+    region: str = "الصحراء المغربية"
+    poem_text: str
+    analysis: Dict
+
+
 class ContactMessageRequest(BaseModel):
     name: str
     contact: str = ""
-    category: str = "تواصل عام"
+    category: str = "تواصل بحثي"
     message: str
 
 
 # ==========================================
-# 2. مدير قاعدة البيانات (MongoDB Atlas + SQLite احتياطي)
+# 2. أدوات إنشاء ملفات Word عربية احترافية (RTL)
+# ==========================================
+def set_paragraph_rtl(paragraph):
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    pPr = paragraph._p.get_or_add_pPr()
+    bidi = OxmlElement("w:bidi")
+    bidi.set(qn("w:val"), "1")
+    pPr.append(bidi)
+
+
+def set_run_arabic(run, size_pt: float = 11.5, bold: bool = False, color_hex: Optional[str] = None, font_name: str = "Arial"):
+    run.bold = bold
+    run.font.size = Pt(size_pt)
+    run.font.name = font_name
+    if color_hex:
+        r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+        run.font.color.rgb = RGBColor(r, g, b)
+    rPr = run._r.get_or_add_rPr()
+    rFonts = rPr.find(qn("w:rFonts"))
+    if rFonts is None:
+        rFonts = OxmlElement("w:rFonts")
+        rPr.append(rFonts)
+    rFonts.set(qn("w:ascii"), font_name)
+    rFonts.set(qn("w:hAnsi"), font_name)
+    rFonts.set(qn("w:cs"), font_name)
+    rtl = OxmlElement("w:rtl")
+    rtl.set(qn("w:val"), "1")
+    rPr.append(rtl)
+
+
+def set_table_rtl(table):
+    tblPr = table._tbl.tblPr
+    bidi = OxmlElement("w:bidiVisual")
+    tblPr.append(bidi)
+
+
+def set_cell_shading(cell, fill_hex: str):
+    tcPr = cell._tc.get_or_add_tcPr()
+    shd = OxmlElement("w:shd")
+    shd.set(qn("w:val"), "clear")
+    shd.set(qn("w:color"), "auto")
+    shd.set(qn("w:fill"), fill_hex)
+    tcPr.append(shd)
+
+
+def add_rtl_para(doc: Document, text: str, size: float = 11.5, bold: bool = False, color: Optional[str] = None, space_after: float = 6):
+    p = doc.add_paragraph()
+    set_paragraph_rtl(p)
+    p.paragraph_format.space_after = Pt(space_after)
+    run = p.add_run(str(text or ""))
+    set_run_arabic(run, size_pt=size, bold=bold, color_hex=color)
+    return p
+
+
+def add_ltr_para(doc: Document, text: str, size: float = 10.5, bold: bool = False, color: Optional[str] = None):
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    p.paragraph_format.space_after = Pt(6)
+    run = p.add_run(str(text or ""))
+    run.bold = bold
+    run.font.size = Pt(size)
+    run.font.name = "Calibri"
+    if color:
+        r, g, b = int(color[0:2], 16), int(color[2:4], 16), int(color[4:6], 16)
+        run.font.color.rgb = RGBColor(r, g, b)
+    return p
+
+
+def create_base_arabic_doc(doc_title: str, subtitle: str = "") -> Document:
+    doc = Document()
+    for sec in doc.sections:
+        sec.top_margin = Inches(0.8)
+        sec.bottom_margin = Inches(0.8)
+        sec.left_margin = Inches(0.8)
+        sec.right_margin = Inches(0.8)
+    add_rtl_para(doc, "مختبر البيظان للذكاء الاصطناعي — ALBIDAN AI LAB", size=10, bold=True, color="9A6B13", space_after=2)
+    add_rtl_para(doc, doc_title, size=16, bold=True, color="1B365D", space_after=4)
+    if subtitle:
+        add_rtl_para(doc, subtitle, size=10, bold=False, color="555555", space_after=10)
+    return doc
+
+
+def append_poem_section_to_doc(doc: Document, title: str, poet: str, region: str, poem_text: str, analysis: Dict):
+    add_rtl_para(doc, f"القصيدة: {title}", size=14, bold=True, color="1B365D", space_after=3)
+    meta = f"الشاعر / الراوي: {poet}  |  المنطقة: {region}  |  الجنس الشعري: {analysis.get('poem_type', '—')}  |  البحر السائد: {analysis.get('dominant_meter', '—')}"
+    add_rtl_para(doc, meta, size=10, color="555555", space_after=8)
+
+    add_rtl_para(doc, "النص الشعري:", size=11.5, bold=True, color="9A6B13", space_after=3)
+    for line in [l.strip() for l in poem_text.split("\n") if l.strip()]:
+        add_rtl_para(doc, line, size=13, bold=False, color="111111", space_after=3)
+
+    if analysis.get("cultural_context"):
+        add_rtl_para(doc, "السياق الثقافي والغرض الشعري:", size=11, bold=True, color="1B365D", space_after=2)
+        add_rtl_para(doc, analysis["cultural_context"], size=10.5, space_after=6)
+
+    notes = analysis.get("linguistic_notes") or ""
+    if notes:
+        add_rtl_para(doc, "ملاحظات عروضية ولغوية:", size=11, bold=True, color="1B365D", space_after=2)
+        add_rtl_para(doc, notes, size=10.5, space_after=6)
+
+    lines_data = analysis.get("lines") or []
+    if lines_data:
+        add_rtl_para(doc, "جدول التقطيع الصوتي والعروضي:", size=11, bold=True, color="1B365D", space_after=4)
+        tbl = doc.add_table(rows=1, cols=5)
+        tbl.style = "Table Grid"
+        set_table_rtl(tbl)
+        headers = ["الشطر الأصلي", "التشكيل الصوتي", "المتحركات", "البحر / الوزن", "الروي"]
+        for i, h in enumerate(headers):
+            cell = tbl.rows[0].cells[i]
+            set_cell_shading(cell, "1B365D")
+            p = cell.paragraphs[0]
+            set_paragraph_rtl(p)
+            set_run_arabic(p.add_run(h), size_pt=10, bold=True, color_hex="FFFFFF")
+        for row_item in lines_data:
+            cells = tbl.add_row().cells
+            vals = [
+                row_item.get("original_line", ""),
+                row_item.get("phonetic_diacritized", ""),
+                str(row_item.get("mutaharrikat_count", "")),
+                row_item.get("estimated_meter", ""),
+                row_item.get("rhyme_ending", ""),
+            ]
+            for i, v in enumerate(vals):
+                p = cells[i].paragraphs[0]
+                set_paragraph_rtl(p)
+                set_run_arabic(p.add_run(v), size_pt=10)
+        doc.add_paragraph()
+
+    glossary = analysis.get("glossary") or []
+    if glossary:
+        add_rtl_para(doc, "المفردات الحسانية المشروحة:", size=11, bold=True, color="1B365D", space_after=4)
+        gtbl = doc.add_table(rows=1, cols=3)
+        gtbl.style = "Table Grid"
+        set_table_rtl(gtbl)
+        for i, h in enumerate(["المفردة", "المعنى بالعربية الفصحى", "English Meaning"]):
+            cell = gtbl.rows[0].cells[i]
+            set_cell_shading(cell, "EFE9DC")
+            p = cell.paragraphs[0]
+            set_paragraph_rtl(p)
+            set_run_arabic(p.add_run(h), size_pt=10, bold=True, color_hex="1B365D")
+        for g in glossary:
+            cells = gtbl.add_row().cells
+            for i, v in enumerate([g.get("term", ""), g.get("arabic_meaning", ""), g.get("english_meaning", "")]):
+                p = cells[i].paragraphs[0]
+                set_paragraph_rtl(p)
+                set_run_arabic(p.add_run(v), size_pt=10)
+        doc.add_paragraph()
+
+    if analysis.get("english_translation"):
+        add_ltr_para(doc, "English Literary Translation:", size=10.5, bold=True, color="1B365D")
+        add_ltr_para(doc, analysis["english_translation"], size=10.5)
+    if analysis.get("french_translation"):
+        add_ltr_para(doc, "Traduction Littéraire (Français):", size=10.5, bold=True, color="1B365D")
+        add_ltr_para(doc, analysis["french_translation"], size=10.5)
+
+
+def doc_to_stream(doc: Document, filename: str) -> StreamingResponse:
+    buf = io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ==========================================
+# 3. مدير قاعدة البيانات (MongoDB Atlas + SQLite احتياطي)
 # ==========================================
 class ArchiveManager:
     def __init__(self, mongo_uri: str, db_name: str, sqlite_path: str = "albidan_archive.db"):
@@ -187,10 +358,8 @@ class ArchiveManager:
             "poem_text": payload.poem_text.strip(),
             "poem_type": payload.analysis.get("poem_type", "غير محدد"),
             "dominant_meter": payload.analysis.get("dominant_meter", "غير محدد"),
-            "azawan_mode": payload.azawan_mode,
             "source_engine": payload.source_engine,
             "analysis": payload.analysis,
-            "music": payload.music,
             "created_at": now_iso,
         }
         glossary_items = payload.analysis.get("glossary", [])
@@ -232,10 +401,10 @@ class ArchiveManager:
                         record["poem_text"],
                         record["poem_type"],
                         record["dominant_meter"],
-                        record["azawan_mode"],
+                        "",
                         record["source_engine"],
                         json.dumps(record["analysis"], ensure_ascii=False),
-                        json.dumps(record["music"], ensure_ascii=False),
+                        "{}",
                         record["created_at"],
                     ),
                 )
@@ -258,6 +427,33 @@ class ArchiveManager:
                         )
                 conn.commit()
         return record_id
+
+    def get_poem(self, record_id: str) -> Optional[Dict]:
+        if self.active_mode == "mongodb":
+            doc = self.mongo_db["poems"].find_one({"$or": [{"_id": record_id}, {"id": record_id}]})
+            if not doc:
+                return None
+            if "id" not in doc and "_id" in doc:
+                doc["id"] = str(doc["_id"])
+            doc.pop("_id", None)
+            return doc
+        with sqlite3.connect(self.sqlite_path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute("SELECT * FROM poems WHERE id = ?", (record_id,)).fetchone()
+            if not row:
+                return None
+            return {
+                "id": row["id"],
+                "title": row["title"],
+                "poet": row["poet"],
+                "region": row["region"],
+                "poem_text": row["poem_text"],
+                "poem_type": row["poem_type"],
+                "dominant_meter": row["dominant_meter"],
+                "source_engine": row["source_engine"],
+                "analysis": json.loads(row["analysis_json"]),
+                "created_at": row["created_at"],
+            }
 
     def update_poem(self, record_id: str, payload: UpdatePoemRequest) -> bool:
         updates = {
@@ -301,10 +497,8 @@ class ArchiveManager:
                         "poem_text": row["poem_text"],
                         "poem_type": row["poem_type"],
                         "dominant_meter": row["dominant_meter"],
-                        "azawan_mode": row["azawan_mode"],
                         "source_engine": row["source_engine"],
                         "analysis": json.loads(row["analysis_json"]),
-                        "music": json.loads(row["music_json"]),
                         "created_at": row["created_at"],
                     })
 
@@ -369,7 +563,7 @@ class ArchiveManager:
             "id": msg_id,
             "name": payload.name.strip(),
             "contact": payload.contact.strip(),
-            "category": payload.category.strip() or "تواصل عام",
+            "category": payload.category.strip() or "تواصل بحثي",
             "message": payload.message.strip(),
             "created_at": now_iso,
         }
@@ -434,12 +628,11 @@ class ArchiveManager:
             "db_status": self.status_message,
             "ai_ready": bool(GEMINI_API_KEY),
             "default_model": DEFAULT_GEMINI_MODEL,
-            "admin_protected": bool(ADMIN_PIN),
         }
 
 
 # ==========================================
-# 3. المحلل الاحتياطي ومحرك أزوان وGemini
+# 4. المحلل الاحتياطي وخدمات Gemini (تحليل + صوت + OCR صور وPDF)
 # ==========================================
 class LocalHassaniyaEngine:
     short_vowels = set("َُِ")
@@ -486,81 +679,30 @@ class LocalHassaniyaEngine:
         return {
             "poem_type": poem_type,
             "dominant_meter": details[0]["estimated_meter"] if details else "غير محدد",
-            "cultural_context": "تحليل أولي بالمحرك المحلي. أضف GEMINI_API_KEY في متغيرات الخادم لتفعيل التحليل الأكاديمي والترجمة الأدبية.",
-            "recommended_azawan": "لبياظ (تقديري)",
+            "dominant_rhyme": details[0]["rhyme_ending"] if details else "—",
+            "cultural_context": "تحليل أولي بالمحرك المحلي. فعّل Gemini API في الخادم للحصول على التحليل الأكاديمي والترجمة.",
+            "linguistic_notes": "تحليل محلي تقديري لعدد المتحركات.",
             "lines": details,
             "glossary": [],
-            "english_translation": "Configure GEMINI_API_KEY on the server for poetic English translation.",
-            "french_translation": "Configurez GEMINI_API_KEY sur le serveur pour la traduction poétique en français.",
+            "english_translation": "Configure GEMINI_API_KEY on the server for literary translation.",
+            "french_translation": "Configurez GEMINI_API_KEY sur le serveur pour la traduction littéraire.",
         }
-
-
-class AzawanMusicDirector:
-    azawan_modes = {
-        "كر (Karr) — الفخر والوقار": {
-            "mood": "Epic, noble, deep desert resonance, proud",
-            "instruments": "Tidinit (Saharan lute), deep Tbal drums, warm ambient synth",
-            "bpm": 85,
-        },
-        "فاغو (Faghu) — الحماس والإيقاع": {
-            "mood": "Energetic, triumphant, rhythmic, uplifting",
-            "instruments": "Fast Tidinit riffs, Ardin harp, handclaps, modern Afro-desert percussion",
-            "bpm": 115,
-        },
-        "لبياظ (Labyad) — الحنين والغزل": {
-            "mood": "Melancholic, romantic, nostalgic, soulful",
-            "instruments": "Soft Ardin harp, acoustic Tidinit, warm cello pad, emotional vocals",
-            "bpm": 75,
-        },
-        "لكحال (Lakhhal) — العمق والروحانية": {
-            "mood": "Mystical, hypnotic, deep night desert atmosphere",
-            "instruments": "Reverb-drenched Tidinit, subtle oud, slow hypnotic percussion",
-            "bpm": 70,
-        },
-    }
-
-    def generate_song_structure(
-        self, poem_lines: List[str], mode: str, fusion_style: str, vocal_type: str
-    ) -> Dict[str, str]:
-        selected = self.azawan_modes.get(mode, list(self.azawan_modes.values())[2])
-        style_prompt = (
-            f"Hassaniya Moroccan Saharan {fusion_style}, {selected['mood']}, "
-            f"{vocal_type}, featuring {selected['instruments']}, {selected['bpm']} BPM, "
-            f"authentic Saharan vocal ornamentation, studio quality mastering, crystal clear mix."
-        )
-        lyrics = "[Intro: Solo Tidinit melody with gentle desert ambience]\n\n"
-        if len(poem_lines) <= 2:
-            lyrics += "[Verse 1: Intimate, expressive vocal]\n" + "\n".join(poem_lines) + "\n\n"
-            lyrics += "[Instrumental Interlude: Emotional Ardin harp solo]\n\n"
-            lyrics += "[Outro: Soft vocal echo fading with Tidinit]"
-        elif len(poem_lines) <= 4:
-            lyrics += "[Verse 1]\n" + "\n".join(poem_lines[:2]) + "\n\n"
-            lyrics += "[Chorus: Full rhythm with Tbal and handclaps]\n" + "\n".join(poem_lines[2:]) + "\n\n"
-            lyrics += "[Outro: Fading Tidinit and rhythmic drums]"
-        else:
-            lyrics += "[Verse 1]\n" + "\n".join(poem_lines[:4]) + "\n\n"
-            lyrics += "[Chorus: Energetic and soulful]\n" + "\n".join(poem_lines[4:6]) + "\n\n"
-            if len(poem_lines) > 6:
-                lyrics += "[Bridge / Verse 2]\n" + "\n".join(poem_lines[6:]) + "\n\n"
-            lyrics += "[Outro: Traditional Saharan instrumental fade-out]"
-
-        return {"style_prompt": style_prompt, "formatted_lyrics": lyrics, "bpm": str(selected["bpm"])}
 
 
 def analyze_with_gemini(poem_text: str, model_name: str) -> Dict:
     client = genai.Client(api_key=GEMINI_API_KEY)
     system_instruction = """
-    أنت خبير أكاديمي وعروضي متخصص في الأدب والشعر الشعبي الحساني المغربي والموريتاني (لغنى والتبراع) وموسيقى أزوان.
-    مهمتك تحليل النص الشعري الحساني بدقة لغوية وعروضية فائقة:
+    أنت باحث أكاديمي وعروضي متخصص في الأدب والشعر الشعبي الحساني (لغنى، الكاف، الطلعة، التبراع).
+    قدّم تحليلاً علمياً دقيقاً ومنهجياً للنص الحساني:
     1. راعِ ظاهرة "الابتداء بالساكن" في اللهجة الحسانية عند التشكيل الصوتي وعدّ المتحركات.
-    2. عدّ المتحركات هو أساس الوزن الحساني (السغير = 6، لبتيت الناقص = 7، لبتيت التام = 8، البت لكبير = 9+).
-    3. ميّز بدقة بين التبراع، الكاف، والطلعة.
-    4. استخرج المفردات الحسانية الأصيلة واشرحها بوضوح بالعربية الفصحى والإنجليزية.
-    5. قدم ترجمة شعرية عالية الجودة للإنجليزية والفرنسية تحافظ على الروح الصحراوية.
+    2. اعتمد عدّ المتحركات أساساً لتحديد البحر (السغير/لبير = 6، لبتيت الناقص = 7، لبتيت التام = 8، البت لكبير = 9+).
+    3. ميّز بدقة بين التبراع، الكاف، الطلعة، ووضّح بنية القافية (الروي).
+    4. قدّم ملاحظات لغوية ومنهجية تفيد الباحث اللساني، واستخرج المفردات الحسانية الأصيلة مع شرحها بالعربية الفصحى والإنجليزية.
+    5. قدّم ترجمة أدبية دقيقة للإنجليزية والفرنسية.
     """
     response = client.models.generate_content(
         model=model_name,
-        contents=f"حلّل هذا النص الشعري الحساني تحليلاً كاملاً:\n\n{poem_text}",
+        contents=f"حلّل هذا النص الشعري الحساني تحليلاً أكاديمياً وعروضياً كاملاً:\n\n{poem_text}",
         config=types.GenerateContentConfig(
             system_instruction=system_instruction,
             response_mime_type="application/json",
@@ -573,19 +715,31 @@ def analyze_with_gemini(poem_text: str, model_name: str) -> Dict:
 def transcribe_with_gemini(audio_bytes: bytes, mime_type: str, model_name: str) -> str:
     client = genai.Client(api_key=GEMINI_API_KEY)
     prompt = """
-    أنت خبير في اللهجة الحسانية والشعر الحساني (لغنى، الكاف، الطلعة، التبراع).
-    فرّغ التسجيل الصوتي نصياً وفق القواعد التالية:
-    1. اكتب الكلمات كما تُنطق باللهجة الحسانية الأصيلة دون تحويلها للفصحى.
-    2. استخدم الحرف (گ) للقاف المعقودة الحسانية (مثل: گلب، گال، اگليب).
-    3. افصل كل شطر شعري (تافلويت) في سطر مستقل تماماً.
-    4. أخرج الأبيات الشعرية فقط دون عناوين أو تعليقات إضافية.
+    أنت خبير في اللهجة الحسانية والشعر الحساني. فرّغ التسجيل الصوتي نصياً بدقة:
+    1. اكتب الكلمات كما تُنطق بالحسانية دون تحويلها للفصحى، مستخدماً حرف (گ) للقاف المعقودة.
+    2. ضع كل شطر شعري (تافلويت) في سطر مستقل.
+    3. أخرج الأبيات الشعرية فقط دون عناوين أو تعليقات.
     """
     response = client.models.generate_content(
         model=model_name,
-        contents=[
-            types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
-            prompt,
-        ],
+        contents=[types.Part.from_bytes(data=audio_bytes, mime_type=mime_type), prompt],
+    )
+    return (response.text or "").strip()
+
+
+def extract_poems_from_media_gemini(parts_list: List[types.Part], model_name: str) -> str:
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    prompt = """
+    أنت خبير في رقمنة المخطوطات والكتب والأشعار الحسانية (OCR).
+    اقرأ النص الشعري الحساني الموجود في هذه الصور أو المستند واستخرجه بدقة تامة:
+    1. حافظ على الألفاظ الحسانية الأصلية واستخدم حرف (گ) للقاف المعقودة الحسانية عند وجودها.
+    2. ضع كل شطر شعري (تافلويت) في سطر مستقل ومرتب.
+    3. إذا احتوى الملف على أكثر من قصيدة، افصل بين كل قصيدة وأخرى بسطر فارغ.
+    4. أخرج النصوص الشعرية فقط بدون شروحات أو مقدمات إضافية.
+    """
+    response = client.models.generate_content(
+        model=model_name,
+        contents=[*parts_list, prompt],
     )
     return (response.text or "").strip()
 
@@ -596,9 +750,9 @@ def require_admin(x_admin_pin: Optional[str]):
 
 
 # ==========================================
-# 4. تطبيق FastAPI ونقاط الاتصال (API Routes)
+# 5. تطبيق FastAPI ونقاط الاتصال (API Routes)
 # ==========================================
-app = FastAPI(title="ALBIDAN AI Lab PRO API", version="2.5.0")
+app = FastAPI(title="ALBIDAN AI Lab — Academic API", version="3.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -609,7 +763,6 @@ app.add_middleware(
 
 archive = ArchiveManager(MONGODB_URI, MONGODB_DB_NAME)
 local_engine = LocalHassaniyaEngine()
-director = AzawanMusicDirector()
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
@@ -622,8 +775,7 @@ def serve_home(request: Request):
     base_url = str(request.base_url).rstrip("/")
     if base_url.startswith("http://") and "localhost" not in base_url and "127.0.0.1" not in base_url:
         base_url = base_url.replace("http://", "https://", 1)
-    html_content = index_file.read_text(encoding="utf-8").replace("__BASE_URL__", base_url)
-    return HTMLResponse(content=html_content)
+    return HTMLResponse(content=index_file.read_text(encoding="utf-8").replace("__BASE_URL__", base_url))
 
 
 @app.get("/health")
@@ -663,15 +815,10 @@ def api_analyze(req: AnalyzeRequest):
         analysis = local_engine.analyze(text)
         source_engine = "Local"
 
-    lines_list = [item["original_line"] for item in analysis.get("lines", [])]
-    music = director.generate_song_structure(
-        lines_list, req.azawan_mode, req.fusion_style, req.vocal_type
-    )
     return {
         "source_engine": source_engine,
         "warning": warning,
         "analysis": analysis,
-        "music": music,
     }
 
 
@@ -682,19 +829,12 @@ async def api_transcribe(
 ):
     if not GEMINI_API_KEY:
         raise HTTPException(status_code=400, detail="مفتاح GEMINI_API_KEY غير مضبوط في الخادم.")
-
     audio_bytes = await file.read()
     if len(audio_bytes) > 20 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="حجم الملف يتجاوز 20 ميجابايت.")
 
     ext = Path(file.filename or "audio.mp3").suffix.lower()
-    mime_map = {
-        ".mp3": "audio/mp3",
-        ".wav": "audio/wav",
-        ".m4a": "audio/mp4",
-        ".ogg": "audio/ogg",
-        ".flac": "audio/flac",
-    }
+    mime_map = {".mp3": "audio/mp3", ".wav": "audio/wav", ".m4a": "audio/mp4", ".ogg": "audio/ogg", ".flac": "audio/flac"}
     mime_type = mime_map.get(ext, file.content_type or "audio/mp3")
     model = model_name if model_name in ALLOWED_MODELS else DEFAULT_GEMINI_MODEL
 
@@ -702,16 +842,80 @@ async def api_transcribe(
         text = transcribe_with_gemini(audio_bytes, mime_type, model)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"خطأ أثناء التفريغ الصوتي: {exc}")
+    return {"text": text}
 
-    return {"text": text, "model": model}
+
+@app.post("/api/ocr")
+async def api_ocr_images(
+    files: List[UploadFile] = File(...),
+    model_name: str = Form(DEFAULT_GEMINI_MODEL),
+):
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=400, detail="يتطلب استخراج النص من الصور تفعيل مفتاح GEMINI_API_KEY.")
+    if not files or len(files) > 6:
+        raise HTTPException(status_code=400, detail="يمكن رفع من صورة واحدة إلى 6 صور في المرة الواحدة.")
+
+    parts: List[types.Part] = []
+    for f in files:
+        raw = await f.read()
+        if len(raw) > 15 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail=f"حجم الصورة {f.filename} يتجاوز 15 ميجابايت.")
+        ext = Path(f.filename or "img.jpg").suffix.lower()
+        mime = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}.get(ext, f.content_type or "image/jpeg")
+        parts.append(types.Part.from_bytes(data=raw, mime_type=mime))
+
+    model = model_name if model_name in ALLOWED_MODELS else DEFAULT_GEMINI_MODEL
+    try:
+        text = extract_poems_from_media_gemini(parts, model)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"تعذر قراءة الصورة: {exc}")
+    return {"text": text}
 
 
-@app.post("/api/azawan")
-def api_azawan(req: AzawanRequest):
-    lines = [l.strip() for l in req.poem_text.split("\n") if l.strip()]
-    if not lines:
-        raise HTTPException(status_code=400, detail="أدخل شطراً واحداً على الأقل.")
-    return director.generate_song_structure(lines, req.mode, req.fusion_style, req.vocal_type)
+@app.post("/api/import-file")
+async def api_import_file(
+    file: UploadFile = File(...),
+    model_name: str = Form(DEFAULT_GEMINI_MODEL),
+):
+    raw = await file.read()
+    if len(raw) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="حجم الملف يتجاوز 20 ميجابايت.")
+
+    ext = Path(file.filename or "").suffix.lower()
+    if ext == ".docx":
+        try:
+            doc = Document(io.BytesIO(raw))
+            lines = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+            return {"text": "\n".join(lines), "method": "docx"}
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"تعذر قراءة ملف Word: {exc}")
+
+    elif ext == ".pdf":
+        extracted = ""
+        try:
+            reader = PdfReader(io.BytesIO(raw))
+            extracted = "\n".join((page.extract_text() or "").strip() for page in reader.pages).strip()
+        except Exception:
+            extracted = ""
+
+        if len(extracted) >= 15:
+            return {"text": extracted, "method": "pdf-text"}
+
+        if GEMINI_API_KEY:
+            model = model_name if model_name in ALLOWED_MODELS else DEFAULT_GEMINI_MODEL
+            try:
+                ocr_text = extract_poems_from_media_gemini(
+                    [types.Part.from_bytes(data=raw, mime_type="application/pdf")], model
+                )
+                return {"text": ocr_text, "method": "pdf-ocr"}
+            except Exception as exc:
+                raise HTTPException(status_code=500, detail=f"تعذر قراءة ملف PDF المصوّر: {exc}")
+        raise HTTPException(status_code=400, detail="ملف PDF مصوّر ولا يحتوي على نص رقمي مباشر.")
+
+    elif ext == ".txt":
+        return {"text": raw.decode("utf-8", errors="ignore").strip(), "method": "txt"}
+
+    raise HTTPException(status_code=400, detail="الصيغ المدعومة للاستيراد هي: Word (.docx) و PDF (.pdf) و TXT.")
 
 
 @app.get("/api/poems")
@@ -724,20 +928,15 @@ def api_save_poem(req: SavePoemRequest):
     if not req.poem_text.strip():
         raise HTTPException(status_code=400, detail="نص القصيدة فارغ.")
     new_id = archive.save_poem(req)
-    return {"id": new_id, "message": "تم الحفظ في المدونة وتحديث المعجم بنجاح."}
+    return {"id": new_id, "message": "تم التوثيق في المدونة وتحديث المعجم بنجاح."}
 
 
 @app.put("/api/poems/{record_id}")
-def api_update_poem(
-    record_id: str,
-    req: UpdatePoemRequest,
-    x_admin_pin: Optional[str] = Header(default=None),
-):
+def api_update_poem(record_id: str, req: UpdatePoemRequest, x_admin_pin: Optional[str] = Header(default=None)):
     require_admin(x_admin_pin)
     if not req.poem_text.strip():
         raise HTTPException(status_code=400, detail="نص القصيدة لا يمكن أن يكون فارغاً.")
-    updated = archive.update_poem(record_id, req)
-    if not updated:
+    if not archive.update_poem(record_id, req):
         raise HTTPException(status_code=404, detail="القصيدة غير موجودة.")
     return {"updated": True, "id": record_id}
 
@@ -745,8 +944,7 @@ def api_update_poem(
 @app.delete("/api/poems/{record_id}")
 def api_delete_poem(record_id: str, x_admin_pin: Optional[str] = Header(default=None)):
     require_admin(x_admin_pin)
-    deleted = archive.delete_poem(record_id)
-    if not deleted:
+    if not archive.delete_poem(record_id):
         raise HTTPException(status_code=404, detail="القصيدة غير موجودة.")
     return {"deleted": True, "id": record_id}
 
@@ -759,8 +957,7 @@ def api_list_glossary(q: str = Query("")):
 @app.delete("/api/glossary/{term}")
 def api_delete_glossary(term: str, x_admin_pin: Optional[str] = Header(default=None)):
     require_admin(x_admin_pin)
-    deleted = archive.delete_glossary_term(term)
-    if not deleted:
+    if not archive.delete_glossary_term(term):
         raise HTTPException(status_code=404, detail="المفردة غير موجودة.")
     return {"deleted": True, "term": term}
 
@@ -770,7 +967,7 @@ def api_save_message(req: ContactMessageRequest):
     if not req.name.strip() or not req.message.strip():
         raise HTTPException(status_code=400, detail="يرجى كتابة الاسم والرسالة.")
     msg_id = archive.save_message(req)
-    return {"id": msg_id, "message": "تم إرسال رسالتك بنجاح! شكراً لمساهمتك في مختبر البيظان."}
+    return {"id": msg_id, "message": "تم استلام مساهمتك بنجاح! شكراً لإثرائك مختبر البيظان."}
 
 
 @app.get("/api/messages")
@@ -782,10 +979,73 @@ def api_list_messages(x_admin_pin: Optional[str] = Header(default=None)):
 @app.delete("/api/messages/{msg_id}")
 def api_delete_message(msg_id: str, x_admin_pin: Optional[str] = Header(default=None)):
     require_admin(x_admin_pin)
-    deleted = archive.delete_message(msg_id)
-    if not deleted:
+    if not archive.delete_message(msg_id):
         raise HTTPException(status_code=404, detail="الرسالة غير موجودة.")
     return {"deleted": True, "id": msg_id}
+
+
+# ==========================================
+# 6. مسارات التصدير الأكاديمي (Word .docx و JSONL)
+# ==========================================
+@app.get("/api/export/glossary.docx")
+def api_export_glossary_docx(q: str = Query("")):
+    items = archive.list_glossary(q=q)
+    now_str = datetime.now().strftime("%Y-%m-%d")
+    doc = create_base_arabic_doc(
+        "المعجم الحساني المتنامي",
+        f"تاريخ التصدير: {now_str}  |  عدد المفردات الموثقة: {len(items)}"
+    )
+    tbl = doc.add_table(rows=1, cols=4)
+    tbl.style = "Table Grid"
+    set_table_rtl(tbl)
+    headers = ["المفردة الحسانية", "المعنى بالعربية الفصحى", "English Meaning", "المصدر (القصيدة)"]
+    for i, h in enumerate(headers):
+        cell = tbl.rows[0].cells[i]
+        set_cell_shading(cell, "1B365D")
+        p = cell.paragraphs[0]
+        set_paragraph_rtl(p)
+        set_run_arabic(p.add_run(h), size_pt=10.5, bold=True, color_hex="FFFFFF")
+    for g in items:
+        cells = tbl.add_row().cells
+        vals = [g.get("term", ""), g.get("arabic_meaning", ""), g.get("english_meaning", ""), g.get("source_poem_title", "")]
+        for i, v in enumerate(vals):
+            p = cells[i].paragraphs[0]
+            set_paragraph_rtl(p)
+            set_run_arabic(p.add_run(v), size_pt=10.5, bold=(i == 0))
+    return doc_to_stream(doc, "albidan_hassaniya_glossary.docx")
+
+
+@app.post("/api/export/analysis.docx")
+def api_export_analysis_docx(req: ExportAnalysisDocxRequest):
+    now_str = datetime.now().strftime("%Y-%m-%d")
+    doc = create_base_arabic_doc("تقرير التحليل العروضي واللساني", f"تاريخ الإصدار: {now_str}")
+    append_poem_section_to_doc(doc, req.title, req.poet, req.region, req.poem_text, req.analysis)
+    return doc_to_stream(doc, "albidan_poem_analysis.docx")
+
+
+@app.get("/api/export/poem/{record_id}.docx")
+def api_export_single_poem_docx(record_id: str):
+    rec = archive.get_poem(record_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="القصيدة غير موجودة.")
+    doc = create_base_arabic_doc("وثيقة شعرية حسانية محقّقة", f"معرّف التوثيق: {rec['id']}  |  تاريخ الأرشفة: {rec.get('created_at', '')}")
+    append_poem_section_to_doc(doc, rec["title"], rec["poet"], rec["region"], rec["poem_text"], rec.get("analysis", {}))
+    return doc_to_stream(doc, f"albidan_poem_{rec['id']}.docx")
+
+
+@app.get("/api/export/poems.docx")
+def api_export_all_poems_docx(q: str = Query(""), poem_type: str = Query("الكل")):
+    poems = archive.list_poems(q=q, poem_type=poem_type)
+    now_str = datetime.now().strftime("%Y-%m-%d")
+    doc = create_base_arabic_doc(
+        "المدونة الحسانية المفتوحة — ديوان النصوص الموثقة",
+        f"تاريخ التصدير: {now_str}  |  عدد القصائد: {len(poems)}"
+    )
+    for idx, rec in enumerate(poems):
+        append_poem_section_to_doc(doc, rec["title"], rec["poet"], rec["region"], rec["poem_text"], rec.get("analysis", {}))
+        if idx < len(poems) - 1:
+            doc.add_page_break()
+    return doc_to_stream(doc, "albidan_hassaniya_anthology.docx")
 
 
 @app.get("/api/export/jsonl")
@@ -796,25 +1056,4 @@ def api_export_jsonl():
         io.BytesIO(content.encode("utf-8")),
         media_type="application/jsonl",
         headers={"Content-Disposition": "attachment; filename=albidan_hassaniya_corpus.jsonl"},
-    )
-
-
-@app.get("/api/export/glossary.csv")
-def api_export_glossary_csv():
-    items = archive.list_glossary()
-    buf = io.StringIO()
-    writer = csv.writer(buf)
-    writer.writerow(["المفردة الحسانية", "المعنى بالعربية الفصحى", "English Meaning", "المصدر", "تاريخ التوثيق"])
-    for g in items:
-        writer.writerow([
-            g.get("term", ""),
-            g.get("arabic_meaning", ""),
-            g.get("english_meaning", ""),
-            g.get("source_poem_title", ""),
-            g.get("updated_at", ""),
-        ])
-    return StreamingResponse(
-        io.BytesIO(buf.getvalue().encode("utf-8-sig")),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=albidan_hassaniya_glossary.csv"},
     )
