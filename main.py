@@ -10,9 +10,9 @@ from datetime import datetime
 from typing import List, Dict, Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Header, Query
+from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from google import genai
@@ -98,6 +98,20 @@ class SavePoemRequest(BaseModel):
     source_engine: str = "AI"
 
 
+class UpdatePoemRequest(BaseModel):
+    title: str
+    poet: str
+    region: str
+    poem_text: str
+
+
+class ContactMessageRequest(BaseModel):
+    name: str
+    contact: str = ""
+    category: str = "تواصل عام"
+    message: str
+
+
 # ==========================================
 # 2. مدير قاعدة البيانات (MongoDB Atlas + SQLite احتياطي)
 # ==========================================
@@ -147,6 +161,16 @@ class ArchiveManager:
                     english_meaning TEXT,
                     source_poem_title TEXT,
                     updated_at TEXT NOT NULL
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS messages (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    contact TEXT,
+                    category TEXT,
+                    message TEXT NOT NULL,
+                    created_at TEXT NOT NULL
                 )
             """)
             conn.commit()
@@ -235,10 +259,33 @@ class ArchiveManager:
                 conn.commit()
         return record_id
 
+    def update_poem(self, record_id: str, payload: UpdatePoemRequest) -> bool:
+        updates = {
+            "title": payload.title.strip() or "قصيدة بدون عنوان",
+            "poet": payload.poet.strip() or "تراث شفهي / غير معروف",
+            "region": payload.region.strip() or "الصحراء المغربية",
+            "poem_text": payload.poem_text.strip(),
+        }
+        if self.active_mode == "mongodb":
+            res = self.mongo_db["poems"].update_one(
+                {"$or": [{"_id": record_id}, {"id": record_id}]},
+                {"$set": updates},
+            )
+            return res.matched_count > 0
+        with sqlite3.connect(self.sqlite_path) as conn:
+            cur = conn.execute(
+                "UPDATE poems SET title = ?, poet = ?, region = ?, poem_text = ? WHERE id = ?",
+                (updates["title"], updates["poet"], updates["region"], updates["poem_text"], record_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+
     def list_poems(self, q: str = "", poem_type: str = "الكل") -> List[Dict]:
         records: List[Dict] = []
         if self.active_mode == "mongodb":
             for doc in self.mongo_db["poems"].find().sort("created_at", -1):
+                if "id" not in doc and "_id" in doc:
+                    doc["id"] = str(doc["_id"])
                 doc.pop("_id", None)
                 records.append(doc)
         else:
@@ -278,7 +325,7 @@ class ArchiveManager:
 
     def delete_poem(self, record_id: str) -> bool:
         if self.active_mode == "mongodb":
-            res = self.mongo_db["poems"].delete_one({"_id": record_id})
+            res = self.mongo_db["poems"].delete_one({"$or": [{"_id": record_id}, {"id": record_id}]})
             return res.deleted_count > 0
         with sqlite3.connect(self.sqlite_path) as conn:
             cur = conn.execute("DELETE FROM poems WHERE id = ?", (record_id,))
@@ -306,27 +353,88 @@ class ArchiveManager:
             ]
         return items
 
+    def delete_glossary_term(self, term: str) -> bool:
+        if self.active_mode == "mongodb":
+            res = self.mongo_db["glossary"].delete_one({"term": term})
+            return res.deleted_count > 0
+        with sqlite3.connect(self.sqlite_path) as conn:
+            cur = conn.execute("DELETE FROM glossary WHERE term = ?", (term,))
+            conn.commit()
+            return cur.rowcount > 0
+
+    def save_message(self, payload: ContactMessageRequest) -> str:
+        msg_id = str(uuid.uuid4())[:8]
+        now_iso = datetime.now().strftime("%Y-%m-%d %H:%M")
+        doc = {
+            "id": msg_id,
+            "name": payload.name.strip(),
+            "contact": payload.contact.strip(),
+            "category": payload.category.strip() or "تواصل عام",
+            "message": payload.message.strip(),
+            "created_at": now_iso,
+        }
+        if self.active_mode == "mongodb":
+            m = dict(doc)
+            m["_id"] = msg_id
+            self.mongo_db["messages"].insert_one(m)
+        else:
+            with sqlite3.connect(self.sqlite_path) as conn:
+                conn.execute(
+                    "INSERT INTO messages (id, name, contact, category, message, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                    (doc["id"], doc["name"], doc["contact"], doc["category"], doc["message"], doc["created_at"]),
+                )
+                conn.commit()
+        return msg_id
+
+    def list_messages(self) -> List[Dict]:
+        items: List[Dict] = []
+        if self.active_mode == "mongodb":
+            for doc in self.mongo_db["messages"].find().sort("created_at", -1):
+                if "id" not in doc and "_id" in doc:
+                    doc["id"] = str(doc["_id"])
+                doc.pop("_id", None)
+                items.append(doc)
+        else:
+            with sqlite3.connect(self.sqlite_path) as conn:
+                conn.row_factory = sqlite3.Row
+                items = [dict(r) for r in conn.execute("SELECT * FROM messages ORDER BY created_at DESC").fetchall()]
+        return items
+
+    def delete_message(self, msg_id: str) -> bool:
+        if self.active_mode == "mongodb":
+            res = self.mongo_db["messages"].delete_one({"$or": [{"_id": msg_id}, {"id": msg_id}]})
+            return res.deleted_count > 0
+        with sqlite3.connect(self.sqlite_path) as conn:
+            cur = conn.execute("DELETE FROM messages WHERE id = ?", (msg_id,))
+            conn.commit()
+            return cur.rowcount > 0
+
     def get_stats(self) -> Dict:
         if self.active_mode == "mongodb":
             poems_count = self.mongo_db["poems"].count_documents({})
             terms_count = self.mongo_db["glossary"].count_documents({})
+            messages_count = self.mongo_db["messages"].count_documents({})
             cursor = self.mongo_db["poems"].find({}, {"analysis.lines": 1})
             total_lines = sum(len(doc.get("analysis", {}).get("lines", [])) for doc in cursor)
         else:
             poems = self.list_poems()
             glossary = self.list_glossary()
+            messages = self.list_messages()
             poems_count = len(poems)
             terms_count = len(glossary)
+            messages_count = len(messages)
             total_lines = sum(len(p.get("analysis", {}).get("lines", [])) for p in poems)
 
         return {
             "poems_count": poems_count,
             "lines_count": total_lines,
             "terms_count": terms_count,
+            "messages_count": messages_count,
             "db_mode": self.active_mode,
             "db_status": self.status_message,
             "ai_ready": bool(GEMINI_API_KEY),
             "default_model": DEFAULT_GEMINI_MODEL,
+            "admin_protected": bool(ADMIN_PIN),
         }
 
 
@@ -482,10 +590,15 @@ def transcribe_with_gemini(audio_bytes: bytes, mime_type: str, model_name: str) 
     return (response.text or "").strip()
 
 
+def require_admin(x_admin_pin: Optional[str]):
+    if ADMIN_PIN and (x_admin_pin or "").strip() != ADMIN_PIN:
+        raise HTTPException(status_code=403, detail="رمز المشرف غير صحيح.")
+
+
 # ==========================================
 # 4. تطبيق FastAPI ونقاط الاتصال (API Routes)
 # ==========================================
-app = FastAPI(title="ALBIDAN AI Lab API", version="2.0.0")
+app = FastAPI(title="ALBIDAN AI Lab PRO API", version="2.5.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -501,17 +614,32 @@ director = AzawanMusicDirector()
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
-@app.get("/")
-def serve_home():
+@app.get("/", response_class=HTMLResponse)
+def serve_home(request: Request):
     index_file = STATIC_DIR / "index.html"
     if not index_file.exists():
         raise HTTPException(status_code=404, detail="ملف الواجهة static/index.html غير موجود.")
-    return FileResponse(str(index_file))
+    base_url = str(request.base_url).rstrip("/")
+    if base_url.startswith("http://") and "localhost" not in base_url and "127.0.0.1" not in base_url:
+        base_url = base_url.replace("http://", "https://", 1)
+    html_content = index_file.read_text(encoding="utf-8").replace("__BASE_URL__", base_url)
+    return HTMLResponse(content=html_content)
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "db_mode": archive.active_mode}
 
 
 @app.get("/api/stats")
 def api_stats():
     return archive.get_stats()
+
+
+@app.post("/api/admin/verify")
+def api_admin_verify(x_admin_pin: Optional[str] = Header(default=None)):
+    require_admin(x_admin_pin)
+    return {"authorized": True}
 
 
 @app.post("/api/analyze")
@@ -599,10 +727,24 @@ def api_save_poem(req: SavePoemRequest):
     return {"id": new_id, "message": "تم الحفظ في المدونة وتحديث المعجم بنجاح."}
 
 
+@app.put("/api/poems/{record_id}")
+def api_update_poem(
+    record_id: str,
+    req: UpdatePoemRequest,
+    x_admin_pin: Optional[str] = Header(default=None),
+):
+    require_admin(x_admin_pin)
+    if not req.poem_text.strip():
+        raise HTTPException(status_code=400, detail="نص القصيدة لا يمكن أن يكون فارغاً.")
+    updated = archive.update_poem(record_id, req)
+    if not updated:
+        raise HTTPException(status_code=404, detail="القصيدة غير موجودة.")
+    return {"updated": True, "id": record_id}
+
+
 @app.delete("/api/poems/{record_id}")
 def api_delete_poem(record_id: str, x_admin_pin: Optional[str] = Header(default=None)):
-    if ADMIN_PIN and x_admin_pin != ADMIN_PIN:
-        raise HTTPException(status_code=403, detail="يتطلب رمز المشرف الصحيح لحذف القصيدة.")
+    require_admin(x_admin_pin)
     deleted = archive.delete_poem(record_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="القصيدة غير موجودة.")
@@ -612,6 +754,38 @@ def api_delete_poem(record_id: str, x_admin_pin: Optional[str] = Header(default=
 @app.get("/api/glossary")
 def api_list_glossary(q: str = Query("")):
     return {"items": archive.list_glossary(q=q)}
+
+
+@app.delete("/api/glossary/{term}")
+def api_delete_glossary(term: str, x_admin_pin: Optional[str] = Header(default=None)):
+    require_admin(x_admin_pin)
+    deleted = archive.delete_glossary_term(term)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="المفردة غير موجودة.")
+    return {"deleted": True, "term": term}
+
+
+@app.post("/api/messages")
+def api_save_message(req: ContactMessageRequest):
+    if not req.name.strip() or not req.message.strip():
+        raise HTTPException(status_code=400, detail="يرجى كتابة الاسم والرسالة.")
+    msg_id = archive.save_message(req)
+    return {"id": msg_id, "message": "تم إرسال رسالتك بنجاح! شكراً لمساهمتك في مختبر البيظان."}
+
+
+@app.get("/api/messages")
+def api_list_messages(x_admin_pin: Optional[str] = Header(default=None)):
+    require_admin(x_admin_pin)
+    return {"items": archive.list_messages()}
+
+
+@app.delete("/api/messages/{msg_id}")
+def api_delete_message(msg_id: str, x_admin_pin: Optional[str] = Header(default=None)):
+    require_admin(x_admin_pin)
+    deleted = archive.delete_message(msg_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="الرسالة غير موجودة.")
+    return {"deleted": True, "id": msg_id}
 
 
 @app.get("/api/export/jsonl")
