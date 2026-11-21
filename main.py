@@ -37,12 +37,15 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
-STATIC_DIR.mkdir(exist_ok=True)
+DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip() or "gemini-3.5-flash-lite"
+ADMIN_PIN = os.getenv("ADMIN_PIN", "").strip()
 
-MONGODB_URI = os.getenv("MONGODB_URI", "").strip()
-MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "albidan_corpus").strip()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip() or "gemini-2.5-flash"
+ALLOWED_MODELS = {
+    "gemini-3.5-flash-lite",
+    "gemini-3.8-flash",
+    "gemini-3.1-pro-preview",
+}
+FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]
 ADMIN_PIN = os.getenv("ADMIN_PIN", "").strip()
 
 ALLOWED_MODELS = {
