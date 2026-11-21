@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" data-theme="dark">
 <head>
@@ -17,11 +16,11 @@
   <meta property="og:url" content="__BASE_URL__/" />
   <meta property="og:image" content="__BASE_URL__/static/founder.jpg" />
 
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D0B09'/%3E%3Crect x='4' y='4' width='56' height='56' rx='11' fill='none' stroke='%23D4AF37' stroke-width='3'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-size='30' fill='%23D4AF37'%3E%F0%9F%90%AA%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D0B09'/%3E%3Crect x='4' y='4' width='56' height='56' rx='11' fill='none' stroke='%23D4AF37' stroke-width='3'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-size='30' fill='%23D4AF37'%3E%F0%9F%90%AA%3C/text%3E%3C/svg%3E" />
 
-  <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)" />
-  <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin />
-  <link href="[https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap](https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap)" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
     :root {
@@ -75,10 +74,7 @@
       background: var(--glass); backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border);
     }
-    .nav-inner {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 0.75rem; padding: 0.65rem 0;
-    }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.65rem 0; }
     .brand { display: flex; align-items: center; gap: 9px; cursor: pointer; }
     .brand-mark {
       width: 34px; height: 34px; border-radius: 9px;
@@ -95,9 +91,7 @@
       padding: 6px 11px; border-radius: 8px; cursor: pointer; transition: 0.2s;
     }
     .nav-tab:hover { color: var(--text); background: var(--bg-soft); }
-    .nav-tab.active {
-      background: rgba(212, 175, 55, 0.14); color: var(--gold-light); border-color: var(--border);
-    }
+    .nav-tab.active { background: rgba(212, 175, 55, 0.14); color: var(--gold-light); border-color: var(--border); }
     [data-theme="light"] .nav-tab.active { background: #1B365D; color: #FFFFFF; border-color: #1B365D; }
 
     .nav-actions { display: flex; align-items: center; gap: 6px; }
@@ -167,14 +161,15 @@
 
     /* المختبر وأدوات الإدخال */
     .lab-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 1.15rem; align-items: start; }
-    .ingest-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 0.9rem; }
+    .ingest-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 0.75rem; }
     .ingest-btn {
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
       padding: 0.6rem 0.4rem; border-radius: 10px; border: 1px dashed var(--border-strong);
       background: var(--bg-soft); color: var(--text); cursor: pointer; font-family: inherit;
       font-size: 0.78rem; font-weight: 700; transition: 0.2s; text-align: center;
     }
-    .ingest-btn:hover { border-color: var(--gold); background: rgba(212, 175, 55, 0.08); }
+    .ingest-btn:hover:not(:disabled) { border-color: var(--gold); background: rgba(212, 175, 55, 0.08); }
+    .ingest-btn:disabled { opacity: 0.55; cursor: wait; }
     .ingest-btn.highlight { border-style: solid; border-color: var(--gold); background: rgba(212, 175, 55, 0.10); }
     .ingest-btn span { font-size: 0.68rem; color: var(--muted); font-weight: 400; }
 
@@ -188,6 +183,18 @@
     }
     textarea:focus, input:focus, select:focus { border-color: var(--gold); }
     .toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.7rem; align-items: center; }
+
+    /* شريط تقدم الرفع والمعالجة */
+    .progress-wrap {
+      display: none; background: var(--bg-soft); border: 1px solid var(--border-strong);
+      border-radius: 10px; padding: 0.65rem 0.85rem; margin-bottom: 0.8rem;
+    }
+    .progress-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; gap: 8px; }
+    .progress-track { width: 100%; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 6px; }
+    [data-theme="light"] .progress-track { background: #E2DBD0; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--gold), var(--accent)); transition: width 0.2s ease; }
+    .progress-fill.pulse { animation: pulseBar 1.2s ease-in-out infinite; }
+    @keyframes pulseBar { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
     /* التبويبات الداخلية */
     .tabs {
@@ -306,13 +313,6 @@
     }
     .batch-poem-item.unchecked { opacity: 0.45; }
     .batch-row-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 7px; margin: 6px 0; }
-    .progress-wrap {
-      display: none; background: var(--bg-soft); border: 1px solid var(--border);
-      border-radius: 10px; padding: 0.75rem; margin: 0.75rem 0;
-    }
-    .progress-track { width: 100%; height: 9px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 6px; }
-    [data-theme="light"] .progress-track { background: #E2DBD0; }
-    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--gold), var(--accent)); transition: width 0.25s ease; }
 
     .toast {
       position: fixed; bottom: 18px; left: 18px; z-index: 130;
@@ -401,18 +401,19 @@
           <div class="page-head" style="margin-bottom:0.8rem">
             <div>
               <h2>إدخال أو رقمنة قصائد</h2>
-              <p>اكتب قصيدة واحدة، صوّر مخطوطاً، أو استورد ديوان Word كاملاً دفعة واحدة</p>
+              <p>اكتب قصيدة واحدة، صوّر مخطوطاً، فرّغ تسجيلاً صوتياً، أو استورد ديوان Word</p>
             </div>
             <select id="modelSelect" style="width:auto;padding:5px 8px;font-size:0.8rem">
+              <option value="gemini-2.5-flash">gemini-2.5-flash (سريع ومستقر)</option>
+              <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite (خفيف)</option>
+              <option value="gemini-2.5-pro">gemini-2.5-pro (تحليل عميق)</option>
               <option value="gemini-3.8-flash">gemini-3.8-flash</option>
-              <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite</option>
-              <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
             </select>
           </div>
 
           <input type="file" id="ocrImageInput" accept="image/*" multiple style="display:none" onchange="handleImageOCR()" />
           <input type="file" id="docFileInput" accept=".docx,.pdf,.txt" style="display:none" onchange="handleDocImport()" />
-          <input type="file" id="audioFileInput" accept=".mp3,.wav,.m4a,.ogg,.flac" style="display:none" onchange="handleAudioTranscribe()" />
+          <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.m4a,.mp4,.aac,.ogg,.oga,.opus,.webm,.flac" style="display:none" onchange="handleAudioTranscribe()" />
 
           <div class="ingest-bar">
             <button class="ingest-btn highlight" onclick="openBatchModal()">
@@ -421,7 +422,7 @@
             </button>
             <button class="ingest-btn" id="ocrBtn" onclick="document.getElementById('ocrImageInput').click()">
               📷 تصوير / صورة
-              <span>مخطوط أو صفحة</span>
+              <span>ضغط تلقائي وسريع</span>
             </button>
             <button class="ingest-btn" id="docBtn" onclick="document.getElementById('docFileInput').click()">
               📄 ملف واحد
@@ -429,8 +430,17 @@
             </button>
             <button class="ingest-btn" id="audioBtn" onclick="document.getElementById('audioFileInput').click()">
               🎙️ تفريغ صوتي
-              <span>MP3 / WAV / M4A</span>
+              <span>MP3 / M4A / واتساب</span>
             </button>
+          </div>
+
+          <!-- شريط تقدم الرفع والمعالجة الحي -->
+          <div class="progress-wrap" id="labProgressWrap">
+            <div class="progress-head">
+              <span id="labProgressText">جاري التجهيز...</span>
+              <strong id="labProgressPct">0%</strong>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="labProgressFill"></div></div>
           </div>
 
           <div class="toolbar">
@@ -676,8 +686,8 @@
               مؤسس ومطور «مختبر البيظان للذكاء الاصطناعي». يعمل على رقمنة التراث الثقافي الحساني، تحليل العروض الشعري آلياً، وبناء مرجع علمي ومعجمي مفتوح لخدمة الباحثين والشعراء.
             </p>
             <div class="social-row">
-              <a class="btn btn-sm social-fb" href="[https://web.facebook.com/aggarlahbib/?locale=ar_AR](https://web.facebook.com/aggarlahbib/?locale=ar_AR)" target="_blank" rel="noopener noreferrer">فيسبوك</a>
-              <a class="btn btn-sm social-wa" href="[https://wa.me/212668208797](https://wa.me/212668208797)" target="_blank" rel="noopener noreferrer">واتساب</a>
+              <a class="btn btn-sm social-fb" href="https://web.facebook.com/aggarlahbib/?locale=ar_AR" target="_blank" rel="noopener noreferrer">فيسبوك</a>
+              <a class="btn btn-sm social-wa" href="https://wa.me/212668208797" target="_blank" rel="noopener noreferrer">واتساب</a>
             </div>
           </div>
         </div>
@@ -725,7 +735,6 @@
         <button class="btn btn-secondary btn-sm" onclick="closeModal('batchModal')">إغلاق</button>
       </div>
 
-      <!-- المرحلة 1: اختيار الملف وإعدادات التقسيم -->
       <div class="line-row" style="margin-bottom:0.9rem">
         <div class="batch-row-grid">
           <input type="file" id="batchDocxFile" accept=".docx,.txt" style="padding:5px" />
@@ -741,7 +750,14 @@
         </div>
       </div>
 
-      <!-- المرحلة 2: المعاينة والتعديل والحفظ الدفعي -->
+      <div class="progress-wrap" id="batchProgressWrap">
+        <div class="progress-head">
+          <span id="batchProgressText">جاري المعالجة...</span>
+          <strong id="batchProgressPct">0%</strong>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="batchProgressFill"></div></div>
+      </div>
+
       <div id="batchPreviewArea" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:0.7rem">
           <span class="pill-tag" id="batchCountBadge">0 قصيدة</span>
@@ -752,7 +768,7 @@
           </div>
         </div>
 
-        <div id="batchItemsList" style="max-height:330px;overflow-y:auto;padding-left:4px"></div>
+        <div id="batchItemsList" style="max-height:320px;overflow-y:auto;padding-left:4px"></div>
 
         <div class="line-row" style="margin-top:0.8rem">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
@@ -761,13 +777,6 @@
               <option value="ai">🧠 تحليل أكاديمي بـ Gemini AI + تحديث المعجم لكل قصيدة بالتتابع</option>
             </select>
             <button class="btn btn-primary" id="batchSaveBtn" onclick="saveBatchPoems()">💾 حفظ القصائد المحددة دفعة واحدة</button>
-          </div>
-          <div class="progress-wrap" id="batchProgressWrap">
-            <div style="display:flex;justify-content:space-between;font-size:0.8rem">
-              <span id="batchProgressText">جاري الحفظ...</span>
-              <strong id="batchProgressPct">0%</strong>
-            </div>
-            <div class="progress-track"><div class="progress-fill" id="batchProgressFill"></div></div>
           </div>
         </div>
       </div>
@@ -855,7 +864,7 @@
       t.textContent = msg;
       t.classList.add("show");
       clearTimeout(window._toastTimer);
-      window._toastTimer = setTimeout(() => t.classList.remove("show"), 3600);
+      window._toastTimer = setTimeout(() => t.classList.remove("show"), 4200);
     }
 
     function closeModal(id) { document.getElementById(id).classList.remove("open"); }
@@ -894,28 +903,234 @@
       document.getElementById(`lab-tab-${name}`).classList.add("active");
     }
 
+    /* ============ أدوات الشبكة، ضغط الصور، وشريط التقدم الحي ============ */
+    function setProgress(prefix, pct, text, pulsing = false) {
+      const wrap = document.getElementById(`${prefix}ProgressWrap`);
+      const fill = document.getElementById(`${prefix}ProgressFill`);
+      wrap.style.display = "block";
+      document.getElementById(`${prefix}ProgressText`).textContent = text;
+      document.getElementById(`${prefix}ProgressPct`).textContent = `${pct}%`;
+      fill.style.width = `${pct}%`;
+      fill.classList.toggle("pulse", pulsing);
+    }
+
+    function hideProgress(prefix) {
+      document.getElementById(`${prefix}ProgressWrap`).style.display = "none";
+      document.getElementById(`${prefix}ProgressFill`).classList.remove("pulse");
+    }
+
+    function friendlyHttpError(status, rawText) {
+      try {
+        const j = JSON.parse(rawText);
+        if (j && j.detail) return typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
+      } catch (e) {}
+      if (status === 413) return "حجم الملف أكبر من المسموح به على الخادم.";
+      if (status === 502 || status === 503 || status === 504) {
+        return "استغرق الخادم وقتاً طويلاً أو كان في وضع السكون؛ أعد المحاولة بعد ثوانٍ أو استخدم ملفاً أصغر.";
+      }
+      return `حدث خطأ من الخادم (رمز ${status}).`;
+    }
+
+    async function safeFetchJson(url, options = {}) {
+      const res = await fetch(url, options);
+      const raw = await res.text();
+      if (!res.ok) throw new Error(friendlyHttpError(res.status, raw));
+      try { return JSON.parse(raw); }
+      catch (e) { throw new Error("استجابة غير متوقعة من الخادم، حاول مجدداً."); }
+    }
+
+    function uploadWithProgress(url, formData, prefix, processingLabel) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", url, true);
+        xhr.timeout = 180000; // 3 دقائق كحد أقصى للملفات الكبيرة
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
+            setProgress(prefix, pct, `جاري رفع الملف إلى الخادم...`, false);
+          }
+        };
+
+        xhr.upload.onload = () => {
+          setProgress(prefix, 100, processingLabel || "اكتمل الرفع — جاري المعالجة بالذكاء الاصطناعي...", true);
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try { resolve(JSON.parse(xhr.responseText)); }
+            catch (e) { reject(new Error("تعذر قراءة استجابة الخادم.")); }
+          } else {
+            reject(new Error(friendlyHttpError(xhr.status, xhr.responseText)));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("تعذر الاتصال بالخادم، تحقق من الإنترنت أو انتظر لحظة وحاول مجدداً."));
+        xhr.ontimeout = () => reject(new Error("انتهت مهلة الانتظار؛ جرّب ملفاً أصغر أو قسّم التسجيل الصوتي."));
+        xhr.send(formData);
+      });
+    }
+
+    async function compressImageFile(file, maxDim = 1600, quality = 0.82) {
+      if (!file.type.startsWith("image/") || file.size <= 350 * 1024) return file;
+      return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width >= height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (!blob || blob.size >= file.size) return resolve(file);
+            const cleanName = (file.name || "photo").replace(/\.[^.]+$/, "") + ".jpg";
+            resolve(new File([blob], cleanName, { type: "image/jpeg" }));
+          }, "image/jpeg", quality);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+        img.src = url;
+      });
+    }
+
+    /* ============ استيراد الصور (مع ضغط تلقائي)، الملفات، والصوت ============ */
+    async function handleImageOCR() {
+      const input = document.getElementById("ocrImageInput");
+      if (!input.files.length) return;
+      if (input.files.length > 6) {
+        input.value = "";
+        return showToast("يمكن رفع 6 صور كحد أقصى في المرة الواحدة.");
+      }
+
+      const btn = document.getElementById("ocrBtn");
+      btn.disabled = true;
+      try {
+        setProgress("lab", 10, `جاري ضغط ${input.files.length} صورة لتسريع الرفع...`, true);
+        const fd = new FormData();
+        for (const f of input.files) {
+          const compressed = await compressImageFile(f);
+          fd.append("files", compressed);
+        }
+        fd.append("model_name", document.getElementById("modelSelect").value);
+
+        const data = await uploadWithProgress("/api/ocr", fd, "lab", "اكتمل الرفع — جاري قراءة الأبيات من الصورة (OCR)...");
+        document.getElementById("poemInput").value = data.text || "";
+        updateLiveCounter();
+        showToast("تم استخراج الأبيات من الصورة بنجاح!");
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.disabled = false;
+        hideProgress("lab");
+        input.value = "";
+      }
+    }
+
+    async function handleDocImport() {
+      const input = document.getElementById("docFileInput");
+      if (!input.files.length) return;
+      const file = input.files[0];
+      if (file.size > 20 * 1024 * 1024) {
+        input.value = "";
+        return showToast("حجم الملف يتجاوز 20 ميجابايت.");
+      }
+
+      const btn = document.getElementById("docBtn");
+      btn.disabled = true;
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("model_name", document.getElementById("modelSelect").value);
+        const data = await uploadWithProgress("/api/import-file", fd, "lab", "اكتمل الرفع — جاري استخراج النص من المستند...");
+        document.getElementById("poemInput").value = data.text || "";
+        updateLiveCounter();
+        showToast("تم استيراد نص الملف بنجاح!");
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.disabled = false;
+        hideProgress("lab");
+        input.value = "";
+      }
+    }
+
+    async function handleAudioTranscribe() {
+      const input = document.getElementById("audioFileInput");
+      if (!input.files.length) return;
+      const file = input.files[0];
+      if (file.size > 20 * 1024 * 1024) {
+        input.value = "";
+        return showToast("حجم التسجيل يتجاوز 20 ميجابايت؛ حوّله إلى MP3 مضغوط أولاً.");
+      }
+
+      const btn = document.getElementById("audioBtn");
+      btn.disabled = true;
+      try {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        setProgress("lab", 5, `جاري تجهيز التسجيل (${sizeMB} MB)...`, false);
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("model_name", document.getElementById("modelSelect").value);
+
+        const data = await uploadWithProgress(
+          "/api/transcribe",
+          fd,
+          "lab",
+          "اكتمل الرفع — جاري الاستماع وتفريغ القصيدة الحسانية..."
+        );
+        document.getElementById("poemInput").value = data.text || "";
+        updateLiveCounter();
+        showToast("تم تفريغ التسجيل الصوتي بنجاح!");
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.disabled = false;
+        hideProgress("lab");
+        input.value = "";
+      }
+    }
+
     /* ============ الاستيراد والحفظ الجماعي لملفات Word ============ */
     function openBatchModal() {
       document.getElementById("batchModal").classList.add("open");
-      document.getElementById("batchProgressWrap").style.display = "none";
+      hideProgress("batch");
     }
 
     async function parseBatchDocx() {
       const fileInput = document.getElementById("batchDocxFile");
       if (!fileInput.files.length) return showToast("اختر ملف Word (.docx) أولاً.");
+      const file = fileInput.files[0];
+      if (file.size > 25 * 1024 * 1024) return showToast("حجم الملف يتجاوز 25 ميجابايت.");
+
       const btn = document.getElementById("batchParseBtn");
-      btn.disabled = true; btn.textContent = "⏳ جاري الفحص والتقسيم...";
+      btn.disabled = true;
       try {
         const fd = new FormData();
-        fd.append("file", fileInput.files[0]);
+        fd.append("file", file);
         fd.append("use_ai_split", document.getElementById("batchUseAiSplit").checked ? "true" : "false");
         fd.append("default_poet", document.getElementById("batchDefaultPoet").value.trim());
         fd.append("default_region", document.getElementById("batchDefaultRegion").value.trim());
         fd.append("model_name", document.getElementById("modelSelect").value);
 
-        const res = await fetch("/api/import-batch-docx", { method: "POST", body: fd });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "تعذر تقسيم الملف");
+        const data = await uploadWithProgress(
+          "/api/import-batch-docx",
+          fd,
+          "batch",
+          "اكتمل الرفع — جاري فحص وتقسيم القصائد..."
+        );
 
         batchItems = (data.items || []).map(item => ({ ...item, selected: true }));
         if (!batchItems.length) throw new Error("لم يتم العثور على قصائد في الملف.");
@@ -926,7 +1141,8 @@
       } catch (e) {
         showToast(e.message);
       } finally {
-        btn.disabled = false; btn.textContent = "🔍 فحص وتقسيم الملف";
+        btn.disabled = false;
+        hideProgress("batch");
       }
     }
 
@@ -952,29 +1168,14 @@
       `).join("");
     }
 
-    function toggleAllBatch(state) {
-      batchItems.forEach(i => i.selected = state);
-      renderBatchItems();
-    }
+    function toggleAllBatch(state) { batchItems.forEach(i => i.selected = state); renderBatchItems(); }
 
     function applyBatchDefaults() {
       const poet = document.getElementById("batchDefaultPoet").value.trim();
       const region = document.getElementById("batchDefaultRegion").value.trim();
-      batchItems.forEach(i => {
-        if (poet) i.poet = poet;
-        if (region) i.region = region;
-      });
+      batchItems.forEach(i => { if (poet) i.poet = poet; if (region) i.region = region; });
       renderBatchItems();
       showToast("تم تطبيق الشاعر والمنطقة على جميع القصائد.");
-    }
-
-    function updateBatchProgress(done, total, text) {
-      const wrap = document.getElementById("batchProgressWrap");
-      wrap.style.display = "block";
-      const pct = total ? Math.round((done / total) * 100) : 0;
-      document.getElementById("batchProgressText").textContent = text;
-      document.getElementById("batchProgressPct").textContent = `${pct}%`;
-      document.getElementById("batchProgressFill").style.width = `${pct}%`;
     }
 
     async function saveBatchPoems() {
@@ -987,8 +1188,8 @@
 
       try {
         if (mode === "fast") {
-          updateBatchProgress(1, 2, `جاري حفظ ${selected.length} قصيدة دفعة واحدة...`);
-          const res = await fetch("/api/poems/batch", {
+          setProgress("batch", 45, `جاري حفظ ${selected.length} قصيدة دفعة واحدة...`, true);
+          const data = await safeFetchJson("/api/poems/batch", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -998,27 +1199,22 @@
               }))
             })
           });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.detail || "تعذر الحفظ الجماعي");
-          updateBatchProgress(selected.length, selected.length, `تم حفظ ${data.saved_count} قصيدة بنجاح!`);
+          setProgress("batch", 100, `تم حفظ ${data.saved_count} قصيدة بنجاح!`, false);
           showToast(data.message);
         } else {
-          // الحفظ المتتابع مع التحليل بـ Gemini AI لتجنب انتهاء مهلة Render
           let saved = 0;
           const model = document.getElementById("modelSelect").value;
           for (let i = 0; i < selected.length; i++) {
             const p = selected[i];
-            updateBatchProgress(i, selected.length, `جاري تحليل وحفظ (${i + 1} / ${selected.length}): ${p.title}...`);
+            const pct = Math.round((i / selected.length) * 100);
+            setProgress("batch", pct, `جاري تحليل وحفظ (${i + 1} / ${selected.length}): ${p.title}...`, true);
             try {
-              const aRes = await fetch("/api/analyze", {
+              const aData = await safeFetchJson("/api/analyze", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ poem_text: p.poem_text, model_name: model, use_ai: true })
               });
-              const aData = await aRes.json();
-              if (!aRes.ok) throw new Error(aData.detail || "خطأ تحليل");
-
-              const sRes = await fetch("/api/poems", {
+              await safeFetchJson("/api/poems", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -1027,92 +1223,29 @@
                   source_engine: aData.source_engine
                 })
               });
-              if (sRes.ok) saved++;
+              saved++;
             } catch (err) {
-              // حفظ احتياطي محلي إذا تعثّر تحليل قصيدة واحدة
-              const fallbackRes = await fetch("/api/poems/batch", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ items: [{ title: p.title, poet: p.poet, region: p.region, poem_text: p.poem_text, source_engine: "Local (Fallback)" }] })
-              });
-              if (fallbackRes.ok) saved++;
+              try {
+                await safeFetchJson("/api/poems/batch", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ items: [{ title: p.title, poet: p.poet, region: p.region, poem_text: p.poem_text, source_engine: "Local (Fallback)" }] })
+                });
+                saved++;
+              } catch (_) {}
             }
           }
-          updateBatchProgress(selected.length, selected.length, `اكتمل تحليل وحفظ ${saved} من أصل ${selected.length} قصيدة!`);
+          setProgress("batch", 100, `اكتمل حفظ ${saved} من أصل ${selected.length} قصيدة!`, false);
           showToast(`تم حفظ ${saved} قصيدة وتحديث المعجم بنجاح!`);
         }
 
         await Promise.all([loadStats(), loadArchive(), loadGlossary()]);
-        setTimeout(() => {
-          closeModal("batchModal");
-          switchView("archive");
-        }, 700);
+        setTimeout(() => { closeModal("batchModal"); switchView("archive"); }, 650);
       } catch (e) {
         showToast(e.message);
       } finally {
         btn.disabled = false;
       }
-    }
-
-    /* ============ استيراد الصور (OCR) والملف الواحد والصوت ============ */
-    async function handleImageOCR() {
-      const input = document.getElementById("ocrImageInput");
-      if (!input.files.length) return;
-      const btn = document.getElementById("ocrBtn");
-      const oldHtml = btn.innerHTML;
-      btn.disabled = true; btn.innerHTML = "⏳ جاري القراءة...<span>يرجى الانتظار</span>";
-      try {
-        const fd = new FormData();
-        for (const f of input.files) fd.append("files", f);
-        fd.append("model_name", document.getElementById("modelSelect").value);
-        const res = await fetch("/api/ocr", { method: "POST", body: fd });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "تعذر استخراج النص من الصورة");
-        document.getElementById("poemInput").value = data.text || "";
-        updateLiveCounter();
-        showToast("تم استخراج الأبيات من الصورة بنجاح!");
-      } catch (e) { showToast(e.message); }
-      finally { btn.disabled = false; btn.innerHTML = oldHtml; input.value = ""; }
-    }
-
-    async function handleDocImport() {
-      const input = document.getElementById("docFileInput");
-      if (!input.files.length) return;
-      const btn = document.getElementById("docBtn");
-      const oldHtml = btn.innerHTML;
-      btn.disabled = true; btn.innerHTML = "⏳ جاري القراءة...<span>Word / PDF</span>";
-      try {
-        const fd = new FormData();
-        fd.append("file", input.files[0]);
-        fd.append("model_name", document.getElementById("modelSelect").value);
-        const res = await fetch("/api/import-file", { method: "POST", body: fd });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "تعذر استيراد الملف");
-        document.getElementById("poemInput").value = data.text || "";
-        updateLiveCounter();
-        showToast("تم استيراد نص الملف بنجاح!");
-      } catch (e) { showToast(e.message); }
-      finally { btn.disabled = false; btn.innerHTML = oldHtml; input.value = ""; }
-    }
-
-    async function handleAudioTranscribe() {
-      const input = document.getElementById("audioFileInput");
-      if (!input.files.length) return;
-      const btn = document.getElementById("audioBtn");
-      const oldHtml = btn.innerHTML;
-      btn.disabled = true; btn.innerHTML = "⏳ جاري التفريغ...<span>صوت إلى نص</span>";
-      try {
-        const fd = new FormData();
-        fd.append("file", input.files[0]);
-        fd.append("model_name", document.getElementById("modelSelect").value);
-        const res = await fetch("/api/transcribe", { method: "POST", body: fd });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "فشل التفريغ الصوتي");
-        document.getElementById("poemInput").value = data.text || "";
-        updateLiveCounter();
-        showToast("تم تفريغ الصوت بنجاح!");
-      } catch (e) { showToast(e.message); }
-      finally { btn.disabled = false; btn.innerHTML = oldHtml; input.value = ""; }
     }
 
     /* ============ التحليل العروضي واللساني ============ */
@@ -1122,7 +1255,7 @@
       const btn = document.getElementById("analyzeBtn");
       btn.disabled = true; btn.textContent = "⏳ جاري التحليل العروضي واللساني...";
       try {
-        const res = await fetch("/api/analyze", {
+        const data = await safeFetchJson("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1131,8 +1264,6 @@
             use_ai: true
           })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "حدث خطأ أثناء التحليل");
         lastPayload = { ...data, poem_text };
         renderResults(data);
         showToast(data.warning || "اكتمل التحليل العروضي بنجاح!");
@@ -1195,7 +1326,7 @@
     async function savePoemToArchive() {
       if (!lastPayload) return showToast("حلّل قصيدة أولاً قبل الحفظ.");
       try {
-        const res = await fetch("/api/poems", {
+        const data = await safeFetchJson("/api/poems", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1207,8 +1338,6 @@
             source_engine: lastPayload.source_engine
           })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "تعذر الحفظ");
         showToast(`تم التوثيق بنجاح (المعرّف: ${data.id}) وتحديث المعجم!`);
         document.getElementById("saveTitle").value = "";
         await Promise.all([loadStats(), loadArchive(), loadGlossary()]);
@@ -1256,7 +1385,7 @@
       iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
       document.body.appendChild(iframe);
       const htmlDoc = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>${escapeHtml(docTitle)}</title>
-        <link href="[https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;700;800&display=swap](https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;700;800&display=swap)" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
         <style>
           @page { size: A4; margin: 16mm; }
           body { font-family: 'Cairo', sans-serif; color: #162133; line-height: 1.7; font-size: 12.5px; }
@@ -1315,8 +1444,7 @@
 
     function exportSinglePoemPDF(idx) {
       const r = cachedPoems[idx];
-      if (!r) return;
-      printAcademicPDF(r.title, buildPoemHtmlForPDF(r.title, r.poet, r.region, r.poem_text, r.analysis));
+      if (r) printAcademicPDF(r.title, buildPoemHtmlForPDF(r.title, r.poet, r.region, r.poem_text, r.analysis));
     }
 
     function exportArchivePDF() {
@@ -1399,8 +1527,7 @@
       const pin = document.getElementById("adminPinInput").value.trim();
       if (!pin) return showToast("أدخل رمز المشرف.");
       try {
-        const res = await fetch("/api/admin/verify", { method: "POST", headers: { "x-admin-pin": pin } });
-        if (!res.ok) throw new Error("رمز المشرف غير صحيح.");
+        await safeFetchJson("/api/admin/verify", { method: "POST", headers: { "x-admin-pin": pin } });
         adminPin = pin; sessionStorage.setItem("albidan_admin_pin", pin);
         closeModal("adminModal"); updateAdminUI(); loadStats();
         showToast("تم تفعيل وضع المشرف بنجاح!");
@@ -1419,64 +1546,74 @@
 
     async function savePoemEdit() {
       if (!editingPoemId || !adminPin) return;
-      const res = await fetch(`/api/poems/${encodeURIComponent(editingPoemId)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
-        body: JSON.stringify({
-          title: document.getElementById("editTitle").value,
-          poet: document.getElementById("editPoet").value,
-          region: document.getElementById("editRegion").value,
-          poem_text: document.getElementById("editText").value
-        })
-      });
-      if (res.ok) { closeModal("editModal"); showToast("تم حفظ التعديلات!"); loadArchive(); }
-      else showToast("تعذر حفظ التعديلات.");
+      try {
+        await safeFetchJson(`/api/poems/${encodeURIComponent(editingPoemId)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
+          body: JSON.stringify({
+            title: document.getElementById("editTitle").value,
+            poet: document.getElementById("editPoet").value,
+            region: document.getElementById("editRegion").value,
+            poem_text: document.getElementById("editText").value
+          })
+        });
+        closeModal("editModal"); showToast("تم حفظ التعديلات!"); loadArchive();
+      } catch (e) { showToast(e.message); }
     }
 
     async function deleteArchivePoem(idx) {
       const rec = cachedPoems[idx]; if (!rec || !adminPin) return;
       if (!confirm(`حذف القصيدة «${rec.title}» نهائياً؟`)) return;
-      const res = await fetch(`/api/poems/${encodeURIComponent(rec.id)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } });
-      if (res.ok) { showToast("تم الحذف."); await Promise.all([loadStats(), loadArchive()]); }
+      try {
+        await safeFetchJson(`/api/poems/${encodeURIComponent(rec.id)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } });
+        showToast("تم الحذف."); await Promise.all([loadStats(), loadArchive()]);
+      } catch (e) { showToast(e.message); }
     }
 
     async function deleteGlossaryTerm(idx) {
       const g = cachedGlossary[idx]; if (!g || !adminPin) return;
       if (!confirm(`حذف المفردة «${g.term}»؟`)) return;
-      const res = await fetch(`/api/glossary/${encodeURIComponent(g.term)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } });
-      if (res.ok) { showToast("تم حذف المفردة."); await Promise.all([loadStats(), loadGlossary()]); }
+      try {
+        await safeFetchJson(`/api/glossary/${encodeURIComponent(g.term)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } });
+        showToast("تم حذف المفردة."); await Promise.all([loadStats(), loadGlossary()]);
+      } catch (e) { showToast(e.message); }
     }
 
     async function openInboxModal() {
       if (!adminPin) return;
       document.getElementById("inboxModal").classList.add("open");
-      const res = await fetch("/api/messages", { headers: { "x-admin-pin": adminPin } });
-      const data = await res.json();
-      cachedMessages = data.items || [];
-      document.getElementById("inboxList").innerHTML = cachedMessages.length
-        ? cachedMessages.map((m, i) => `
-          <div class="line-row">
-            <div style="display:flex;justify-content:space-between;gap:6px"><strong>${escapeHtml(m.name)}</strong><span class="pill-tag">${escapeHtml(m.category)}</span></div>
-            <div style="font-size:0.76rem;color:var(--muted)">${escapeHtml(m.contact || "—")} • ${escapeHtml(m.created_at)}</div>
-            <div style="white-space:pre-line;font-size:0.86rem;margin:6px 0">${escapeHtml(m.message)}</div>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-secondary btn-sm" onclick="closeModal('inboxModal');document.getElementById('poemInput').value=cachedMessages[${i}].message;updateLiveCounter();switchView('lab')">فتح في المختبر</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteMessage(${i})">حذف</button>
-            </div>
-          </div>`).join("")
-        : '<div style="text-align:center;color:var(--muted);padding:1rem">لا توجد رسائل حالياً.</div>';
+      try {
+        const data = await safeFetchJson("/api/messages", { headers: { "x-admin-pin": adminPin } });
+        cachedMessages = data.items || [];
+        document.getElementById("inboxList").innerHTML = cachedMessages.length
+          ? cachedMessages.map((m, i) => `
+            <div class="line-row">
+              <div style="display:flex;justify-content:space-between;gap:6px"><strong>${escapeHtml(m.name)}</strong><span class="pill-tag">${escapeHtml(m.category)}</span></div>
+              <div style="font-size:0.76rem;color:var(--muted)">${escapeHtml(m.contact || "—")} • ${escapeHtml(m.created_at)}</div>
+              <div style="white-space:pre-line;font-size:0.86rem;margin:6px 0">${escapeHtml(m.message)}</div>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-secondary btn-sm" onclick="closeModal('inboxModal');document.getElementById('poemInput').value=cachedMessages[${i}].message;updateLiveCounter();switchView('lab')">فتح في المختبر</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteMessage(${i})">حذف</button>
+              </div>
+            </div>`).join("")
+          : '<div style="text-align:center;color:var(--muted);padding:1rem">لا توجد رسائل حالياً.</div>';
+      } catch (e) {
+        document.getElementById("inboxList").innerHTML = `<div style="color:#F87171">${escapeHtml(e.message)}</div>`;
+      }
     }
 
     async function deleteMessage(idx) {
       const m = cachedMessages[idx]; if (!m || !adminPin) return;
-      const res = await fetch(`/api/messages/${encodeURIComponent(m.id)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } });
-      if (res.ok) { openInboxModal(); loadStats(); }
+      try {
+        await safeFetchJson(`/api/messages/${encodeURIComponent(m.id)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } });
+        openInboxModal(); loadStats();
+      } catch (e) { showToast(e.message); }
     }
 
     /* ============ تحميل البيانات ============ */
     async function loadStats() {
       try {
-        const s = await (await fetch("/api/stats")).json();
+        const s = await safeFetchJson("/api/stats");
         document.getElementById("statPoems").textContent = s.poems_count;
         document.getElementById("statLines").textContent = s.lines_count;
         document.getElementById("statTerms").textContent = s.terms_count;
@@ -1486,11 +1623,13 @@
     }
 
     async function loadArchive() {
-      const q = encodeURIComponent(document.getElementById("archiveSearch").value || "");
-      const t = encodeURIComponent(document.getElementById("archiveFilter").value || "الكل");
-      const data = await (await fetch(`/api/poems?q=${q}&poem_type=${t}`)).json();
-      cachedPoems = data.items || [];
-      renderArchiveCards();
+      try {
+        const q = encodeURIComponent(document.getElementById("archiveSearch").value || "");
+        const t = encodeURIComponent(document.getElementById("archiveFilter").value || "الكل");
+        const data = await safeFetchJson(`/api/poems?q=${q}&poem_type=${t}`);
+        cachedPoems = data.items || [];
+        renderArchiveCards();
+      } catch (e) {}
     }
 
     function renderArchiveCards() {
@@ -1533,10 +1672,12 @@
     }
 
     async function loadGlossary() {
-      const q = encodeURIComponent(document.getElementById("glossarySearch").value || "");
-      const data = await (await fetch(`/api/glossary?q=${q}`)).json();
-      cachedGlossary = data.items || [];
-      renderGlossaryTable();
+      try {
+        const q = encodeURIComponent(document.getElementById("glossarySearch").value || "");
+        const data = await safeFetchJson(`/api/glossary?q=${q}`);
+        cachedGlossary = data.items || [];
+        renderGlossaryTable();
+      } catch (e) {}
     }
 
     function renderGlossaryTable() {
@@ -1570,7 +1711,7 @@
       const btn = document.getElementById("cSubmitBtn");
       btn.disabled = true; btn.textContent = "جاري الإرسال...";
       try {
-        const res = await fetch("/api/messages", {
+        const data = await safeFetchJson("/api/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1580,8 +1721,6 @@
             message: document.getElementById("cMessage").value
           })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "تعذر الإرسال");
         showToast(data.message);
         document.getElementById("cName").value = "";
         document.getElementById("cContact").value = "";
@@ -1597,13 +1736,21 @@
       runGlobalSearch();
     }
 
+    function selectSearchTerm(idx) {
+      const g = cachedGlossary[idx]; if (!g) return;
+      closeModal("searchModal");
+      document.getElementById("glossarySearch").value = g.term;
+      loadGlossary();
+      switchView("glossary");
+    }
+
     function runGlobalSearch() {
       const q = (document.getElementById("globalSearchInput").value || "").trim().toLowerCase();
       const poems = cachedPoems.map((p, idx) => ({ p, idx })).filter(({ p }) => !q || `${p.title} ${p.poem_text} ${p.poet}`.toLowerCase().includes(q)).slice(0, 5);
-      const terms = cachedGlossary.filter(g => !q || `${g.term} ${g.arabic_meaning} ${g.english_meaning}`.toLowerCase().includes(q)).slice(0, 5);
+      const terms = cachedGlossary.map((g, idx) => ({ g, idx })).filter(({ g }) => !q || `${g.term} ${g.arabic_meaning} ${g.english_meaning}`.toLowerCase().includes(q)).slice(0, 5);
       document.getElementById("globalSearchResults").innerHTML = [
         ...poems.map(({ p, idx }) => `<div class="search-item" onclick="closeModal('searchModal');openArchivePoem(${idx})">📜 <strong>${escapeHtml(p.title)}</strong> — ${escapeHtml(p.poet)}</div>`),
-        ...terms.map(g => `<div class="search-item" onclick="closeModal('searchModal');document.getElementById('glossarySearch').value='${escapeHtml(g.term)}';loadGlossary();switchView('glossary')">📖 <strong>${escapeHtml(g.term)}</strong> — ${escapeHtml(g.arabic_meaning)}</div>`)
+        ...terms.map(({ g, idx }) => `<div class="search-item" onclick="selectSearchTerm(${idx})">📖 <strong>${escapeHtml(g.term)}</strong> — ${escapeHtml(g.arabic_meaning)}</div>`)
       ].join("") || '<div style="text-align:center;color:var(--muted);padding:1rem">لا توجد نتائج.</div>';
     }
 
