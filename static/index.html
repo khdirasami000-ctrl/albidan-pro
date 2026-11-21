@@ -4,6 +4,27 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>مختبر البيظان | ALBIDAN AI LAB PRO — المرجع الرقمي للشعر الحساني وأزوان</title>
+  <meta name="description" content="منصة مختبر البيظان للذكاء الاصطناعي — المرجع الرقمي العالمي للشعر الشعبي الحساني (لغنى والتبراع)، التقطيع العروضي الصوتي، المعجم الحساني المتنامي، وهندسة موسيقى أزوان التوليدية. فكرة وتطوير أڭار الحبيب." />
+  <meta name="keywords" content="مختبر البيظان, الشعر الحساني, لغنى, التبراع, أزوان, التراث الحساني, المعجم الحساني, بوجدور, الصحراء المغربية, ALBIDAN AI Lab, Hassaniya poetry" />
+  <meta name="author" content="أڭــار الحبيب — Aggar Lahbib" />
+  <meta name="theme-color" content="#0D0B09" />
+
+  <!-- Open Graph / بطاقة المعاينة لفيسبوك وواتساب -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="ar_AR" />
+  <meta property="og:site_name" content="مختبر البيظان — ALBIDAN AI LAB" />
+  <meta property="og:title" content="مختبر البيظان | المرجع الرقمي العالمي للشعر الحساني وأزوان" />
+  <meta property="og:description" content="تحليل عروضي آلي لبحور لغنى والتبراع، تفريغ صوتي ذكي، معجم حساني متنامي، وهندسة أزوان التوليدية للباحثين والشعراء حول العالم." />
+  <meta property="og:url" content="__BASE_URL__/" />
+  <meta property="og:image" content="__BASE_URL__/static/founder.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="مختبر البيظان | ALBIDAN AI LAB PRO" />
+  <meta name="twitter:description" content="المرجع الرقمي للشعر الحساني، المعجم التراثي، وهندسة أزوان بالذكاء الاصطناعي." />
+  <meta name="twitter:image" content="__BASE_URL__/static/founder.jpg" />
+
+  <!-- أيقونة الموقع (SVG Favicon) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230D0B09'/%3E%3Crect x='4' y='4' width='56' height='56' rx='13' fill='none' stroke='%23D4AF37' stroke-width='3'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-size='32' fill='%23D4AF37'%3E%F0%9F%90%AA%3C/text%3E%3C/svg%3E" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
@@ -11,23 +32,25 @@
     :root {
       --bg: #0D0B09;
       --bg-soft: #161310;
-      --card: rgba(25, 21, 17, 0.88);
+      --card: rgba(25, 21, 17, 0.90);
       --card-solid: #191511;
       --border: rgba(212, 175, 55, 0.22);
-      --border-strong: rgba(212, 175, 55, 0.5);
+      --border-strong: rgba(212, 175, 55, 0.55);
       --gold: #D4AF37;
       --gold-light: #F3D982;
       --accent: #C86D3B;
+      --danger: #EF4444;
+      --success: #22C55E;
       --text: #F5EFE6;
       --muted: #A99F91;
       --shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
-      --glass: rgba(13, 11, 9, 0.78);
+      --glass: rgba(13, 11, 9, 0.84);
     }
 
     [data-theme="light"] {
       --bg: #F9F6F0;
       --bg-soft: #F1ECE2;
-      --card: rgba(255, 255, 255, 0.94);
+      --card: rgba(255, 255, 255, 0.96);
       --card-solid: #FFFFFF;
       --border: #E5DDD0;
       --border-strong: #1B365D;
@@ -37,7 +60,7 @@
       --text: #162133;
       --muted: #5A6577;
       --shadow: 0 14px 34px rgba(22, 33, 51, 0.08);
-      --glass: rgba(249, 246, 240, 0.88);
+      --glass: rgba(249, 246, 240, 0.92);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -63,51 +86,65 @@
         radial-gradient(circle at 85% 82%, rgba(180, 123, 9, 0.07), transparent 42%);
     }
 
-    .container { max-width: 1200px; margin: 0 auto; padding: 0 1.25rem; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1.2rem; }
 
     /* Navbar */
     .navbar {
-      position: sticky; top: 0; z-index: 50;
+      position: sticky; top: 0; z-index: 60;
       background: var(--glass); backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
     }
     .nav-inner {
       display: flex; align-items: center; justify-content: space-between;
-      gap: 1rem; padding: 0.85rem 0; flex-wrap: wrap;
+      gap: 0.8rem; padding: 0.78rem 0;
     }
     .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
     .brand-mark {
       width: 42px; height: 42px; border-radius: 12px;
       background: linear-gradient(135deg, #D4AF37, #8C6413);
       color: #14100C; display: grid; place-items: center; font-size: 1.35rem; font-weight: 900;
-      box-shadow: 0 6px 18px rgba(212, 175, 55, 0.28);
+      box-shadow: 0 6px 18px rgba(212, 175, 55, 0.28); flex-shrink: 0;
     }
-    .brand-name { font-size: 1.15rem; font-weight: 900; line-height: 1.15; }
-    .brand-sub { font-size: 0.72rem; color: var(--gold-light); font-weight: 700; letter-spacing: 0.8px; }
-    .nav-links { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+    .brand-name { font-size: 1.12rem; font-weight: 900; line-height: 1.15; }
+    .brand-sub { font-size: 0.7rem; color: var(--gold-light); font-weight: 700; letter-spacing: 0.8px; }
+    .nav-links { display: flex; align-items: center; gap: 0.2rem; flex-wrap: wrap; }
     .nav-links a {
-      text-decoration: none; color: var(--muted); font-weight: 700; font-size: 0.9rem;
-      padding: 6px 12px; border-radius: 10px; transition: 0.2s;
+      text-decoration: none; color: var(--muted); font-weight: 700; font-size: 0.87rem;
+      padding: 6px 10px; border-radius: 9px; transition: 0.2s;
     }
-    .nav-links a:hover { color: var(--text); background: rgba(212, 175, 55, 0.12); }
-    .nav-actions { display: flex; align-items: center; gap: 8px; }
+    .nav-links a:hover { color: var(--text); background: rgba(212, 175, 55, 0.13); }
+    .nav-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .icon-btn {
       background: var(--bg-soft); color: var(--text); border: 1px solid var(--border);
-      padding: 7px 12px; border-radius: 10px; cursor: pointer; font-family: inherit;
-      font-weight: 700; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 11px; border-radius: 10px; cursor: pointer; font-family: inherit;
+      font-weight: 700; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 6px;
       transition: 0.2s;
     }
     .icon-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+    .icon-btn.admin-on { border-color: var(--success); color: var(--success); background: rgba(34, 197, 94, 0.12); }
+    .menu-toggle { display: none; }
     .status-dot {
-      width: 8px; height: 8px; border-radius: 50%; background: #22C55E;
-      display: inline-block; box-shadow: 0 0 8px #22C55E;
+      width: 8px; height: 8px; border-radius: 50%; background: var(--success);
+      display: inline-block; box-shadow: 0 0 8px var(--success);
+    }
+
+    /* Mobile Drawer */
+    .mobile-menu {
+      display: none; flex-direction: column; gap: 6px;
+      padding: 0.8rem 1.2rem 1.1rem; border-top: 1px solid var(--border);
+      background: var(--card-solid);
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      text-decoration: none; color: var(--text); font-weight: 700;
+      padding: 8px 12px; border-radius: 10px; background: var(--bg-soft);
     }
 
     /* Buttons */
     .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 0.72rem 1.35rem; border-radius: 12px; font-family: inherit;
-      font-weight: 800; font-size: 0.94rem; cursor: pointer; border: 1px solid transparent;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 0.72rem 1.3rem; border-radius: 12px; font-family: inherit;
+      font-weight: 800; font-size: 0.92rem; cursor: pointer; border: 1px solid transparent;
       text-decoration: none; transition: transform 0.18s, box-shadow 0.2s, background 0.2s;
     }
     .btn:active { transform: scale(0.98); }
@@ -120,14 +157,14 @@
       box-shadow: 0 8px 22px rgba(27, 54, 93, 0.22);
     }
     .btn-primary:hover { transform: translateY(-2px); }
-    .btn-secondary {
-      background: var(--bg-soft); color: var(--text); border-color: var(--border);
-    }
+    .btn-secondary { background: var(--bg-soft); color: var(--text); border-color: var(--border); }
     .btn-secondary:hover { border-color: var(--gold); color: var(--gold-light); }
-    .btn-sm { padding: 0.45rem 0.9rem; font-size: 0.82rem; border-radius: 9px; }
+    .btn-danger { background: rgba(239, 68, 68, 0.14); color: #F87171; border-color: rgba(239, 68, 68, 0.35); }
+    .btn-danger:hover { background: #EF4444; color: #FFFFFF; }
+    .btn-sm { padding: 0.44rem 0.85rem; font-size: 0.8rem; border-radius: 9px; }
 
     /* Hero */
-    .hero { padding: 3.2rem 0 2.4rem; }
+    .hero { padding: 2.8rem 0 2.2rem; }
     .hero-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; align-items: center; }
     .eyebrow {
       display: inline-flex; align-items: center; gap: 8px;
@@ -135,77 +172,75 @@
       background: rgba(212, 175, 55, 0.14); border: 1px solid var(--border); color: var(--gold-light);
       margin-bottom: 1rem;
     }
-    .hero h1 { font-size: clamp(1.9rem, 3.6vw, 2.85rem); font-weight: 900; line-height: 1.28; margin-bottom: 1rem; }
+    .hero h1 { font-size: clamp(1.85rem, 3.6vw, 2.8rem); font-weight: 900; line-height: 1.28; margin-bottom: 1rem; }
     .hero h1 span { color: var(--gold-light); }
-    .hero p { color: var(--muted); font-size: 1.04rem; margin-bottom: 1.6rem; max-width: 600px; }
-    .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 1.8rem; }
+    .hero p { color: var(--muted); font-size: 1.03rem; margin-bottom: 1.5rem; max-width: 600px; }
+    .hero-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.7rem; }
     .stats-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 480px; }
     .stat-pill {
       background: var(--card); border: 1px solid var(--border); border-radius: 14px;
       padding: 0.85rem; text-align: center;
     }
-    .stat-num { font-size: 1.55rem; font-weight: 900; color: var(--gold-light); line-height: 1.1; }
-    .stat-lbl { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+    .stat-num { font-size: 1.5rem; font-weight: 900; color: var(--gold-light); line-height: 1.1; }
+    .stat-lbl { font-size: 0.77rem; color: var(--muted); margin-top: 4px; }
 
     /* Hero Poem Slider Card */
     .poem-showcase {
       background: var(--card); border: 1px solid var(--border); border-radius: 22px;
-      padding: 1.7rem; box-shadow: var(--shadow); position: relative;
+      padding: 1.6rem; box-shadow: var(--shadow);
     }
     .showcase-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
     .pill-tag {
-      font-size: 0.76rem; font-weight: 800; padding: 4px 12px; border-radius: 999px;
+      display: inline-block; font-size: 0.75rem; font-weight: 800; padding: 4px 11px; border-radius: 999px;
       background: rgba(212, 175, 55, 0.15); color: var(--gold-light); border: 1px solid var(--border);
     }
     .poem-verses {
-      font-family: 'Amiri', serif; font-size: 1.55rem; line-height: 2.2;
-      padding: 1.1rem 1.3rem; border-radius: 14px; background: var(--bg-soft);
+      font-family: 'Amiri', serif; font-size: 1.52rem; line-height: 2.15;
+      padding: 1.1rem 1.25rem; border-radius: 14px; background: var(--bg-soft);
       border-right: 4px solid var(--gold); min-height: 185px; white-space: pre-line;
-      transition: opacity 0.25s ease;
     }
     .showcase-foot {
       display: flex; justify-content: space-between; align-items: center;
       margin-top: 1rem; gap: 8px; flex-wrap: wrap;
     }
 
-    /* Section Header */
-    section { padding: 2.8rem 0; }
-    .sec-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.6rem; }
-    .sec-head h2 { font-size: 1.75rem; font-weight: 900; }
-    .sec-head p { color: var(--muted); font-size: 0.96rem; margin-top: 0.2rem; }
+    /* Sections */
+    section { padding: 2.6rem 0; }
+    .sec-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .sec-head h2 { font-size: 1.68rem; font-weight: 900; }
+    .sec-head p { color: var(--muted); font-size: 0.94rem; margin-top: 0.2rem; }
 
-    /* Cards & Sliders */
     .card {
       background: var(--card); border: 1px solid var(--border);
       border-radius: 18px; padding: 1.4rem; box-shadow: var(--shadow);
     }
-    .azawan-slider {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-    }
+
+    /* Azawan Slider */
+    .azawan-slider { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
     .azawan-card {
       background: var(--card); border: 1px solid var(--border); border-radius: 18px;
-      padding: 1.35rem; cursor: pointer; transition: 0.25s; position: relative;
+      padding: 1.3rem; cursor: pointer; transition: 0.25s;
     }
     .azawan-card:hover, .azawan-card.active {
       transform: translateY(-4px); border-color: var(--gold);
       box-shadow: 0 12px 30px rgba(212, 175, 55, 0.16);
     }
     .azawan-bpm { font-size: 0.78rem; color: var(--gold-light); font-weight: 800; }
-    .azawan-card h3 { font-size: 1.15rem; margin: 0.4rem 0 0.35rem; }
-    .azawan-card p { font-size: 0.86rem; color: var(--muted); margin-bottom: 1rem; }
+    .azawan-card h3 { font-size: 1.12rem; margin: 0.35rem 0; }
+    .azawan-card p { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; }
 
     /* Lab Editor */
-    .lab-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 1.4rem; align-items: start; }
-    textarea, input[type="text"], select {
+    .lab-grid { display: grid; grid-template-columns: 1.12fr 1fr; gap: 1.4rem; align-items: start; }
+    textarea, input[type="text"], input[type="password"], input[type="number"], select {
       width: 100%; background: var(--bg-soft); color: var(--text);
-      border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem 1rem;
-      font-family: inherit; font-size: 0.96rem; outline: none; transition: 0.2s;
+      border: 1px solid var(--border); border-radius: 12px; padding: 0.76rem 1rem;
+      font-family: inherit; font-size: 0.95rem; outline: none; transition: 0.2s;
     }
     textarea.poem-editor {
-      font-family: 'Amiri', serif; font-size: 1.42rem; line-height: 2.15; min-height: 190px; resize: vertical;
+      font-family: 'Amiri', serif; font-size: 1.4rem; line-height: 2.15; min-height: 190px; resize: vertical;
     }
     textarea:focus, input:focus, select:focus { border-color: var(--gold); }
-    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 0.8rem; align-items: center; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 0.8rem; align-items: center; }
     .upload-box {
       border: 1.5px dashed var(--border-strong); border-radius: 14px; padding: 0.9rem 1rem;
       background: rgba(212, 175, 55, 0.04); margin-bottom: 1rem;
@@ -213,11 +248,11 @@
     }
 
     /* Tabs */
-    .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; background: var(--bg-soft); padding: 6px; border-radius: 13px; border: 1px solid var(--border); }
+    .tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 1rem; background: var(--bg-soft); padding: 5px; border-radius: 13px; border: 1px solid var(--border); }
     .tab-btn {
-      flex: 1; min-width: 110px; padding: 8px 12px; border: none; border-radius: 9px;
+      flex: 1; min-width: 100px; padding: 8px 10px; border: none; border-radius: 9px;
       background: transparent; color: var(--muted); font-family: inherit; font-weight: 800;
-      cursor: pointer; transition: 0.2s; font-size: 0.86rem;
+      cursor: pointer; transition: 0.2s; font-size: 0.84rem;
     }
     .tab-btn.active { background: var(--gold); color: #14100C; }
     [data-theme="light"] .tab-btn.active { color: #FFFFFF; }
@@ -227,20 +262,18 @@
     /* Prosody Visual Bars */
     .line-row {
       background: var(--bg-soft); border: 1px solid var(--border); border-radius: 13px;
-      padding: 0.9rem 1rem; margin-bottom: 0.7rem;
+      padding: 0.85rem 1rem; margin-bottom: 0.65rem;
     }
-    .line-orig { font-family: 'Amiri', serif; font-size: 1.32rem; font-weight: 700; }
-    .line-phon { font-family: 'Amiri', serif; font-size: 1.15rem; color: var(--gold-light); margin: 2px 0 8px; }
+    .line-orig { font-family: 'Amiri', serif; font-size: 1.3rem; font-weight: 700; }
+    .line-phon { font-family: 'Amiri', serif; font-size: 1.12rem; color: var(--gold-light); margin: 2px 0 8px; }
     .beats { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-    .beat-dot {
-      width: 24px; height: 9px; border-radius: 999px;
-      background: linear-gradient(90deg, var(--gold), var(--accent));
-    }
+    .beat-dot { width: 22px; height: 8px; border-radius: 999px; background: linear-gradient(90deg, var(--gold), var(--accent)); }
 
     .code-box {
       direction: ltr; text-align: left; background: #0B0A08; color: #F5EFE6;
-      border: 1px solid var(--border); border-radius: 12px; padding: 1rem;
-      font-family: monospace; font-size: 0.88rem; white-space: pre-wrap; margin: 0.6rem 0 1rem;
+      border: 1px solid var(--border); border-radius: 12px; padding: 0.95rem;
+      font-family: monospace; font-size: 0.86rem; white-space: pre-wrap; margin: 0.5rem 0 0.9rem;
+      word-break: break-word;
     }
     .trans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .trans-card {
@@ -254,35 +287,49 @@
     .archive-card {
       background: var(--card); border: 1px solid var(--border); border-right: 4px solid var(--gold);
       border-radius: 16px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.7rem;
+      transition: transform 0.2s, border-color 0.2s;
     }
-    .archive-poem { font-family: 'Amiri', serif; font-size: 1.25rem; line-height: 2; white-space: pre-line; color: var(--text); }
+    .archive-card:hover { transform: translateY(-3px); border-color: var(--gold); }
+    .archive-poem { font-family: 'Amiri', serif; font-size: 1.25rem; line-height: 2; white-space: pre-line; }
+    .card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 6px; border-top: 1px solid var(--border); }
 
     .glossary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
-    .flip-card { perspective: 1000px; height: 175px; cursor: pointer; }
-    .flip-inner {
-      position: relative; width: 100%; height: 100%; transition: transform 0.55s;
-      transform-style: preserve-3d;
-    }
+    .flip-card { perspective: 1000px; height: 185px; cursor: pointer; position: relative; }
+    .flip-inner { position: relative; width: 100%; height: 100%; transition: transform 0.55s; transform-style: preserve-3d; }
     .flip-card.flipped .flip-inner { transform: rotateY(180deg); }
     .flip-face {
       position: absolute; inset: 0; backface-visibility: hidden;
-      border-radius: 16px; padding: 1.2rem; border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.1rem; border: 1px solid var(--border);
       display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
       background: var(--card);
     }
     .flip-front h3 { font-family: 'Amiri', serif; font-size: 1.75rem; color: var(--gold-light); margin-bottom: 6px; }
     .flip-back { transform: rotateY(180deg); background: var(--bg-soft); border-color: var(--gold); }
 
+    /* Quiz */
+    .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 1rem 0; }
+    .quiz-opt {
+      padding: 0.9rem 1rem; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--bg-soft); color: var(--text); font-family: inherit; font-weight: 700;
+      cursor: pointer; text-align: right; transition: 0.2s;
+    }
+    .quiz-opt:hover:not(:disabled) { border-color: var(--gold); transform: translateY(-2px); }
+    .quiz-opt.correct { background: rgba(34, 197, 94, 0.18); border-color: #22C55E; color: #4ADE80; }
+    .quiz-opt.wrong { background: rgba(239, 68, 68, 0.18); border-color: #EF4444; color: #F87171; }
+    [data-theme="light"] .quiz-opt.correct { color: #15803D; }
+    [data-theme="light"] .quiz-opt.wrong { color: #B91C1C; }
+
     /* Atlas */
     .atlas-cities { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
     .city-chip {
-      padding: 8px 15px; border-radius: 999px; border: 1px solid var(--border);
+      padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border);
       background: var(--bg-soft); color: var(--text); cursor: pointer; font-family: inherit; font-weight: 700;
     }
     .city-chip.active { background: var(--gold); color: #14100C; border-color: var(--gold); }
     [data-theme="light"] .city-chip.active { color: #FFFFFF; }
 
-    /* Founder */
+    /* Contact & Founder */
+    .contact-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; align-items: start; }
     .founder-card {
       background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--gold);
       border-radius: 22px; padding: 2rem; display: flex; gap: 2rem; align-items: center; box-shadow: var(--shadow);
@@ -292,22 +339,22 @@
       border: 3px solid var(--gold); display: grid; place-items: center;
       background: linear-gradient(145deg, #1E3A5F, #13253D 65%, #3B2A1A); color: #FDE68A;
     }
-    .founder-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .founder-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
     .founder-monogram { font-family: 'Amiri', serif; font-size: 3.1rem; font-weight: 700; }
     .social-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1.1rem; }
     .social-fb { background: #1877F2; color: #fff; }
     .social-wa { background: #16A34A; color: #fff; }
 
-    /* Modal Search (Ctrl+K) */
+    /* Modals */
     .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(6px);
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.72); backdrop-filter: blur(6px);
       display: none; place-items: center; z-index: 100; padding: 1rem;
     }
     .modal-backdrop.open { display: grid; }
     .modal-box {
       width: 100%; max-width: 620px; background: var(--card-solid);
-      border: 1px solid var(--border-strong); border-radius: 18px; padding: 1.3rem;
-      box-shadow: var(--shadow); max-height: 80vh; overflow-y: auto;
+      border: 1px solid var(--border-strong); border-radius: 18px; padding: 1.4rem;
+      box-shadow: var(--shadow); max-height: 84vh; overflow-y: auto;
     }
     .search-item {
       padding: 0.75rem; border-radius: 10px; border: 1px solid var(--border);
@@ -316,28 +363,38 @@
     .search-item:hover { border-color: var(--gold); }
 
     .toast {
-      position: fixed; bottom: 20px; left: 20px; z-index: 120;
+      position: fixed; bottom: 20px; left: 20px; z-index: 130;
       background: #162133; color: #FDE68A; border: 1px solid var(--gold);
       padding: 0.8rem 1.2rem; border-radius: 12px; font-weight: 700;
-      display: none; box-shadow: var(--shadow);
+      display: none; box-shadow: var(--shadow); max-width: 90vw;
     }
     .toast.show { display: block; animation: fadeIn 0.2s ease; }
 
+    .scroll-top {
+      position: fixed; bottom: 20px; right: 20px; z-index: 90;
+      width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--gold);
+      background: var(--card-solid); color: var(--gold-light); font-size: 1.2rem;
+      cursor: pointer; display: none; place-items: center; box-shadow: var(--shadow);
+    }
+    .scroll-top.show { display: grid; }
+
     footer {
-      margin-top: 3rem; padding: 2rem 1rem; border-top: 1px solid var(--border);
+      margin-top: 3rem; padding: 2.2rem 1rem; border-top: 1px solid var(--border);
       text-align: center; color: var(--muted); font-size: 0.9rem;
     }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     @media (max-width: 960px) {
-      .hero-grid, .lab-grid, .trans-grid { grid-template-columns: 1fr; }
+      .hero-grid, .lab-grid, .trans-grid, .contact-grid { grid-template-columns: 1fr; }
       .azawan-slider { grid-template-columns: 1fr 1fr; }
       .founder-card { flex-direction: column; text-align: center; }
       .social-row { justify-content: center; }
+      .nav-links { display: none; }
+      .menu-toggle { display: inline-flex; }
     }
     @media (max-width: 600px) {
-      .azawan-slider { grid-template-columns: 1fr; }
-      .nav-links { display: none; }
+      .azawan-slider, .quiz-options { grid-template-columns: 1fr; }
+      .hide-xs { display: none; }
     }
   </style>
 </head>
@@ -356,24 +413,40 @@
       </a>
 
       <nav class="nav-links">
-        <a href="#lab">المختبر العروضي</a>
-        <a href="#azawan">مقامات أزوان</a>
+        <a href="#lab">المختبر</a>
+        <a href="#azawan">أزوان</a>
         <a href="#archive">المدونة</a>
         <a href="#glossary">المعجم</a>
+        <a href="#quiz">الاختبار</a>
         <a href="#atlas">الأطلس</a>
+        <a href="#contact">شاركنا</a>
         <a href="#founder">المؤسس</a>
       </nav>
 
       <div class="nav-actions">
-        <button class="icon-btn" onclick="openSearchModal()" title="بحث شامل (Ctrl+K)">🔍 بحث <kbd style="opacity:.7;font-size:.75rem">Ctrl+K</kbd></button>
-        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()">☀️ النهاري</button>
-        <span class="icon-btn" id="serverBadge"><span class="status-dot"></span> جاري الاتصال...</span>
+        <button class="icon-btn" onclick="openSearchModal()" title="بحث شامل (Ctrl+K)">🔍 <span class="hide-xs">بحث</span></button>
+        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()">☀️</button>
+        <button class="icon-btn" id="adminBtn" onclick="handleAdminClick()">🔐 <span class="hide-xs">المشرف</span></button>
+        <button class="icon-btn" id="inboxBtn" style="display:none" onclick="openInboxModal()">📬 الرسائل (<span id="msgCountBadge">0</span>)</button>
+        <span class="icon-btn hide-xs" id="serverBadge"><span class="status-dot"></span> جاري الاتصال...</span>
+        <button class="icon-btn menu-toggle" onclick="toggleMobileMenu()" aria-label="القائمة">☰</button>
       </div>
+    </div>
+
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="#lab" onclick="toggleMobileMenu()">🔬 المختبر العروضي</a>
+      <a href="#azawan" onclick="toggleMobileMenu()">🎵 مقامات أزوان</a>
+      <a href="#archive" onclick="toggleMobileMenu()">📚 المدونة الحسانية</a>
+      <a href="#glossary" onclick="toggleMobileMenu()">📖 المعجم التفاعلي</a>
+      <a href="#quiz" onclick="toggleMobileMenu()">🎯 اختبر ثقافتك الحسانية</a>
+      <a href="#atlas" onclick="toggleMobileMenu()">🗺️ الأطلس الجغرافي</a>
+      <a href="#contact" onclick="toggleMobileMenu()">✉️ شارك قصيدة / تواصل معنا</a>
+      <a href="#founder" onclick="toggleMobileMenu()">👤 مؤسس المشروع</a>
     </div>
   </header>
 
-  <!-- القسم الافتتاحي -->
   <main id="top" class="container">
+    <!-- القسم الافتتاحي -->
     <section class="hero">
       <div class="hero-grid">
         <div>
@@ -385,6 +458,7 @@
           <div class="hero-cta">
             <a href="#lab" class="btn btn-primary">🚀 ابدأ التحليل العروضي</a>
             <a href="#archive" class="btn btn-secondary">📚 تصفح المدونة الحية</a>
+            <button class="btn btn-secondary" onclick="shareWebsite()">🔗 مشاركة المنصة</button>
           </div>
           <div class="stats-strip">
             <div class="stat-pill">
@@ -419,7 +493,7 @@
       </div>
     </section>
 
-    <!-- سلايدر مقامات أزوان مع معاينة صوتية -->
+    <!-- سلايدر مقامات أزوان -->
     <section id="azawan">
       <div class="sec-head">
         <div>
@@ -437,25 +511,22 @@
           <h2>🔬 المختبر العروضي والتفريغ الصوتي (Gemini AI)</h2>
           <p>ارفع تسجيلاً صوتياً أو اكتب الأبيات لتحصل على التقطيع العروضي والترجمة والمعجم وأوامر Suno AI</p>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <select id="modelSelect" style="width:auto">
-            <option value="gemini-3.8-flash">gemini-3.8-flash (الأحدث)</option>
-            <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (سريع)</option>
-            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (عميق)</option>
-          </select>
-        </div>
+        <select id="modelSelect" style="width:auto">
+          <option value="gemini-3.8-flash">gemini-3.8-flash (الأحدث)</option>
+          <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (سريع)</option>
+          <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (عميق)</option>
+        </select>
       </div>
 
       <div class="lab-grid">
-        <!-- المحرر والرفع الصوتي -->
         <div class="card">
           <div class="upload-box">
             <div>
               <strong>🎙️ تفريغ تسجيل صوتي تلقائياً</strong>
-              <div style="font-size:0.82rem;color:var(--muted)">MP3, WAV, M4A (الحد الأقصى 20MB)</div>
+              <div style="font-size:0.8rem;color:var(--muted)">MP3, WAV, M4A (الحد الأقصى 20MB)</div>
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.ogg,.flac" style="max-width:210px;padding:6px" />
+              <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.ogg,.flac" style="max-width:205px;padding:6px" />
               <button class="btn btn-secondary btn-sm" id="transcribeBtn" onclick="transcribeAudio()">📝 تفريغ الصوت</button>
             </div>
           </div>
@@ -463,8 +534,8 @@
           <div class="toolbar">
             <button class="btn btn-secondary btn-sm" onclick="fillSample('gaf')">✨ نموذج كاف</button>
             <button class="btn btn-secondary btn-sm" onclick="fillSample('tebraa')">✨ نموذج تبراع</button>
-            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('poemInput').value=''">🧹 مسح</button>
-            <span style="margin-right:auto;font-size:0.82rem;color:var(--muted)" id="liveCounter">0 أشطر</span>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('poemInput').value='';updateLiveCounter()">🧹 مسح</button>
+            <span style="margin-right:auto;font-size:0.82rem;color:var(--gold-light);font-weight:700" id="liveCounter">0 أشطر</span>
           </div>
 
           <textarea id="poemInput" class="poem-editor" oninput="updateLiveCounter()" placeholder="اكتب الكاف أو الطلعة أو التبراع هنا (كل تافلويت في سطر مستقل)..."></textarea>
@@ -490,13 +561,12 @@
           </button>
         </div>
 
-        <!-- لوحة النتائج -->
         <div class="card">
           <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('prosody', this)">📊 العروض</button>
-            <button class="tab-btn" onclick="switchTab('trans', this)">🌍 الترجمة والمعجم</button>
-            <button class="tab-btn" onclick="switchTab('studio', this)">🎵 أزوان Suno</button>
-            <button class="tab-btn" onclick="switchTab('save', this)">💾 التوثيق والاستشهاد</button>
+            <button class="tab-btn" onclick="switchTab('trans', this)">🌍 الترجمة</button>
+            <button class="tab-btn" onclick="switchTab('studio', this)">🎵 أزوان</button>
+            <button class="tab-btn" onclick="switchTab('save', this)">💾 التوثيق</button>
           </div>
 
           <div id="resultsEmpty" style="text-align:center;padding:3rem 1rem;color:var(--muted)">
@@ -506,13 +576,13 @@
           <div id="resultsContent" style="display:none">
             <div id="tab-prosody" class="tab-panel active">
               <div class="stats-strip" style="max-width:100%;margin-bottom:1rem">
-                <div class="stat-pill"><div class="stat-num" style="font-size:1.05rem" id="resType">—</div><div class="stat-lbl">النوع</div></div>
-                <div class="stat-pill"><div class="stat-num" style="font-size:1.05rem" id="resMeter">—</div><div class="stat-lbl">البحر السائد</div></div>
-                <div class="stat-pill"><div class="stat-num" style="font-size:1.05rem" id="resAzawan">—</div><div class="stat-lbl">المقام المرشح</div></div>
+                <div class="stat-pill"><div class="stat-num" style="font-size:1rem" id="resType">—</div><div class="stat-lbl">النوع</div></div>
+                <div class="stat-pill"><div class="stat-num" style="font-size:1rem" id="resMeter">—</div><div class="stat-lbl">البحر السائد</div></div>
+                <div class="stat-pill"><div class="stat-num" style="font-size:1rem" id="resAzawan">—</div><div class="stat-lbl">المقام المرشح</div></div>
               </div>
               <div class="line-row" style="border-right:3px solid var(--gold)">
                 <div style="font-size:0.8rem;color:var(--gold-light);font-weight:800">🏜️ السياق الثقافي</div>
-                <div id="resContext" style="font-size:0.93rem;margin-top:4px"></div>
+                <div id="resContext" style="font-size:0.92rem;margin-top:4px"></div>
               </div>
               <div id="resLines"></div>
             </div>
@@ -520,11 +590,17 @@
             <div id="tab-trans" class="tab-panel">
               <div class="trans-grid">
                 <div class="trans-card">
-                  <div style="color:var(--gold-light);font-weight:800;font-size:0.8rem;margin-bottom:6px">🇬🇧 ENGLISH POETIC TRANSLATION</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <span style="color:var(--gold-light);font-weight:800;font-size:0.78rem">🇬🇧 ENGLISH</span>
+                    <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('resEn').innerText)">📋</button>
+                  </div>
                   <div id="resEn"></div>
                 </div>
                 <div class="trans-card">
-                  <div style="color:var(--gold-light);font-weight:800;font-size:0.8rem;margin-bottom:6px">🇫🇷 TRADUCTION POÉTIQUE</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <span style="color:var(--gold-light);font-weight:800;font-size:0.78rem">🇫🇷 FRANÇAIS</span>
+                    <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('resFr').innerText)">📋</button>
+                  </div>
                   <div id="resFr"></div>
                 </div>
               </div>
@@ -548,17 +624,25 @@
             <div id="tab-save" class="tab-panel">
               <h4 style="margin-bottom:0.7rem">💾 حفظ في المدونة السحابية (MongoDB Atlas)</h4>
               <div style="display:grid;gap:8px;margin-bottom:0.9rem">
-                <input type="text" id="saveTitle" placeholder="عنوان القصيدة (مثال: كاف في مدح الصحراء)" />
+                <input type="text" id="saveTitle" oninput="updateCitation()" placeholder="عنوان القصيدة (مثال: كاف في مدح الصحراء)" />
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                  <input type="text" id="savePoet" placeholder="الشاعر / الراوي" />
+                  <input type="text" id="savePoet" oninput="updateCitation()" placeholder="الشاعر / الراوي" />
                   <input type="text" id="saveRegion" value="بوجدور — الصحراء المغربية" placeholder="المدينة / المنطقة" />
                 </div>
-                <button class="btn btn-primary" onclick="savePoemToArchive()">📥 حفظ في المدونة وتحديث المعجم</button>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <button class="btn btn-primary" style="flex:1" onclick="savePoemToArchive()">📥 حفظ في المدونة وتحديث المعجم</button>
+                  <button class="btn btn-secondary" onclick="downloadCurrentJson()">⬇️ JSON</button>
+                </div>
               </div>
               <hr style="border:none;border-top:1px solid var(--border);margin:1rem 0" />
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                <strong>🎓 الاستشهاد الأكاديمي التلقائي (APA)</strong>
-                <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('citeBox').innerText)">📋 نسخ المرجع</button>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+                <strong>🎓 الاستشهاد الأكاديمي</strong>
+                <div style="display:flex;gap:5px">
+                  <button class="btn btn-secondary btn-sm" onclick="setCiteFormat('APA')">APA</button>
+                  <button class="btn btn-secondary btn-sm" onclick="setCiteFormat('MLA')">MLA</button>
+                  <button class="btn btn-secondary btn-sm" onclick="setCiteFormat('BibTeX')">BibTeX</button>
+                  <button class="btn btn-primary btn-sm" onclick="copyText(document.getElementById('citeBox').innerText)">📋 نسخ</button>
+                </div>
               </div>
               <div class="code-box" id="citeBox"></div>
             </div>
@@ -572,10 +656,10 @@
       <div class="sec-head">
         <div>
           <h2>📚 المدونة الحسانية المفتوحة</h2>
-          <p>أرشيف سحابي حي للقصائد المحللة مع التصدير المباشر للباحثين بصيغة JSONL</p>
+          <p>أرشيف سحابي حي للقصائد المحللة مع إمكانية توليد بطاقة مصوّرة جاهزة للنشر</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input type="text" id="archiveSearch" placeholder="🔍 ابحث في القصائد..." style="width:220px" oninput="loadArchive()" />
+          <input type="text" id="archiveSearch" placeholder="🔍 ابحث في القصائد..." style="width:210px" oninput="loadArchive()" />
           <select id="archiveFilter" style="width:auto" onchange="loadArchive()">
             <option value="الكل">الكل</option>
             <option value="كاف">كاف</option>
@@ -588,7 +672,7 @@
       <div class="archive-grid" id="archiveGrid"></div>
     </section>
 
-    <!-- المعجم التفاعلي ثلاثي الأبعاد -->
+    <!-- المعجم ثلاثي الأبعاد -->
     <section id="glossary">
       <div class="sec-head">
         <div>
@@ -596,14 +680,26 @@
           <p>اضغط على أي بطاقة لتنقلب وتكشف معناها بالعربية الفصحى والإنجليزية</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input type="text" id="glossarySearch" placeholder="🔍 ابحث عن مفردة..." style="width:220px" oninput="loadGlossary()" />
+          <input type="text" id="glossarySearch" placeholder="🔍 ابحث عن مفردة..." style="width:210px" oninput="loadGlossary()" />
           <a href="/api/export/glossary.csv" class="btn btn-secondary btn-sm">📥 تصدير CSV</a>
         </div>
       </div>
       <div class="glossary-grid" id="glossaryGrid"></div>
     </section>
 
-    <!-- الأطلس الجغرافي للشعر الحساني -->
+    <!-- الاختبار الثقافي التفاعلي -->
+    <section id="quiz">
+      <div class="sec-head">
+        <div>
+          <h2>🎯 اختبر معرفتك بالشعر الحساني وأزوان</h2>
+          <p>6 أسئلة تفاعلية سريعة للباحثين ومحبي الثقافة الصحراوية</p>
+        </div>
+        <span class="pill-tag" id="quizProgress">السؤال 1 من 6</span>
+      </div>
+      <div class="card" id="quizBox"></div>
+    </section>
+
+    <!-- الأطلس الجغرافي -->
     <section id="atlas">
       <div class="sec-head">
         <div>
@@ -613,14 +709,55 @@
       </div>
       <div class="card">
         <div class="atlas-cities" id="atlasCities"></div>
-        <div id="atlasDetail" style="padding:0.8rem 0 0.3rem"></div>
+        <div id="atlasDetail" style="padding:0.7rem 0 0.2rem"></div>
+      </div>
+    </section>
+
+    <!-- نموذج التواصل ومساهمات الشعراء -->
+    <section id="contact">
+      <div class="sec-head">
+        <div>
+          <h2>✉️ شارك قصيدة تراثية أو تواصل معنا</h2>
+          <p>هل لديك كاف أو تبراع نادر أو ملاحظة بحثية؟ أرسلها لتوثيقها في المدونة باسمك</p>
+        </div>
+      </div>
+      <div class="card contact-grid">
+        <div>
+          <span class="pill-tag">مساهمة مفتوحة للباحثين والشعراء</span>
+          <h3 style="font-size:1.35rem;margin:0.7rem 0 0.5rem">ساهم في بناء أكبر مدونة رقمية حسانية</h3>
+          <p style="color:var(--muted);font-size:0.95rem;margin-bottom:1rem">
+            نرحب بمساهمات الشعراء، الرواة، وطلبة الدكتوراه لتوثيق النصوص النادرة، تصحيح المفردات المعجمية، أو اقتراح شراكات ثقافية وتقنية.
+          </p>
+          <div class="line-row">
+            <strong>📍 المقر الرقمي:</strong> إقليم بوجدور — الصحراء المغربية<br />
+            <strong>🔒 التخزين:</strong> تُحفظ الرسائل مباشرة في قاعدة البيانات وتُراجع من طرف المشرف.
+          </div>
+        </div>
+        <form onsubmit="submitContactForm(event)" style="display:grid;gap:10px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <input type="text" id="cName" required placeholder="الاسم الكامل *" />
+            <input type="text" id="cContact" placeholder="واتساب أو البريد الإلكتروني (اختياري)" />
+          </div>
+          <select id="cCategory">
+            <option value="مساهمة بقصيدة تراثية">📜 مساهمة بقصيدة تراثية</option>
+            <option value="تصحيح عروضي أو معجمي">⚖️ تصحيح عروضي أو معجمي</option>
+            <option value="تعاون أكاديمي / بحثي">🎓 تعاون أكاديمي / بحثي</option>
+            <option value="تواصل عام">💬 تواصل عام</option>
+          </select>
+          <textarea id="cMessage" required rows="4" placeholder="اكتب القصيدة أو رسالتك هنا..."></textarea>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <label for="cCaptcha" style="font-size:0.88rem;font-weight:700" id="captchaLabel">للأمان، كم يساوي 3 + 4؟</label>
+            <input type="number" id="cCaptcha" required style="width:110px" placeholder="النتيجة" />
+            <button type="submit" class="btn btn-primary" style="flex:1" id="cSubmitBtn">📨 إرسال المساهمة</button>
+          </div>
+        </form>
       </div>
     </section>
 
     <!-- قسم مؤسس المشروع -->
     <section id="founder">
       <div class="founder-card">
-        <div class="founder-avatar" id="founderAvatar">
+        <div class="founder-avatar">
           <img src="/static/founder.jpg" alt="أڭــار الحبيب" onerror="this.remove(); document.getElementById('founderFallback').style.display='block';" />
           <div id="founderFallback" class="founder-monogram" style="display:none">أ ح</div>
         </div>
@@ -642,23 +779,67 @@
 
   <footer>
     <div class="container">
-      <strong style="color:var(--gold-light)">🐪 مختبر البيظان للذكاء الاصطناعي — ALBIDAN AI LAB</strong><br />
+      <strong style="color:var(--gold-light)">🐪 مختبر البيظان للذكاء الاصطناعي — ALBIDAN AI LAB PRO</strong><br />
       © 2026 فكرة وتطوير أڭــار الحبيب • منصة مفتوحة لخدمة التراث الحساني والباحثين والشعراء حول العالم.
     </div>
   </footer>
 
-  <!-- نافذة البحث الشامل Ctrl+K -->
-  <div class="modal-backdrop" id="searchModal" onclick="if(event.target===this) closeSearchModal()">
+  <!-- نافذة البحث الشامل -->
+  <div class="modal-backdrop" id="searchModal" onclick="if(event.target===this) closeModal('searchModal')">
     <div class="modal-box">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
         <strong>🔍 البحث الشامل في المدونة والمعجم</strong>
-        <button class="btn btn-secondary btn-sm" onclick="closeSearchModal()">إغلاق</button>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('searchModal')">إغلاق</button>
       </div>
       <input type="text" id="globalSearchInput" placeholder="اكتب كلمة حسانية، اسم شاعر، بحر، أو منطقة..." oninput="runGlobalSearch()" />
       <div id="globalSearchResults" style="margin-top:0.8rem"></div>
     </div>
   </div>
 
+  <!-- نافذة دخول المشرف -->
+  <div class="modal-backdrop" id="adminModal" onclick="if(event.target===this) closeModal('adminModal')">
+    <div class="modal-box" style="max-width:420px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem">
+        <strong>🔐 تفعيل وضع المشرف (Admin)</strong>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('adminModal')">إغلاق</button>
+      </div>
+      <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.8rem">أدخل رمز المشرف (`ADMIN_PIN`) لتفعيل تعديل وحذف القصائد وقراءة رسائل الزوار.</p>
+      <input type="password" id="adminPinInput" placeholder="أدخل الرمز السري..." onkeydown="if(event.key==='Enter') verifyAdminPin()" />
+      <button class="btn btn-primary" style="width:100%;margin-top:0.9rem" onclick="verifyAdminPin()">🔓 دخول المشرف</button>
+    </div>
+  </div>
+
+  <!-- نافذة تعديل القصيدة (للمشرف) -->
+  <div class="modal-backdrop" id="editModal" onclick="if(event.target===this) closeModal('editModal')">
+    <div class="modal-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem">
+        <strong>✏️ تعديل بيانات القصيدة</strong>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('editModal')">إغلاق</button>
+      </div>
+      <div style="display:grid;gap:10px">
+        <input type="text" id="editTitle" placeholder="عنوان القصيدة" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <input type="text" id="editPoet" placeholder="الشاعر / الراوي" />
+          <input type="text" id="editRegion" placeholder="المنطقة" />
+        </div>
+        <textarea id="editText" class="poem-editor" style="min-height:150px"></textarea>
+        <button class="btn btn-primary" onclick="savePoemEdit()">💾 حفظ التعديلات</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة صندوق الرسائل (للمشرف) -->
+  <div class="modal-backdrop" id="inboxModal" onclick="if(event.target===this) closeModal('inboxModal')">
+    <div class="modal-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem">
+        <strong>📬 رسائل الزوار ومساهمات الشعراء</strong>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('inboxModal')">إغلاق</button>
+      </div>
+      <div id="inboxList"></div>
+    </div>
+  </div>
+
+  <button class="scroll-top" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="العودة للأعلى">↑</button>
   <div class="toast" id="toast"></div>
 
   <script>
@@ -689,11 +870,58 @@
       { city: "شنقيط", region: "آدرار — موريتانيا", note: "قلب المخطوطات التاريخية ومدارس العروض الحساني الكلاسيكي." }
     ];
 
+    const QUIZ = [
+      {
+        q: "كم عدد المتحركات في الشطر الواحد (تافلويت) في بحر «لبتيت التام»؟",
+        opts: ["6 متحركات", "7 متحركات", "8 متحركات", "10 متحركات"],
+        ans: 2,
+        exp: "بحر لبتيت التام يقوم على 8 متحركات في كل تافلويت، بينما لبتيت الناقص يقوم على 7 متحركات."
+      },
+      {
+        q: "ما هو الفن الشعري النسائي الحساني الذي يتكون غالباً من بيتين متفقي القافية؟",
+        opts: ["الطلعة", "التبراع", "البت لكبير", "المديح"],
+        ans: 1,
+        exp: "التبراع فن شعري أصيل تبدعه المرأة الحسانية للتعبير الرمزي الراقي في بيتين غالباً."
+      },
+      {
+        q: "أي آلة موسيقية تقليدية في أزوان تُعرف بأنها مخصصة غالباً لعزف النساء؟",
+        opts: ["التيدينيت", "الآردين", "النيفارة", "الرباب"],
+        ans: 1,
+        exp: "الآردين آلة وترية شبيهة بالقيثارة الصحراوية وتُعرف بارتباطها بالفنانات في موسيقى أزوان، بينما التيدينيت يعزفها الرجال."
+      },
+      {
+        q: "أي مقام من مقامات أزوان يُعرف بالهيبة والفخر والوقار؟",
+        opts: ["لبياظ", "كر (Karr)", "لكحال", "فاغو"],
+        ans: 1,
+        exp: "مقام «كر» هو أول المقامات في الترتيب الكلاسيكي ويرتبط بالوقار والفخر والمديح."
+      },
+      {
+        q: "ماذا يُطلق على الشطر الشعري الواحد في مصطلحات العروض الحساني؟",
+        opts: ["تافلويت", "الكاف", "الطبل", "الروي"],
+        ans: 0,
+        exp: "تافلويت هي الشطر الواحد، وتتألف قطعة الكاف عادة من أربع تافلويات."
+      },
+      {
+        q: "ما المقصود بظاهرة «الابتداء بالساكن» في النطق الحساني؟",
+        opts: ["تسكين آخر البيت فقط", "بدء الكلمة بحرف ساكن مثل: لْحگ واگْليب", "حذف القافية الأخيرة", "تطويل حرف المد"],
+        ans: 1,
+        exp: "الابتداء بالساكن سمة صوتية أصيلة في الحسانية تؤثر مباشرة على عدّ المتحركات عند التقطيع العروضي."
+      }
+    ];
+
     let currentSlide = 0;
     let selectedAzawan = AZAWAN_MODES[2].key;
     let lastPayload = null;
     let cachedPoems = [];
     let cachedGlossary = [];
+    let cachedMessages = [];
+    let citeFormat = "APA";
+    let adminPin = sessionStorage.getItem("albidan_admin_pin") || "";
+    let editingPoemId = null;
+    let quizIdx = 0;
+    let quizScore = 0;
+    let quizAnswered = false;
+    let captchaA = 3, captchaB = 4;
 
     function escapeHtml(str) {
       return String(str ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
@@ -703,15 +931,29 @@
       const t = document.getElementById("toast");
       t.textContent = msg;
       t.classList.add("show");
-      setTimeout(() => t.classList.remove("show"), 3200);
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => t.classList.remove("show"), 3400);
     }
+
+    function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+    function toggleMobileMenu() { document.getElementById("mobileMenu").classList.toggle("open"); }
 
     function toggleTheme() {
       const root = document.documentElement;
       const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
       root.setAttribute("data-theme", next);
-      document.getElementById("themeBtn").textContent = next === "dark" ? "☀️ النهاري" : "🌙 الليلي";
+      document.getElementById("themeBtn").textContent = next === "dark" ? "☀️" : "🌙";
       localStorage.setItem("albidan_theme", next);
+    }
+
+    function shareWebsite() {
+      const url = window.location.href;
+      const text = "اكتشف «مختبر البيظان للذكاء الاصطناعي» — المرجع الرقمي للشعر الحساني وأزوان:";
+      if (navigator.share) {
+        navigator.share({ title: document.title, text, url }).catch(() => {});
+      } else {
+        copyText(`${text} ${url}`);
+      }
     }
 
     function renderSlide() {
@@ -738,8 +980,12 @@
     }
 
     function updateLiveCounter() {
-      const lines = document.getElementById("poemInput").value.split("\n").filter(l => l.trim()).length;
-      document.getElementById("liveCounter").textContent = `${lines} أشطر`;
+      const lines = document.getElementById("poemInput").value.split("\n").filter(l => l.trim());
+      let kind = "";
+      if (lines.length === 2) kind = " • تبراع";
+      else if (lines.length === 4) kind = " • كاف";
+      else if (lines.length >= 6) kind = " • طلعة";
+      document.getElementById("liveCounter").textContent = `${lines.length} أشطر${kind}`;
     }
 
     function playAzawanPreview(notes) {
@@ -753,8 +999,7 @@
           gain.gain.setValueAtTime(0.001, ctx.currentTime + idx * 0.28);
           gain.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime + idx * 0.28 + 0.04);
           gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.28 + 0.32);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
+          osc.connect(gain); gain.connect(ctx.destination);
           osc.start(ctx.currentTime + idx * 0.28);
           osc.stop(ctx.currentTime + idx * 0.28 + 0.35);
         });
@@ -762,8 +1007,7 @@
     }
 
     function renderAzawanSlider() {
-      const wrap = document.getElementById("azawanSlider");
-      wrap.innerHTML = AZAWAN_MODES.map((m, i) => `
+      document.getElementById("azawanSlider").innerHTML = AZAWAN_MODES.map((m, i) => `
         <div class="azawan-card ${m.key === selectedAzawan ? 'active' : ''}" onclick="selectAzawan(${i})">
           <div class="azawan-bpm">${m.bpm}</div>
           <h3>${m.title}</h3>
@@ -852,8 +1096,7 @@
         if (!res.ok) throw new Error(data.detail || "حدث خطأ في التحليل");
         lastPayload = { ...data, poem_text };
         renderResults(data);
-        if (data.warning) showToast(data.warning);
-        else showToast("اكتمل التحليل بنجاح!");
+        showToast(data.warning || "اكتمل التحليل بنجاح!");
       } catch (e) {
         showToast(e.message);
       } finally {
@@ -881,8 +1124,7 @@
               ${beats}
               <span class="pill-tag">${l.mutaharrikat_count} متحرك • ${escapeHtml(l.estimated_meter)} • روي: ${escapeHtml(l.rhyme_ending)}</span>
             </div>
-          </div>
-        `;
+          </div>`;
       }).join("");
 
       document.getElementById("resEn").textContent = a.english_translation || "";
@@ -900,12 +1142,31 @@
       updateCitation();
     }
 
+    function setCiteFormat(fmt) { citeFormat = fmt; updateCitation(); }
+
     function updateCitation() {
       const title = document.getElementById("saveTitle").value.trim() || "قصيدة حسانية موثقة";
       const poet = document.getElementById("savePoet").value.trim() || "تراث شفهي حساني";
       const year = new Date().getFullYear();
-      document.getElementById("citeBox").textContent =
-        `${poet}. (${year}). "${title}". ALBIDAN AI Lab — Hassaniya Digital Poetry Corpus. Retrieved from ${window.location.origin}`;
+      const url = window.location.origin;
+      let txt = "";
+      if (citeFormat === "APA") {
+        txt = `${poet}. (${year}). "${title}". ALBIDAN AI Lab — Hassaniya Digital Poetry Corpus. Retrieved from ${url}`;
+      } else if (citeFormat === "MLA") {
+        txt = `${poet}. "${title}." ALBIDAN AI Lab: Hassaniya Digital Poetry Corpus, ${year}, ${url}.`;
+      } else {
+        txt = `@misc{albidan_${year},\n  author = {${poet}},\n  title  = {${title}},\n  year   = {${year}},\n  howpublished = {ALBIDAN AI Lab — Hassaniya Digital Corpus},\n  url    = {${url}}\n}`;
+      }
+      document.getElementById("citeBox").textContent = txt;
+    }
+
+    function downloadCurrentJson() {
+      if (!lastPayload) return showToast("حلّل قصيدة أولاً.");
+      const blob = new Blob([JSON.stringify(lastPayload, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "albidan_poem_analysis.json";
+      a.click();
     }
 
     async function savePoemToArchive() {
@@ -931,11 +1192,260 @@
         showToast(`تم التوثيق بنجاح (المعرّف: ${data.id})!`);
         document.getElementById("saveTitle").value = "";
         await Promise.all([loadStats(), loadArchive(), loadGlossary()]);
-      } catch (e) {
-        showToast(e.message);
+      } catch (e) { showToast(e.message); }
+    }
+
+    /* ============ وضع المشرف (Admin Mode) ============ */
+    function updateAdminUI() {
+      const btn = document.getElementById("adminBtn");
+      const inboxBtn = document.getElementById("inboxBtn");
+      if (adminPin) {
+        btn.classList.add("admin-on");
+        btn.innerHTML = '🔓 <span class="hide-xs">خروج المشرف</span>';
+        inboxBtn.style.display = "inline-flex";
+      } else {
+        btn.classList.remove("admin-on");
+        btn.innerHTML = '🔐 <span class="hide-xs">المشرف</span>';
+        inboxBtn.style.display = "none";
+      }
+      renderArchiveCards();
+      renderGlossaryCards();
+    }
+
+    function handleAdminClick() {
+      if (adminPin) {
+        adminPin = "";
+        sessionStorage.removeItem("albidan_admin_pin");
+        updateAdminUI();
+        showToast("تم الخروج من وضع المشرف.");
+      } else {
+        document.getElementById("adminPinInput").value = "";
+        document.getElementById("adminModal").classList.add("open");
+        document.getElementById("adminPinInput").focus();
       }
     }
 
+    async function verifyAdminPin() {
+      const pin = document.getElementById("adminPinInput").value.trim();
+      if (!pin) return showToast("أدخل رمز المشرف.");
+      try {
+        const res = await fetch("/api/admin/verify", {
+          method: "POST",
+          headers: { "x-admin-pin": pin }
+        });
+        if (!res.ok) throw new Error("رمز المشرف غير صحيح.");
+        adminPin = pin;
+        sessionStorage.setItem("albidan_admin_pin", pin);
+        closeModal("adminModal");
+        updateAdminUI();
+        loadStats();
+        showToast("تم تفعيل وضع المشرف بنجاح!");
+      } catch (e) { showToast(e.message); }
+    }
+
+    function openEditPoem(idx) {
+      const rec = cachedPoems[idx];
+      if (!rec) return;
+      editingPoemId = rec.id;
+      document.getElementById("editTitle").value = rec.title || "";
+      document.getElementById("editPoet").value = rec.poet || "";
+      document.getElementById("editRegion").value = rec.region || "";
+      document.getElementById("editText").value = rec.poem_text || "";
+      document.getElementById("editModal").classList.add("open");
+    }
+
+    async function savePoemEdit() {
+      if (!editingPoemId || !adminPin) return;
+      try {
+        const res = await fetch(`/api/poems/${encodeURIComponent(editingPoemId)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
+          body: JSON.stringify({
+            title: document.getElementById("editTitle").value,
+            poet: document.getElementById("editPoet").value,
+            region: document.getElementById("editRegion").value,
+            poem_text: document.getElementById("editText").value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "فشل التعديل");
+        closeModal("editModal");
+        showToast("تم حفظ التعديلات بنجاح!");
+        await loadArchive();
+      } catch (e) { showToast(e.message); }
+    }
+
+    async function deleteArchivePoem(idx) {
+      const rec = cachedPoems[idx];
+      if (!rec || !adminPin) return;
+      if (!confirm(`هل تريد حذف القصيدة «${rec.title}» نهائياً؟`)) return;
+      try {
+        const res = await fetch(`/api/poems/${encodeURIComponent(rec.id)}`, {
+          method: "DELETE",
+          headers: { "x-admin-pin": adminPin }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "تعذر الحذف");
+        showToast("تم حذف القصيدة من الأرشيف.");
+        await Promise.all([loadStats(), loadArchive()]);
+      } catch (e) { showToast(e.message); }
+    }
+
+    async function deleteGlossaryTerm(idx) {
+      const g = cachedGlossary[idx];
+      if (!g || !adminPin) return;
+      if (!confirm(`حذف المفردة «${g.term}» من المعجم؟`)) return;
+      try {
+        const res = await fetch(`/api/glossary/${encodeURIComponent(g.term)}`, {
+          method: "DELETE",
+          headers: { "x-admin-pin": adminPin }
+        });
+        if (!res.ok) throw new Error("تعذر الحذف");
+        showToast("تم حذف المفردة من المعجم.");
+        await Promise.all([loadStats(), loadGlossary()]);
+      } catch (e) { showToast(e.message); }
+    }
+
+    async function openInboxModal() {
+      if (!adminPin) return;
+      document.getElementById("inboxModal").classList.add("open");
+      document.getElementById("inboxList").innerHTML = '<div style="text-align:center;color:var(--muted);padding:1rem">جاري تحميل الرسائل...</div>';
+      try {
+        const res = await fetch("/api/messages", { headers: { "x-admin-pin": adminPin } });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "تعذر جلب الرسائل");
+        cachedMessages = data.items || [];
+        renderInbox();
+      } catch (e) {
+        document.getElementById("inboxList").innerHTML = `<div style="color:#F87171">${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderInbox() {
+      const box = document.getElementById("inboxList");
+      if (!cachedMessages.length) {
+        box.innerHTML = '<div style="text-align:center;color:var(--muted);padding:1.5rem">لا توجد رسائل أو مساهمات جديدة حالياً.</div>';
+        return;
+      }
+      box.innerHTML = cachedMessages.map((m, i) => `
+        <div class="line-row">
+          <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+            <strong>${escapeHtml(m.name)}</strong>
+            <span class="pill-tag">${escapeHtml(m.category)}</span>
+          </div>
+          <div style="font-size:0.8rem;color:var(--muted);margin:3px 0">${escapeHtml(m.contact || "بدون وسيلة تواصل")} • ${escapeHtml(m.created_at)}</div>
+          <div style="white-space:pre-line;margin:6px 0">${escapeHtml(m.message)}</div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button class="btn btn-secondary btn-sm" onclick="useMessageInLab(${i})">🔬 فتح في المختبر</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteMessage(${i})">🗑️ حذف</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function useMessageInLab(idx) {
+      const m = cachedMessages[idx];
+      if (!m) return;
+      closeModal("inboxModal");
+      document.getElementById("poemInput").value = m.message;
+      updateLiveCounter();
+      document.getElementById("lab").scrollIntoView({ behavior: "smooth" });
+    }
+
+    async function deleteMessage(idx) {
+      const m = cachedMessages[idx];
+      if (!m || !adminPin) return;
+      const res = await fetch(`/api/messages/${encodeURIComponent(m.id)}`, {
+        method: "DELETE",
+        headers: { "x-admin-pin": adminPin }
+      });
+      if (res.ok) {
+        cachedMessages.splice(idx, 1);
+        renderInbox();
+        loadStats();
+        showToast("تم حذف الرسالة.");
+      }
+    }
+
+    /* ============ بطاقة القصيدة المصوّرة (PNG) ومشاركة واتساب ============ */
+    function generatePoemCardPNG(idx) {
+      const rec = cachedPoems[idx];
+      if (!rec) return;
+      const canvas = document.createElement("canvas");
+      canvas.width = 1080;
+      canvas.height = 1080;
+      const ctx = canvas.getContext("2d");
+
+      const grad = ctx.createLinearGradient(0, 0, 1080, 1080);
+      grad.addColorStop(0, "#14100C");
+      grad.addColorStop(0.55, "#1E1812");
+      grad.addColorStop(1, "#0D0B09");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1080, 1080);
+
+      // إطار ذهبي مزدوج
+      ctx.strokeStyle = "#D4AF37";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(42, 42, 996, 996);
+      ctx.strokeStyle = "rgba(212, 175, 55, 0.35)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(58, 58, 964, 964);
+
+      ctx.direction = "rtl";
+      ctx.textAlign = "center";
+
+      // الشعار العلوي
+      ctx.fillStyle = "#D4AF37";
+      ctx.font = "bold 30px Cairo, sans-serif";
+      ctx.fillText("🐪 مختبر البيظان للذكاء الاصطناعي • ALBIDAN AI LAB", 540, 128);
+
+      // العنوان
+      ctx.fillStyle = "#F5EFE6";
+      ctx.font = "900 44px Cairo, sans-serif";
+      ctx.fillText(rec.title || "قصيدة حسانية", 540, 215);
+
+      ctx.fillStyle = "#C86D3B";
+      ctx.font = "700 26px Cairo, sans-serif";
+      ctx.fillText(`${rec.poem_type || ""}  •  ${rec.dominant_meter || ""}`, 540, 268);
+
+      // فاصل ذهبي
+      ctx.fillStyle = "#D4AF37";
+      ctx.fillRect(390, 298, 300, 3);
+
+      // الأبيات
+      const lines = (rec.poem_text || "").split("\n").filter(l => l.trim()).slice(0, 8);
+      const fontSize = lines.length > 5 ? 42 : 52;
+      const lineStep = lines.length > 5 ? 74 : 92;
+      const startY = 540 - ((lines.length - 1) * lineStep) / 2 + 45;
+      ctx.fillStyle = "#FFFDF7";
+      ctx.font = `700 ${fontSize}px Amiri, serif`;
+      lines.forEach((line, i) => {
+        ctx.fillText(line.trim(), 540, startY + i * lineStep);
+      });
+
+      // التذييل
+      ctx.fillStyle = "#A99F91";
+      ctx.font = "700 26px Cairo, sans-serif";
+      ctx.fillText(`✍️ ${rec.poet || "تراث شفهي"}  |  📍 ${rec.region || "الصحراء المغربية"}`, 540, 935);
+      ctx.fillStyle = "#D4AF37";
+      ctx.font = "600 22px Cairo, sans-serif";
+      ctx.fillText(window.location.host, 540, 982);
+
+      const link = document.createElement("a");
+      link.download = `albidan_${rec.id || "poem"}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      showToast("تم تحميل بطاقة القصيدة المصوّرة بنجاح!");
+    }
+
+    function sharePoemWhatsApp(idx) {
+      const rec = cachedPoems[idx];
+      if (!rec) return;
+      const msg = `📜 *${rec.title}*\n\n${rec.poem_text}\n\n✍️ ${rec.poet} | 📍 ${rec.region}\n🐪 عبر مختبر البيظان: ${window.location.origin}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+    }
+
+    /* ============ تحميل البيانات ============ */
     async function loadStats() {
       try {
         const res = await fetch("/api/stats");
@@ -943,6 +1453,7 @@
         document.getElementById("statPoems").textContent = s.poems_count;
         document.getElementById("statLines").textContent = s.lines_count;
         document.getElementById("statTerms").textContent = s.terms_count;
+        document.getElementById("msgCountBadge").textContent = s.messages_count ?? 0;
         document.getElementById("serverBadge").innerHTML =
           `<span class="status-dot"></span> ${s.db_mode === "mongodb" ? "MongoDB سحابي" : "SQLite محلي"}`;
       } catch (e) {
@@ -956,6 +1467,10 @@
       const res = await fetch(`/api/poems?q=${q}&poem_type=${t}`);
       const data = await res.json();
       cachedPoems = data.items || [];
+      renderArchiveCards();
+    }
+
+    function renderArchiveCards() {
       const grid = document.getElementById("archiveGrid");
       if (!cachedPoems.length) {
         grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;color:var(--muted)">لا توجد قصائد مطابقة حالياً.</div>';
@@ -967,10 +1482,16 @@
             <strong>📜 ${escapeHtml(p.title)}</strong>
             <span class="pill-tag">${escapeHtml(p.poem_type)}</span>
           </div>
-          <div style="font-size:0.82rem;color:var(--muted)">✍️ ${escapeHtml(p.poet)} • 📍 ${escapeHtml(p.region)} • ⚖️ ${escapeHtml(p.dominant_meter)}</div>
+          <div style="font-size:0.81rem;color:var(--muted)">✍️ ${escapeHtml(p.poet)} • 📍 ${escapeHtml(p.region)} • ⚖️ ${escapeHtml(p.dominant_meter)}</div>
           <div class="archive-poem">${escapeHtml(p.poem_text)}</div>
-          <div style="display:flex;gap:8px;margin-top:auto">
-            <button class="btn btn-primary btn-sm" style="flex:1" onclick="openArchivePoem(${idx})">🔄 فتح في المختبر</button>
+          <div class="card-actions">
+            <button class="btn btn-primary btn-sm" style="flex:1" onclick="openArchivePoem(${idx})">🔄 فتح</button>
+            <button class="btn btn-secondary btn-sm" onclick="generatePoemCardPNG(${idx})" title="تحميل بطاقة صورة للنشر">🖼️ صورة</button>
+            <button class="btn btn-secondary btn-sm" onclick="sharePoemWhatsApp(${idx})" title="مشاركة عبر واتساب">📲</button>
+            ${adminPin ? `
+              <button class="btn btn-secondary btn-sm" onclick="openEditPoem(${idx})" title="تعديل">✏️</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteArchivePoem(${idx})" title="حذف">🗑️</button>
+            ` : ""}
           </div>
         </div>
       `).join("");
@@ -991,12 +1512,16 @@
       const res = await fetch(`/api/glossary?q=${q}`);
       const data = await res.json();
       cachedGlossary = data.items || [];
+      renderGlossaryCards();
+    }
+
+    function renderGlossaryCards() {
       const grid = document.getElementById("glossaryGrid");
       if (!cachedGlossary.length) {
         grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;color:var(--muted)">المعجم بانتظار أول قصيدة موثقة بالذكاء الاصطناعي.</div>';
         return;
       }
-      grid.innerHTML = cachedGlossary.map(g => `
+      grid.innerHTML = cachedGlossary.map((g, idx) => `
         <div class="flip-card" onclick="this.classList.toggle('flipped')">
           <div class="flip-inner">
             <div class="flip-face flip-front">
@@ -1004,15 +1529,69 @@
               <span style="font-size:0.78rem;color:var(--muted)">اضغط لمعرفة المعنى ↺</span>
             </div>
             <div class="flip-face flip-back">
-              <strong style="margin-bottom:6px">${escapeHtml(g.arabic_meaning)}</strong>
-              <div style="font-size:0.86rem;color:var(--gold-light)">${escapeHtml(g.english_meaning)}</div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:8px">المصدر: ${escapeHtml(g.source_poem_title || "المدونة")}</div>
+              <strong style="margin-bottom:5px">${escapeHtml(g.arabic_meaning)}</strong>
+              <div style="font-size:0.85rem;color:var(--gold-light)">${escapeHtml(g.english_meaning)}</div>
+              <div style="font-size:0.74rem;color:var(--muted);margin-top:6px">المصدر: ${escapeHtml(g.source_poem_title || "المدونة")}</div>
+              ${adminPin ? `<button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="event.stopPropagation(); deleteGlossaryTerm(${idx})">🗑️ حذف</button>` : ""}
             </div>
           </div>
         </div>
       `).join("");
     }
 
+    /* ============ الاختبار الثقافي ============ */
+    function renderQuiz() {
+      const box = document.getElementById("quizBox");
+      if (quizIdx >= QUIZ.length) {
+        document.getElementById("quizProgress").textContent = "اكتمل الاختبار!";
+        const level = quizScore >= 5 ? "🏆 خبير في التراث الحساني وأزوان" : quizScore >= 3 ? "✨ متذوق واعٍ للشعر الحساني" : "🌱 بداية جميلة في رحلة اكتشاف الحسانية";
+        box.innerHTML = `
+          <div style="text-align:center;padding:1.2rem">
+            <div style="font-size:2.4rem;font-weight:900;color:var(--gold-light)">${quizScore} / ${QUIZ.length}</div>
+            <h3 style="margin:0.5rem 0">${level}</h3>
+            <p style="color:var(--muted);margin-bottom:1.2rem">شارك نتيجتك وتحدَّ أصدقاءك في ثقافة البيظان!</p>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="restartQuiz()">🔄 إعادة الاختبار</button>
+              <button class="btn btn-secondary" onclick="copyText('حصلت على ${quizScore}/${QUIZ.length} في اختبار الشعر الحساني وأزوان على مختبر البيظان: ' + window.location.origin)">📋 نسخ النتيجة</button>
+            </div>
+          </div>`;
+        return;
+      }
+      const item = QUIZ[quizIdx];
+      document.getElementById("quizProgress").textContent = `السؤال ${quizIdx + 1} من ${QUIZ.length}`;
+      box.innerHTML = `
+        <h3 style="font-size:1.2rem;margin-bottom:0.6rem">${item.q}</h3>
+        <div class="quiz-options">
+          ${item.opts.map((opt, i) => `<button class="quiz-opt" id="qopt_${i}" onclick="answerQuiz(${i})">${opt}</button>`).join("")}
+        </div>
+        <div id="quizFeedback" style="display:none" class="line-row"></div>
+      `;
+    }
+
+    function answerQuiz(choice) {
+      if (quizAnswered) return;
+      quizAnswered = true;
+      const item = QUIZ[quizIdx];
+      document.querySelectorAll(".quiz-opt").forEach(b => b.disabled = true);
+      document.getElementById(`qopt_${item.ans}`).classList.add("correct");
+      if (choice === item.ans) {
+        quizScore++;
+      } else {
+        document.getElementById(`qopt_${choice}`).classList.add("wrong");
+      }
+      const fb = document.getElementById("quizFeedback");
+      fb.style.display = "block";
+      fb.innerHTML = `
+        <strong>${choice === item.ans ? "✅ إجابة صحيحة!" : "❌ إجابة غير دقيقة"}</strong>
+        <div style="color:var(--muted);margin:4px 0 10px">${item.exp}</div>
+        <button class="btn btn-primary btn-sm" onclick="nextQuiz()">${quizIdx + 1 < QUIZ.length ? "السؤال التالي ←" : "عرض النتيجة 🏆"}</button>
+      `;
+    }
+
+    function nextQuiz() { quizIdx++; quizAnswered = false; renderQuiz(); }
+    function restartQuiz() { quizIdx = 0; quizScore = 0; quizAnswered = false; renderQuiz(); }
+
+    /* ============ الأطلس والتواصل ============ */
     function renderAtlas(activeIdx = 0) {
       document.getElementById("atlasCities").innerHTML = ATLAS.map((a, i) =>
         `<button class="city-chip ${i === activeIdx ? 'active' : ''}" onclick="renderAtlas(${i})">📍 ${a.city}</button>`
@@ -1031,20 +1610,83 @@
       document.getElementById("archive").scrollIntoView({ behavior: "smooth" });
     }
 
+    function resetCaptcha() {
+      captchaA = Math.floor(Math.random() * 6) + 2;
+      captchaB = Math.floor(Math.random() * 6) + 1;
+      document.getElementById("captchaLabel").textContent = `للأمان، كم يساوي ${captchaA} + ${captchaB}؟`;
+      document.getElementById("cCaptcha").value = "";
+    }
+
+    async function submitContactForm(e) {
+      e.preventDefault();
+      if (parseInt(document.getElementById("cCaptcha").value, 10) !== captchaA + captchaB) {
+        return showToast("نتيجة سؤال الأمان غير صحيحة، حاول مجدداً.");
+      }
+      const btn = document.getElementById("cSubmitBtn");
+      btn.disabled = true; btn.textContent = "⏳ جاري الإرسال...";
+      try {
+        const res = await fetch("/api/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: document.getElementById("cName").value,
+            contact: document.getElementById("cContact").value,
+            category: document.getElementById("cCategory").value,
+            message: document.getElementById("cMessage").value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "تعذر الإرسال");
+        showToast(data.message);
+        document.getElementById("cName").value = "";
+        document.getElementById("cContact").value = "";
+        document.getElementById("cMessage").value = "";
+        resetCaptcha();
+        loadStats();
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = "📨 إرسال المساهمة";
+      }
+    }
+
+    /* ============ البحث الشامل Ctrl+K ============ */
     function openSearchModal() {
       document.getElementById("searchModal").classList.add("open");
       document.getElementById("globalSearchInput").focus();
       runGlobalSearch();
     }
-    function closeSearchModal() { document.getElementById("searchModal").classList.remove("open"); }
+
+    function selectSearchPoem(idx) {
+      const p = cachedPoems[idx];
+      if (!p) return;
+      closeModal("searchModal");
+      openArchivePoem(idx);
+    }
+
+    function selectSearchTerm(idx) {
+      const g = cachedGlossary[idx];
+      if (!g) return;
+      closeModal("searchModal");
+      document.getElementById("glossarySearch").value = g.term;
+      loadGlossary();
+      document.getElementById("glossary").scrollIntoView({ behavior: "smooth" });
+    }
 
     function runGlobalSearch() {
       const q = (document.getElementById("globalSearchInput").value || "").trim().toLowerCase();
-      const poems = cachedPoems.filter(p => !q || `${p.title} ${p.poem_text} ${p.poet} ${p.region}`.toLowerCase().includes(q)).slice(0, 5);
-      const terms = cachedGlossary.filter(g => !q || `${g.term} ${g.arabic_meaning} ${g.english_meaning}`.toLowerCase().includes(q)).slice(0, 5);
+      const poemHits = cachedPoems
+        .map((p, idx) => ({ p, idx }))
+        .filter(({ p }) => !q || `${p.title} ${p.poem_text} ${p.poet} ${p.region}`.toLowerCase().includes(q))
+        .slice(0, 5);
+      const termHits = cachedGlossary
+        .map((g, idx) => ({ g, idx }))
+        .filter(({ g }) => !q || `${g.term} ${g.arabic_meaning} ${g.english_meaning}`.toLowerCase().includes(q))
+        .slice(0, 5);
+
       const html = [
-        ...poems.map(p => `<div class="search-item" onclick="closeSearchModal();document.getElementById('archiveSearch').value='${escapeHtml(p.title)}';loadArchive();document.getElementById('archive').scrollIntoView({behavior:'smooth'})">📜 <strong>${escapeHtml(p.title)}</strong> — <span style="color:var(--muted)">${escapeHtml(p.poet)}</span></div>`),
-        ...terms.map(g => `<div class="search-item" onclick="closeSearchModal();document.getElementById('glossarySearch').value='${escapeHtml(g.term)}';loadGlossary();document.getElementById('glossary').scrollIntoView({behavior:'smooth'})">📖 <strong>${escapeHtml(g.term)}</strong> — ${escapeHtml(g.arabic_meaning)}</div>`)
+        ...poemHits.map(({ p, idx }) => `<div class="search-item" onclick="selectSearchPoem(${idx})">📜 <strong>${escapeHtml(p.title)}</strong> — <span style="color:var(--muted)">${escapeHtml(p.poet)}</span></div>`),
+        ...termHits.map(({ g, idx }) => `<div class="search-item" onclick="selectSearchTerm(${idx})">📖 <strong>${escapeHtml(g.term)}</strong> — ${escapeHtml(g.arabic_meaning)}</div>`)
       ].join("");
       document.getElementById("globalSearchResults").innerHTML = html || '<div style="color:var(--muted);text-align:center;padding:1rem">لا توجد نتائج مطابقة.</div>';
     }
@@ -1056,15 +1698,23 @@
     document.addEventListener("keydown", e => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault(); openSearchModal();
-      } else if (e.key === "Escape") closeSearchModal();
+      } else if (e.key === "Escape") {
+        ["searchModal", "adminModal", "editModal", "inboxModal"].forEach(closeModal);
+      }
+    });
+
+    window.addEventListener("scroll", () => {
+      document.getElementById("scrollTopBtn").classList.toggle("show", window.scrollY > 450);
     });
 
     (function init() {
-      const savedTheme = localStorage.getItem("albidan_theme");
-      if (savedTheme === "light") toggleTheme();
+      if (localStorage.getItem("albidan_theme") === "light") toggleTheme();
       renderSlide();
       renderAzawanSlider();
       renderAtlas(0);
+      renderQuiz();
+      resetCaptcha();
+      updateAdminUI();
       loadStats();
       loadArchive();
       loadGlossary();
