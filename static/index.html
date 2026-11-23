@@ -349,6 +349,59 @@
     .active-filter-bar { display: none; align-items: center; gap: 8px; margin-bottom: 0.9rem; flex-wrap: wrap; }
     .active-filter-bar.show { display: flex; }
 
+    /* شريط إدارة الحذف الجماعي للمشرف فقط */
+    .admin-bulk-bar {
+      display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+      background: linear-gradient(135deg, rgba(216, 178, 84, 0.08), rgba(239, 68, 68, 0.06));
+      border: 1px solid var(--border-strong); border-radius: 13px;
+      padding: 0.75rem 1rem; margin-bottom: 1rem;
+    }
+    .admin-bulk-bar.show { display: flex; animation: fadeIn 0.2s ease; }
+    .admin-bulk-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .archive-card.selected-card {
+      border-color: var(--danger); border-right-color: var(--danger);
+      background: rgba(239, 68, 68, 0.06);
+    }
+    .poem-select-label {
+      display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+      user-select: none; flex-shrink: 0;
+    }
+    .poem-select-cb {
+      width: 18px !important; height: 18px; accent-color: var(--danger);
+      cursor: pointer; border-radius: 5px;
+    }
+    .danger-zone-box {
+      background: rgba(239, 68, 68, 0.07); border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 12px; padding: 0.95rem 1rem; margin-bottom: 0.9rem;
+    }
+    .wipe-option {
+      display: flex; align-items: flex-start; gap: 9px; padding: 0.7rem 0.85rem;
+      border-radius: 10px; border: 1px solid var(--border); background: var(--bg-soft);
+      cursor: pointer; margin-bottom: 0.6rem; transition: border-color 0.2s;
+    }
+    .wipe-option:hover { border-color: var(--danger); }
+    .wipe-option input[type="radio"] { width: auto; margin-top: 4px; accent-color: var(--danger); }
+
+    /* قسم المؤسس والتواصل الدائم أسفل كل الصفحات */
+    .persistent-about {
+      margin-top: 3rem; padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+    .persistent-about-head {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+      margin-bottom: 1.1rem;
+    }
+    .persistent-about-head h2 {
+      font-size: 1.18rem; font-weight: 700; display: flex; align-items: center; gap: 8px;
+    }
+    .persistent-about-head h2 svg.lucide { color: var(--gold-light); width: 19px; height: 19px; }
+    .persistent-about.highlight-pulse { animation: aboutPulse 0.9s var(--ease); }
+    @keyframes aboutPulse {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.008); }
+      100% { transform: scale(1); }
+    }
+
     /* المرجع العروضي والمؤسس */
     .ref-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 1.1rem; }
     .ref-card { background: var(--card); border: 1px solid var(--border); border-radius: 13px; padding: 1.1rem; }
@@ -499,7 +552,7 @@
         <button class="nav-tab" data-view="glossary" onclick="switchView('glossary')"><i data-lucide="book-open"></i> المعجم</button>
         <button class="nav-tab" data-view="lab" onclick="switchView('lab')"><i data-lucide="flask-conical"></i> المختبر والرقمنة</button>
         <button class="nav-tab" data-view="methodology" onclick="switchView('methodology')"><i data-lucide="ruler"></i> المرجع العروضي</button>
-        <button class="nav-tab" data-view="about" onclick="switchView('about')"><i data-lucide="user-round"></i> المؤسس</button>
+        <button class="nav-tab" data-view="about" onclick="scrollToFounder()"><i data-lucide="user-round"></i> المؤسس والتواصل</button>
       </nav>
 
       <div class="nav-actions">
@@ -520,7 +573,7 @@
       <button data-view="glossary" onclick="switchView('glossary');toggleMobileMenu()"><i data-lucide="book-open"></i> المعجم الحساني المتنامي</button>
       <button data-view="lab" onclick="switchView('lab');toggleMobileMenu()"><i data-lucide="flask-conical"></i> المختبر والرقمنة والتحليل</button>
       <button data-view="methodology" onclick="switchView('methodology');toggleMobileMenu()"><i data-lucide="ruler"></i> المرجع العروضي والمنهجي</button>
-      <button data-view="about" onclick="switchView('about');toggleMobileMenu()"><i data-lucide="user-round"></i> المؤسس والتواصل</button>
+      <button data-view="about" onclick="toggleMobileMenu();scrollToFounder()"><i data-lucide="user-round"></i> المؤسس والتواصل</button>
     </div>
   </header>
 
@@ -822,6 +875,19 @@
         <button class="btn btn-secondary btn-sm" onclick="clearMeterFilter()">إزالة التصفية ×</button>
       </div>
 
+      <div class="admin-bulk-bar" id="archiveAdminBar">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="pill-tag"><i data-lucide="shield-check"></i> إدارة المشرف</span>
+          <span style="font-size:0.84rem;color:var(--muted)">المحدد للحذف: <strong id="selectedPoemsCount" style="color:var(--gold-light)">0</strong></span>
+        </div>
+        <div class="admin-bulk-actions">
+          <button class="btn btn-secondary btn-sm" onclick="selectAllVisiblePoems()"><i data-lucide="check-square"></i> تحديد الكل</button>
+          <button class="btn btn-secondary btn-sm" onclick="clearPoemSelection()"><i data-lucide="square"></i> إلغاء التحديد</button>
+          <button class="btn btn-danger btn-sm" id="bulkDeleteBtn" onclick="deleteSelectedPoems()" disabled><i data-lucide="trash-2"></i> حذف المحدد (<span id="bulkDeleteCount">0</span>)</button>
+          <button class="btn btn-danger btn-sm" onclick="openDangerWipeModal()"><i data-lucide="alert-triangle"></i> حذف جميع الملفات والأشعار</button>
+        </div>
+      </div>
+
       <div class="archive-grid" id="archiveGrid"></div>
     </section>
 
@@ -979,8 +1045,12 @@
       </div>
     </section>
 
-    <!-- 7. قسم المؤسس والتواصل -->
-    <section id="view-about" class="view-section">
+    <!-- 7. قسم المؤسس والتواصل (يظهر دائماً أسفل الصفحة) -->
+    <section id="founder-contact-section" class="persistent-about">
+      <div class="persistent-about-head">
+        <h2><i data-lucide="user-round"></i> المؤسس والتواصل والمساهمات البحثية</h2>
+        <span class="pill-tag">ALBIDAN • مفتوح لمساهمات الباحثين والشعراء</span>
+      </div>
       <div class="about-grid">
         <div class="founder-card">
           <div class="founder-avatar">
@@ -1202,7 +1272,57 @@
         <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">يحلّل 10 قصائد غير محللة بـ Gemini AI لاستخراج بحورها (لَبْتُوتَة)، الظّهر، والمفردات الحسانية وإضافتها للمعجم تلقائياً.</p>
         <button class="btn btn-secondary btn-sm" id="enrichGlossaryBtn" onclick="runAdminEnrichGlossary()"><i data-lucide="book-plus"></i> تحليل وإثراء 10 قصائد الآن</button>
       </div>
+      <div class="danger-zone-box" style="margin-top:0.8rem;margin-bottom:0">
+        <strong style="font-size:0.9rem;color:#F87171;display:block;margin-bottom:4px">3. الحذف الشامل وتصفير الأرشيف (منطقة خطرة)</strong>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">حذف جميع القصائد والملفات المؤرشفة دفعة واحدة، أو تصفير الموقع بالكامل مع المعجم وذاكرة الباحث.</p>
+        <button class="btn btn-danger btn-sm" onclick="closeModal('adminToolsModal');openDangerWipeModal()"><i data-lucide="trash-2"></i> فتح نافذة الحذف الشامل</button>
+      </div>
       <div id="adminToolsStatus" style="margin-top:0.8rem;font-size:0.83rem;color:var(--gold-light);display:none"></div>
+    </div>
+  </div>
+
+  <!-- نافذة الحذف الشامل الآمن لجميع الملفات والأشعار -->
+  <div class="modal-backdrop" id="dangerWipeModal" onclick="if(event.target===this) closeModal('dangerWipeModal')">
+    <div class="modal-box" style="max-width:500px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.85rem">
+        <strong style="color:#F87171;display:flex;align-items:center;gap:7px"><i data-lucide="alert-triangle"></i> حذف جميع الملفات والأشعار دفعة واحدة</strong>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('dangerWipeModal')">إغلاق</button>
+      </div>
+      <div class="danger-zone-box">
+        <p style="font-size:0.84rem;color:var(--text);line-height:1.7">
+          <strong>تنبيه مهم:</strong> هذا الإجراء نهائي ولا يمكن التراجع عنه بعد التنفيذ. يُنصح بتنزيل نسخة احتياطية من المدونة (Word أو JSONL) قبل الحذف.
+        </p>
+      </div>
+
+      <label class="wipe-option">
+        <input type="radio" name="wipeScope" value="poems_only" checked />
+        <div>
+          <strong style="font-size:0.88rem;display:block">حذف جميع القصائد والملفات فقط</strong>
+          <span style="font-size:0.78rem;color:var(--muted)">يمسح كل القصائد المؤرشفة ومقاطعها في الباحث الذكي، مع الإبقاء على مفردات المعجم الحساني.</span>
+        </div>
+      </label>
+
+      <label class="wipe-option">
+        <input type="radio" name="wipeScope" value="full_reset" />
+        <div>
+          <strong style="font-size:0.88rem;color:#F87171;display:block">تصفير الموقع بالكامل (القصائد + المعجم + ذاكرة الباحث)</strong>
+          <span style="font-size:0.78rem;color:var(--muted)">يمسح جميع القصائد وجميع مفردات المعجم وكل مقاطع البحث الهجين دفعة واحدة.</span>
+        </div>
+      </label>
+
+      <div style="margin-top:0.85rem">
+        <label for="wipeConfirmInput" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:5px">
+          للحماية من الحذف بالخطأ، اكتب كلمة <strong style="color:#F87171">تأكيد</strong> في الخانة أدناه:
+        </label>
+        <input type="text" id="wipeConfirmInput" placeholder="اكتب كلمة: تأكيد" oninput="updateWipeConfirmState()" autocomplete="off" />
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:0.95rem">
+        <button class="btn btn-secondary" style="flex:1" onclick="closeModal('dangerWipeModal')">إلغاء</button>
+        <button class="btn btn-danger" style="flex:1.4" id="executeWipeBtn" onclick="executeDangerWipe()" disabled>
+          <i data-lucide="trash-2"></i> تنفيذ الحذف النهائي
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1240,6 +1360,7 @@
     let allPoems = [], cachedPoems = [], cachedGlossary = [], cachedMessages = [], batchItems = [];
     let citeFormat = "APA", adminPin = sessionStorage.getItem("albidan_admin_pin") || "", editingPoemId = null, captchaA = 3, captchaB = 4;
     let activeMeterFilter = "", readerFontRem = 1.55;
+    const selectedPoemIds = new Set();
 
     const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
     const normSearch = s => String(s ?? "").replace(/[\u0617-\u061A\u064B-\u0652\u0670\u0640]/g, "").replace(/[أإآ]/g, "ا").replace(/[ݣڭڨ]/g, "گ").toLowerCase();
@@ -1253,7 +1374,17 @@
     const closeModal = id => document.getElementById(id).classList.remove("open");
     const toggleMobileMenu = () => document.getElementById("mobileMenu").classList.toggle("open");
 
+    function scrollToFounder() {
+      const el = document.getElementById("founder-contact-section");
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.remove("highlight-pulse");
+      void el.offsetWidth;
+      el.classList.add("highlight-pulse");
+    }
+
     function switchView(v) {
+      if (v === "about") return scrollToFounder();
       document.querySelectorAll(".view-section").forEach(s => s.classList.remove("active"));
       document.querySelectorAll(".nav-tab, .mobile-menu button").forEach(b => b.classList.toggle("active", b.dataset.view === v));
       const target = document.getElementById(`view-${v}`);
@@ -1875,15 +2006,126 @@
     /* إدارة المشرف */
     function updateAdminUI() {
       const btn = document.getElementById("adminBtn"), inboxBtn = document.getElementById("inboxBtn"), toolsBtn = document.getElementById("adminToolsBtn");
+      const bulkBar = document.getElementById("archiveAdminBar");
       document.getElementById("glossAdminCol").style.display = adminPin ? "table-cell" : "none";
       if (adminPin) {
         btn.classList.add("admin-on"); btn.innerHTML = '<i data-lucide="unlock"></i> <span class="hide-xs">خروج</span>';
         inboxBtn.style.display = "inline-flex"; toolsBtn.style.display = "inline-flex";
+        if (bulkBar) bulkBar.classList.add("show");
       } else {
         btn.classList.remove("admin-on"); btn.innerHTML = '<i data-lucide="lock"></i> <span class="hide-xs">المشرف</span>';
         inboxBtn.style.display = "none"; toolsBtn.style.display = "none";
+        selectedPoemIds.clear();
+        if (bulkBar) bulkBar.classList.remove("show");
       }
+      updateSelectionCounters();
       renderArchiveCards(); renderGlossaryTable(); refreshIcons();
+    }
+
+    function getVisibleArchivePoems() {
+      return cachedPoems.filter(p => matchesMeterKey(p.dominant_meter, activeMeterFilter));
+    }
+
+    function updateSelectionCounters() {
+      const validIds = new Set(allPoems.map(p => p.id));
+      for (const id of [...selectedPoemIds]) {
+        if (validIds.size && !validIds.has(id)) selectedPoemIds.delete(id);
+      }
+      const n = selectedPoemIds.size;
+      const c1 = document.getElementById("selectedPoemsCount");
+      const c2 = document.getElementById("bulkDeleteCount");
+      const delBtn = document.getElementById("bulkDeleteBtn");
+      if (c1) c1.textContent = n;
+      if (c2) c2.textContent = n;
+      if (delBtn) delBtn.disabled = n === 0;
+    }
+
+    function togglePoemSelect(id, checked) {
+      if (checked) selectedPoemIds.add(id);
+      else selectedPoemIds.delete(id);
+      const card = document.querySelector(`.archive-card[data-poem-id="${CSS.escape(id)}"]`);
+      if (card) card.classList.toggle("selected-card", checked);
+      updateSelectionCounters();
+    }
+
+    function selectAllVisiblePoems() {
+      getVisibleArchivePoems().forEach(p => selectedPoemIds.add(p.id));
+      updateSelectionCounters();
+      renderArchiveCards();
+    }
+
+    function clearPoemSelection() {
+      selectedPoemIds.clear();
+      updateSelectionCounters();
+      renderArchiveCards();
+    }
+
+    async function deleteSelectedPoems() {
+      if (!adminPin) return showToast("يرجى الدخول بوضع المشرف أولاً.");
+      const ids = [...selectedPoemIds];
+      if (!ids.length) return showToast("حدد قصيدة واحدة على الأقل.");
+      if (!confirm(`هل أنت متأكد من حذف ${ids.length} قصيدة محددة نهائياً من الموقع؟`)) return;
+      const btn = document.getElementById("bulkDeleteBtn");
+      btn.disabled = true;
+      try {
+        const res = await safeFetchJson("/api/poems/bulk-delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
+          body: JSON.stringify({ ids })
+        });
+        selectedPoemIds.clear();
+        showToast(res.message || `تم حذف ${ids.length} قصيدة بنجاح.`);
+        await Promise.all([loadStats(), loadAllPoems(), loadArchive(), loadRagHealth()]);
+        updateSelectionCounters();
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        updateSelectionCounters();
+      }
+    }
+
+    function openDangerWipeModal() {
+      if (!adminPin) return showToast("هذه الميزة مخصصة للمشرف فقط.");
+      document.getElementById("wipeConfirmInput").value = "";
+      document.getElementById("executeWipeBtn").disabled = true;
+      const radioPoems = document.querySelector('input[name="wipeScope"][value="poems_only"]');
+      if (radioPoems) radioPoems.checked = true;
+      document.getElementById("dangerWipeModal").classList.add("open");
+      refreshIcons();
+    }
+
+    function updateWipeConfirmState() {
+      const val = (document.getElementById("wipeConfirmInput").value || "").trim();
+      document.getElementById("executeWipeBtn").disabled = (val !== "تأكيد");
+    }
+
+    async function executeDangerWipe() {
+      if (!adminPin) return;
+      const val = (document.getElementById("wipeConfirmInput").value || "").trim();
+      if (val !== "تأكيد") return showToast("اكتب كلمة «تأكيد» أولاً.");
+      const scope = document.querySelector('input[name="wipeScope"]:checked')?.value || "poems_only";
+      const includeGlossary = scope === "full_reset";
+      const btn = document.getElementById("executeWipeBtn");
+      btn.disabled = true;
+      btn.textContent = "جاري الحذف الشامل...";
+      try {
+        const res = await safeFetchJson("/api/poems/delete-all", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
+          body: JSON.stringify({ include_glossary: includeGlossary, include_rag: true })
+        });
+        selectedPoemIds.clear();
+        closeModal("dangerWipeModal");
+        showToast(res.message || "تم الحذف الشامل بنجاح.");
+        await Promise.all([loadStats(), loadAllPoems(), loadArchive(), loadGlossary(), loadRagHealth()]);
+        updateSelectionCounters();
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.innerHTML = '<i data-lucide="trash-2"></i> تنفيذ الحذف النهائي';
+        updateWipeConfirmState();
+        refreshIcons();
+      }
     }
     function openAdminToolsModal() {
       if (!adminPin) return;
@@ -1945,7 +2187,7 @@
     }
     async function deleteArchivePoemById(id) {
       const rec = findPoemById(id); if (!rec || !adminPin || !confirm(`حذف القصيدة «${rec.title}» نهائياً؟`)) return;
-      try { await safeFetchJson(`/api/poems/${encodeURIComponent(rec.id)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } }); showToast("تم الحذف."); await Promise.all([loadStats(), loadAllPoems(), loadArchive()]); } catch (e) { showToast(e.message); }
+      try { await safeFetchJson(`/api/poems/${encodeURIComponent(rec.id)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } }); selectedPoemIds.delete(rec.id); showToast("تم الحذف."); await Promise.all([loadStats(), loadAllPoems(), loadArchive()]); } catch (e) { showToast(e.message); }
     }
     async function deleteGlossaryTerm(idx) {
       const g = cachedGlossary[idx]; if (!g || !adminPin || !confirm(`حذف المفردة «${g.term}»؟`)) return;
@@ -1993,7 +2235,8 @@
     }
     function renderArchiveCards() {
       const grid = document.getElementById("archiveGrid");
-      const list = cachedPoems.filter(p => matchesMeterKey(p.dominant_meter, activeMeterFilter));
+      const list = getVisibleArchivePoems();
+      updateSelectionCounters();
 
       if (!list.length) {
         grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;color:var(--muted);padding:2rem">لم يُعثر على هذا الأثر في الديوان بعد؛ جرّب البحث بكلمة أخرى أو أزل التصفية.</div>';
@@ -2001,10 +2244,14 @@
       }
       grid.innerHTML = list.map(p => {
         const pid = escapeHtml(p.id);
+        const isSel = adminPin && selectedPoemIds.has(p.id);
         return `
-        <div class="archive-card">
-          <div style="display:flex;justify-content:space-between;gap:6px;align-items:center">
-            <strong style="font-size:0.96rem;cursor:pointer" onclick="openZenReaderById('${pid}')">${escapeHtml(p.title)}</strong>
+        <div class="archive-card ${isSel ? "selected-card" : ""}" data-poem-id="${pid}">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0">
+              ${adminPin ? `<label class="poem-select-label" title="تحديد للحذف الجماعي" onclick="event.stopPropagation()"><input type="checkbox" class="poem-select-cb" ${isSel ? "checked" : ""} onchange="togglePoemSelect('${pid}', this.checked)" /></label>` : ""}
+              <strong style="font-size:0.96rem;cursor:pointer" onclick="openZenReaderById('${pid}')">${escapeHtml(p.title)}</strong>
+            </div>
             <span class="pill-tag">${escapeHtml(p.poem_type)}</span>
           </div>
           <div style="font-size:0.78rem;color:var(--muted)">${escapeHtml(p.poet)} • ${escapeHtml(p.region)} • ${escapeHtml(p.dominant_meter)}</div>
@@ -2081,7 +2328,7 @@
 
     document.addEventListener("keydown", e => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openSearchModal(); }
-      else if (e.key === "Escape") ["searchModal", "adminModal", "editModal", "inboxModal", "batchModal", "readerModal", "adminToolsModal"].forEach(closeModal);
+      else if (e.key === "Escape") ["searchModal", "adminModal", "editModal", "inboxModal", "batchModal", "readerModal", "adminToolsModal", "dangerWipeModal"].forEach(closeModal);
     });
 
     window.addEventListener("DOMContentLoaded", () => {
