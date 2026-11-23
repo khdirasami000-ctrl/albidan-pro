@@ -310,7 +310,7 @@
     .pill-success { background: rgba(34, 197, 94, 0.14); color: #4ADE80; border-color: rgba(34, 197, 94, 0.38); }
     [data-theme="light"] .pill-success { color: #15803D; background: rgba(21, 128, 61, 0.10); }
 
-    .meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 0.85rem; }
+    .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 0.85rem; }
     .meta-box { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px; padding: 0.65rem; text-align: center; }
     .meta-box small { display: block; font-size: 0.72rem; color: var(--muted); }
     .meta-box strong { font-size: 0.88rem; color: var(--gold-light); }
@@ -469,7 +469,7 @@
       .reader-poem-body { font-size: 1.32rem; line-height: 2.15; padding: 1.1rem 0.7rem; }
     }
     @media (max-width: 680px) {
-      .ingest-bar { grid-template-columns: 1fr 1fr; }
+      .ingest-bar, .meta-grid { grid-template-columns: 1fr 1fr; }
       .batch-row-grid, .rag-filter-grid { grid-template-columns: 1fr; }
       .founder-card { flex-direction: column; text-align: center; }
       .social-row { justify-content: center; }
@@ -506,6 +506,7 @@
         <button class="icon-btn" onclick="openSearchModal()" title="بحث شامل (Ctrl+K)"><i data-lucide="search"></i></button>
         <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل المظهر"><i data-lucide="sun"></i></button>
         <button class="icon-btn" id="adminBtn" onclick="handleAdminClick()"><i data-lucide="lock"></i> <span class="hide-xs">المشرف</span></button>
+        <button class="icon-btn" id="adminToolsBtn" style="display:none" onclick="openAdminToolsModal()" title="أدوات صيانة الأرشيف والمعجم"><i data-lucide="wrench"></i> <span class="hide-xs">صيانة</span></button>
         <button class="icon-btn" id="inboxBtn" style="display:none" onclick="openInboxModal()"><i data-lucide="mail"></i> (<span id="msgCountBadge">0</span>)</button>
         <span class="icon-btn hide-xs" id="serverBadge"><span class="status-dot"></span> جاري الاتصال...</span>
         <button class="icon-btn menu-toggle" onclick="toggleMobileMenu()" aria-label="القائمة"><i data-lucide="menu"></i></button>
@@ -528,9 +529,9 @@
     <!-- 1. قسم استكشف الديوان (الواجهة الرئيسية التفاعلية) -->
     <section id="view-discover" class="view-section active">
       <div class="hero-editorial">
-        <span class="hero-badge"><i data-lucide="book-marked"></i> المرجع العلمي الرقمي للشعر الشعبي الحساني</span>
+        <span class="hero-badge"><i data-lucide="book-marked"></i> المرجع العلمي الرقمي لشعر «لغن» الحساني</span>
         <h1>غُص في ديوان الصحراء ومعجمها الحيّ</h1>
-        <p class="hero-desc">تصفّح القصائد الحسانية الموثّقة بوضع القراءة والتأمل، اكتشف معاني المفردات داخل الأبيات بلمسة واحدة، وحلّل البحور والتافلويات بأدوات أكاديمية مفتوحة.</p>
+        <p class="hero-desc">تصفّح قصائد «لغن» الموثّقة بوضع القراءة والتأمل، اكتشف معاني المفردات داخل «التيفلواتن» بلمسة واحدة، وحلّل بحور «لَبْتُوتَة» والظّهر الموسيقي بأدوات أكاديمية مفتوحة.</p>
 
         <div class="hero-search-bar">
           <input type="text" id="heroQuickSearch" placeholder="ابحث عن شاعر، بيت حساني، بحر، أو اطرح سؤالاً بحثياً..." onkeydown="if(event.key==='Enter') runHeroSearch()" />
@@ -540,7 +541,7 @@
 
         <div class="hero-stats">
           <div class="hero-stat-item"><strong id="statPoems">—</strong> <span>قصيدة موثّقة</span></div>
-          <div class="hero-stat-item"><strong id="statLines">—</strong> <span>تافلويت (شطر)</span></div>
+          <div class="hero-stat-item"><strong id="statLines">—</strong> <span>تافلويت (ج. تيفلواتن)</span></div>
           <div class="hero-stat-item"><strong id="statTerms">—</strong> <span>مفردة في المعجم</span></div>
         </div>
       </div>
@@ -559,10 +560,14 @@
         <div class="skeleton-box" style="flex:0 0 360px"></div>
       </div>
 
-      <!-- سلايدر بحور الشعر الحساني -->
+      <!-- سلايدر بحور «لغن» (لَبْتُوتَة) -->
       <div class="section-bar">
-        <h3><i data-lucide="waves"></i> تصفّح حسب البحور (البتوت)</h3>
-        <button class="btn btn-secondary btn-sm" onclick="switchView('methodology')">دليل العروض الكامل</button>
+        <h3><i data-lucide="waves"></i> تصفّح حسب بحور «لغن» (لَبْتُوتَة)</h3>
+        <div class="slider-controls">
+          <button class="icon-btn" onclick="scrollSlider('metersSlider', 300)" aria-label="السابق"><i data-lucide="chevron-right"></i></button>
+          <button class="icon-btn" onclick="scrollSlider('metersSlider', -300)" aria-label="التالي"><i data-lucide="chevron-left"></i></button>
+          <button class="btn btn-secondary btn-sm" onclick="switchView('methodology')">دليل لَبْتُوتَة الكامل</button>
+        </div>
       </div>
       <div class="snap-slider" id="metersSlider"></div>
 
@@ -620,12 +625,13 @@
 
           <div class="toolbar">
             <button class="btn btn-secondary btn-sm" onclick="fillSample('gaf')">نموذج گاف</button>
+            <button class="btn btn-secondary btn-sm" onclick="fillSample('talaa')">نموذج طلعة</button>
             <button class="btn btn-secondary btn-sm" onclick="fillSample('tebraa')">نموذج تبراع</button>
             <button class="btn btn-secondary btn-sm" onclick="document.getElementById('poemInput').value='';updateLiveCounter()">مسح</button>
-            <span style="margin-right:auto;font-size:0.78rem;color:var(--gold-light);font-weight:700" id="liveCounter">0 أشطر</span>
+            <span style="margin-right:auto;font-size:0.78rem;color:var(--gold-light);font-weight:700" id="liveCounter">0 تيفلواتن</span>
           </div>
 
-          <textarea id="poemInput" class="poem-editor" oninput="updateLiveCounter()" placeholder="أدخل الأبيات الحسانية هنا (ضع كل تافلويت في سطر مستقل)..."></textarea>
+          <textarea id="poemInput" class="poem-editor" oninput="updateLiveCounter()" placeholder="أدخل أبيات «لغن» الحسانية هنا (ضع كل تافلويت في سطر مستقل)..."></textarea>
           <button class="btn btn-primary" style="width:100%;margin-top:0.85rem" id="analyzeBtn" onclick="runAnalysis()">
             <i data-lucide="sparkles"></i> بدء التحليل العروضي واللساني
           </button>
@@ -645,9 +651,10 @@
           <div id="resultsContent" style="display:none">
             <div id="lab-tab-prosody" class="tab-panel active">
               <div class="meta-grid">
-                <div class="meta-box"><small>الجنس الشعري</small><strong id="resType">—</strong></div>
-                <div class="meta-box"><small>البحر السائد</small><strong id="resMeter">—</strong></div>
-                <div class="meta-box"><small>القافية / الروي</small><strong id="resRhyme">—</strong></div>
+                <div class="meta-box"><small>وحدة / جنس «لغن»</small><strong id="resType">—</strong></div>
+                <div class="meta-box"><small>البَتْ (البحر)</small><strong id="resMeter">—</strong></div>
+                <div class="meta-box"><small>الروي / القافية</small><strong id="resRhyme">—</strong></div>
+                <div class="meta-box"><small>الظّهر (المقام)</small><strong id="resZahr">—</strong></div>
               </div>
               <div class="line-row" style="border-right:3px solid var(--gold)">
                 <div style="font-size:0.76rem;color:var(--gold-light);font-weight:700">السياق الثقافي والغرض</div>
@@ -739,11 +746,11 @@
 
         <div class="rag-filter-grid">
           <input type="text" id="ragPoetFilter" list="poetsDatalist" placeholder="فلترة بالشاعر (اختياري)" />
-          <input type="text" id="ragMeterFilter" list="metersDatalist" placeholder="فلترة بالبحر / البتّ (اختياري)" />
+          <input type="text" id="ragMeterFilter" list="metersDatalist" placeholder="فلترة بالبَتْ / البحر (اختياري)" />
           <select id="ragGenreFilter">
             <option value="">كل الأجناس (قصائد + معجم)</option>
             <option value="معجم حساني">معجم حساني</option>
-            <option value="كاف (Gaf)">كاف (Gaf)</option>
+            <option value="گاف (Gaf)">الكاف / الگاف (Gaf)</option>
             <option value="تبراع (Tebraa)">تبراع (Tebraa)</option>
             <option value="طلعة (Tal'aa)">طلعة (Tal'aa)</option>
           </select>
@@ -848,69 +855,127 @@
     <section id="view-methodology" class="view-section">
       <div class="page-head">
         <div>
-          <h2><i data-lucide="ruler"></i> المرجع العروضي والمنهجي للشعر الحساني</h2>
-          <p>دليل معياري يضبط قواعد التقطيع الصوتي، البحور الرئيسية، وأصول التدوين العلمي المعتمدة في المختبر</p>
+          <h2><i data-lucide="ruler"></i> المرجع العروضي والمنهجي لشعر «لغن» الحساني</h2>
+          <p>دليل معياري يضبط بحور «لَبْتُوتَة» (مفردها «بَتْ»)، عدّ المتحركات في «التافلويت»، وحدات «لغن»، والظّهر الموسيقي</p>
         </div>
         <button class="btn btn-secondary btn-sm" onclick="exportMethodologyPDF()"><i data-lucide="printer"></i> طباعة الدليل (PDF)</button>
       </div>
-      <div class="table-wrap" style="margin-bottom:1.15rem">
+
+      <div class="ref-grid" style="margin-bottom:1.25rem">
+        <div class="ref-card">
+          <h3>1. أساس الوزن ووحدات «لغن»</h3>
+          <ul>
+            <li><strong>المتحرك:</strong> الحرف المتحرك يُعدّ واحداً، وإذا تبعه ساكن يُضمّ إليه في التقطيع الإيقاعي، وتُهمل السواكن في العدّ.</li>
+            <li><strong>التافلويت (ج. تيفلواتن):</strong> الشطر أو الوحدة الكلامية التي يُقاس عليها الوزن في «لغن».</li>
+            <li><strong>الطلعة:</strong> وحدة شائعة تتكوّن من ثلاث «تيفلواتن» برويّ واحد.</li>
+            <li><strong>الكاف (الگاف):</strong> وحدة تتكوّن غالباً من أربع أو ست أو ثماني «تيفلواتن».</li>
+            <li><strong>التبراع:</strong> فن نسائي راقٍ يقوم غالباً على تافلويتين متفقتي القافية والوزن.</li>
+            <li><strong>الظّهر:</strong> المقام أو النغم الموسيقي الذي يرافق أداء البحر ويمنحه لحنه الخاص.</li>
+          </ul>
+        </div>
+        <div class="ref-card">
+          <h3>2. بحور «لَبْتُوتَة» الأخرى المتداولة</h3>
+          <p style="margin-bottom:0.5rem">إلى جانب البحور الرئيسية المفصّلة في الجدول أدناه، يزخر «لغن» الحساني ببحور وأوزان أخرى معروفة، من أبرزها:</p>
+          <ul>
+            <li><strong>إمريميدة</strong> و<strong>السروزي</strong> و<strong>الرسم</strong>.</li>
+            <li><strong>لبتيت التام</strong> (8 متحركات) و<strong>لبتيت الناقص</strong> (7 متحركات).</li>
+            <li><strong>لبير</strong> (6 متحركات) و<strong>بغزز</strong>.</li>
+            <li><strong>بت اثنين</strong> و<strong>بت اثلاثة</strong> و<strong>حثو اجراد</strong>.</li>
+          </ul>
+        </div>
+        <div class="ref-card">
+          <h3>3. قواعد التدوين الصوتي والتوثيق</h3>
+          <ul>
+            <li><strong>حرف الگاف (گ):</strong> يُعتمد حصراً لتمثيل القاف المعقودة الحسانية (گلب، گال، المزارگ، الدگسري) تمييزاً لها عن القاف الفصيحة.</li>
+            <li><strong>السواكن والمدود:</strong> تُهمل السواكن وحروف المد الساكنة (ا، و، ي) في عدّ المتحركات وتُضمّ إلى المتحرك قبلها في التقطيع الإيقاعي.</li>
+            <li><strong>الاستيراد والتصدير:</strong> لتفريغ ديوان Word طويل بدقة، افصل بين القصائد بسطر فارغ أو علامة <code>---</code>؛ وتُصدَّر المدونة والمعجم بصيغ <strong>Word</strong> و<strong>PDF</strong> و<strong>JSONL</strong>.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 style="font-size:1.05rem;font-weight:700;color:var(--gold-light);margin-bottom:0.75rem;display:flex;align-items:center;gap:7px">
+        <i data-lucide="waves"></i> دليل أبرز بحور «لغن» الحساني («لَبْتُوتَة»)
+      </h3>
+      <div class="table-wrap" style="margin-bottom:1.2rem">
         <table class="academic-table">
           <thead>
-            <tr><th>البحر الحساني (البت)</th><th>عدد المتحركات / الشطر</th><th>البنية والخصائص الإيقاعية</th><th>الاستعمال الشعري الغالب</th></tr>
+            <tr><th>البَتْ (البحر الحساني)</th><th>الوزن / السمة الإيقاعية</th><th>التعريف والخصائص العروضية</th><th>الغرض والاستعمال الشعري</th></tr>
           </thead>
           <tbody>
             <tr>
-              <td class="term-cell">السغير / لبير</td>
-              <td data-label="عدد المتحركات">6 متحركات</td>
-              <td data-label="الخصائص الإيقاعية">إيقاع خفيف وسريع، يكثر في المقطوعات الموجزة والتبراع.</td>
-              <td data-label="الاستعمال الغالب">الغزل الخفيف، المساجلات السريعة، وبعض مقطوعات التبراع.</td>
+              <td class="term-cell">التيدوم</td>
+              <td data-label="السمة الإيقاعية">من أقدم «لَبْتُوتَة»</td>
+              <td data-label="الخصائص العروضية">يُعدّ من أقدم البحور المعروفة في الموزون الحساني وجذوره الإيقاعية الأولى.</td>
+              <td data-label="الاستعمال الشعري">الأغراض التراثية الأصيلة والموزون القديم.</td>
             </tr>
             <tr>
-              <td class="term-cell">لبتيت الناقص</td>
-              <td data-label="عدد المتحركات">7 متحركات</td>
-              <td data-label="الخصائص الإيقاعية">أحد أشهر بحور لغنى، يقوم على توازن نغمي مرن يناسب الإلقاء الهادئ.</td>
-              <td data-label="الاستعمال الغالب">التبراع، الشكوى، الحنين، والوصف العاطفي.</td>
+              <td class="term-cell">البت الكبير</td>
+              <td data-label="السمة الإيقاعية">9 متحركات فأكثر (جامع)</td>
+              <td data-label="الخصائص العروضية">يجمع أوزاناً من مراحل سابقة ويُعدّ من الأبحر الجامعة ذات النَّفَس الممتد.</td>
+              <td data-label="الاستعمال الشعري">الملاحم، التوثيق التاريخي، والقصائد المطوّلة.</td>
+            </tr>
+            <tr>
+              <td class="term-cell">بوعمران</td>
+              <td data-label="السمة الإيقاعية">7 متحركات</td>
+              <td data-label="الخصائص العروضية">بحر عريق ذو إيقاع قوي ومهيب يتكوّن شطره من سبعة متحركات.</td>
+              <td data-label="الاستعمال الشعري">الفخر والحماسة.</td>
             </tr>
             <tr>
               <td class="term-cell">لبتيت التام</td>
-              <td data-label="عدد المتحركات">8 متحركات</td>
-              <td data-label="الخصائص الإيقاعية">عماد الشعر الحساني وأوسع بحوره انتشاراً في الصحراء المغربية وموريتانيا.</td>
-              <td data-label="الاستعمال الغالب">الگاف والطلعة في الفخر، الكرم، المديح، والحكمة.</td>
+              <td data-label="السمة الإيقاعية">8 متحركات</td>
+              <td data-label="الخصائص العروضية">من أوسع بحور «لغن» انتشاراً واتزاناً في البناء الإيقاعي.</td>
+              <td data-label="الاستعمال الشعري">الكاف والطلعة في الفخر، الكرم، المديح، والحكمة.</td>
             </tr>
             <tr>
-              <td class="term-cell">البت لكبير</td>
-              <td data-label="عدد المتحركات">9 متحركات فأكثر</td>
-              <td data-label="الخصائص الإيقاعية">نَفَس شعري ممتد يتسع للتفصيل والسرد التاريخي والوصفي العميق.</td>
-              <td data-label="الاستعمال الغالب">الملاحم، التوثيق التاريخي، والقصائد المطوّلة.</td>
+              <td class="term-cell">لبتيت الناقص</td>
+              <td data-label="السمة الإيقاعية">7 متحركات</td>
+              <td data-label="الخصائص العروضية">يقوم على توازن نغمي مرن يناسب الإلقاء الهادئ والتأملي.</td>
+              <td data-label="الاستعمال الشعري">التبراع، الحنين، الشكوى، والوصف العاطفي.</td>
+            </tr>
+            <tr>
+              <td class="term-cell">إملخ واسغير</td>
+              <td data-label="السمة الإيقاعية">إيقاع موجز (اسغير: 6 متحركات)</td>
+              <td data-label="الخصائص العروضية">بحران خفيفان وسريعا الإيقاع، يشتركان مع «لبير» في الرشاقة اللفظية.</td>
+              <td data-label="الاستعمال الشعري">القصائد القصيرة والمواضيع العاطفية.</td>
+            </tr>
+            <tr>
+              <td class="term-cell">المزارگ</td>
+              <td data-label="السمة الإيقاعية">بنية متداولة ومرنة</td>
+              <td data-label="الخصائص العروضية">من البحور القريبة من الحياة اليومية والتعبير المباشر في «لغن».</td>
+              <td data-label="الاستعمال الشعري">الموضوعات الاجتماعية والشعبية.</td>
+            </tr>
+            <tr>
+              <td class="term-cell">المصارع</td>
+              <td data-label="السمة الإيقاعية">إيقاع جزل ورصين</td>
+              <td data-label="الخصائص العروضية">بحر متماسك الإيقاع يبرز قوة المعنى والاعتزاز.</td>
+              <td data-label="الاستعمال الشعري">الفخر والمآثر.</td>
+            </tr>
+            <tr>
+              <td class="term-cell">الواكدي</td>
+              <td data-label="السمة الإيقاعية">نغم رقيق ومنساب</td>
+              <td data-label="الخصائص العروضية">يتسم بعذوبة إيقاعية وانسيابية تلائم البوح الوجداني.</td>
+              <td data-label="الاستعمال الشعري">الغزل والحب.</td>
+            </tr>
+            <tr>
+              <td class="term-cell">أحويويص</td>
+              <td data-label="السمة الإيقاعية">تقطيع ومقاطع مميزة</td>
+              <td data-label="الخصائص العروضية">من البحور الحماسية ذات التقطيع الإيقاعي الخاص والمقاطع اللافتة.</td>
+              <td data-label="الاستعمال الشعري">الحماسة والإلقاء الإيقاعي.</td>
+            </tr>
+            <tr>
+              <td class="term-cell">الدگسري</td>
+              <td data-label="السمة الإيقاعية">إيقاع سريع وحيوي</td>
+              <td data-label="الخصائص العروضية">يتسم بالخفة والسرعة الحركية المتدفقة أثناء الأداء والغناء.</td>
+              <td data-label="الاستعمال الشعري">الاحتفالات والمناسبات.</td>
+            </tr>
+            <tr>
+              <td class="term-cell">المشكل</td>
+              <td data-label="السمة الإيقاعية">بناء لغوي وتوروي دقيق</td>
+              <td data-label="الخصائص العروضية">بحر يقوم على التورية الذكية واختبار البديهة اللغوية والعروضية.</td>
+              <td data-label="الاستعمال الشعري">الألغاز الشعرية.</td>
             </tr>
           </tbody>
         </table>
-      </div>
-      <div class="ref-grid">
-        <div class="ref-card">
-          <h3>1. الأجناس الشعرية الحسانية</h3>
-          <ul>
-            <li><strong>التافلويت:</strong> الشطر الشعري الواحد، وهو وحدة قياس المتحركات.</li>
-            <li><strong>التبراع:</strong> فن نسائي راقٍ يقوم غالباً على شطرين متفقي القافية والوزن.</li>
-            <li><strong>الگاف:</strong> وحدة شعرية من 4 تافلويات، بقافية متعاقبة (أ-ب-أ-ب) غالباً.</li>
-            <li><strong>الطلعة:</strong> قصيدة من 6 تافلويات فأكثر تلتزم نظام قافية مركب وتُختم بالگاف.</li>
-          </ul>
-        </div>
-        <div class="ref-card">
-          <h3>2. قواعد التدوين الصوتي</h3>
-          <ul>
-            <li><strong>حرف الگاف (گ):</strong> يُعتمد حصراً لتمثيل القاف المعقودة الحسانية (گلب، گال، اگليب) تمييزاً لها عن القاف الفصيحة.</li>
-            <li><strong>الابتداء بالساكن:</strong> يُحسب الساكن في بداية الكلمة الحسانية (مثل: لْحگ، مْعاك) ضمن البنية الصوتية دون عده متحركاً مستقلاً.</li>
-            <li><strong>حروف المد:</strong> الألف والواو والياء الساكنة لا تُعدّ من المتحركات بل تُحتسب تابعة للحرف المتحرك قبلها.</li>
-          </ul>
-        </div>
-        <div class="ref-card">
-          <h3>3. منهجية التوثيق والاستيراد الجماعي</h3>
-          <ul>
-            <li>لتفريغ ديوان طويل من ملف Word بدقة عالية، اترك <strong>سطراً فارغاً</strong> أو علامة <code>---</code> بين كل قصيدة وأخرى، أو استخدم عناوين Word.</li>
-            <li>تُصدَّر المدونة والمعجم بصيغ <strong>Word (.docx)</strong> و<strong>PDF</strong> و<strong>JSONL</strong>.</li>
-          </ul>
-        </div>
       </div>
     </section>
 
@@ -1120,19 +1185,56 @@
     </div>
   </div>
 
+    <!-- نافذة أدوات صيانة المشرف (تنظيف الأرشيف وتغذية المعجم) -->
+  <div class="modal-backdrop" id="adminToolsModal" onclick="if(event.target===this) closeModal('adminToolsModal')">
+    <div class="modal-box" style="max-width:520px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem">
+        <strong style="display:flex;align-items:center;gap:7px"><i data-lucide="wrench" style="color:var(--gold-light)"></i> أدوات صيانة الأرشيف والمعجم</strong>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('adminToolsModal')">إغلاق</button>
+      </div>
+      <div class="line-row" style="margin-bottom:0.8rem">
+        <strong style="font-size:0.9rem;color:var(--gold-light);display:block;margin-bottom:4px">1. تنظيف الأرشيف تلقائياً (مجاني وفوري)</strong>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">يفصل أسماء الشعراء المدمجة داخل العناوين، ويصلح الأوزان التقديرية الخاطئة ومسميات البحور في جميع القصائد المؤرشفة.</p>
+        <button class="btn btn-primary btn-sm" id="cleanArchiveBtn" onclick="runAdminCleanArchive()"><i data-lucide="sparkles"></i> تشغيل التنظيف التلقائي الآن</button>
+      </div>
+      <div class="line-row">
+        <strong style="font-size:0.9rem;color:var(--gold-light);display:block;margin-bottom:4px">2. تغذية المعجم المتنامي بالذكاء الاصطناعي</strong>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem">يحلّل 10 قصائد غير محللة بـ Gemini AI لاستخراج بحورها (لَبْتُوتَة)، الظّهر، والمفردات الحسانية وإضافتها للمعجم تلقائياً.</p>
+        <button class="btn btn-secondary btn-sm" id="enrichGlossaryBtn" onclick="runAdminEnrichGlossary()"><i data-lucide="book-plus"></i> تحليل وإثراء 10 قصائد الآن</button>
+      </div>
+      <div id="adminToolsStatus" style="margin-top:0.8rem;font-size:0.83rem;color:var(--gold-light);display:none"></div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
     const SAMPLES = {
       gaf: "الصحرا دار الكرم والجود\nفيها الخيمة والگلب الصافي\nتاريخ أجدادنا المعهود\nيبقى في كل زمن وافي",
+      talaa: "يا راكب العيس في البيداء\nسلّم على دار الأجواد\nأهل الوفا والعزم والجاه",
       tebraa: "يا گلب اصبر لا تلوم\nالزين يبان ف كل يوم"
     };
     const CORE_METERS = [
-      { key: "لبير", label: "السغير / لبير", beats: "6 متحركات • إيقاع خفيف" },
-      { key: "لبتيت الناقص", label: "لبتيت الناقص", beats: "7 متحركات • توازن نغمي" },
-      { key: "لبتيت التام", label: "لبتيت التام", beats: "8 متحركات • عماد الشعر الحساني" },
-      { key: "البت لكبير", label: "البت لكبير", beats: "9 متحركات فأكثر • نَفَس ممتد" }
+      { key: "التيدوم", aliases: ["التيدوم", "تيدوم"], label: "التيدوم", beats: "من أقدم بحور الموزون الحساني" },
+      { key: "البت الكبير", aliases: ["البت الكبير", "البت لكبير"], label: "البت الكبير", beats: "9+ متحركات • من الأبحر الجامعة" },
+      { key: "لبتيت التام", aliases: ["لبتيت التام"], label: "لبتيت التام", beats: "8 متحركات • عماد «لغن»" },
+      { key: "بوعمران", aliases: ["بوعمران"], label: "بوعمران", beats: "7 متحركات • الفخر والحماسة" },
+      { key: "لبتيت الناقص", aliases: ["لبتيت الناقص"], label: "لبتيت الناقص", beats: "7 متحركات • توازن نغمي مرن" },
+      { key: "اسغير", aliases: ["اسغير", "السغير", "لبير", "إملخ"], label: "اسغير وإملخ ولبير", beats: "6 متحركات • قصائد قصيرة وعاطفية" },
+      { key: "الواكدي", aliases: ["الواكدي", "واكدي"], label: "الواكدي", beats: "الغزل والحب والبوح الوجداني" },
+      { key: "المزارگ", aliases: ["المزارگ", "المزارك", "مزارگ"], label: "المزارگ", beats: "الموضوعات الاجتماعية والشعبية" },
+      { key: "المصارع", aliases: ["المصارع", "مصارع"], label: "المصارع", beats: "الفخر والمآثر" },
+      { key: "أحويويص", aliases: ["أحويويص", "احويويص"], label: "أحويويص", beats: "بحر حماسي بمقاطع مميزة" },
+      { key: "الدگسري", aliases: ["الدگسري", "الدكسري"], label: "الدگسري", beats: "إيقاع سريع • الاحتفالات" },
+      { key: "المشكل", aliases: ["المشكل", "مشكل"], label: "المشكل", beats: "الألغاز الشعرية والتورية" }
     ];
+    function matchesMeterKey(poemMeter, meterKey) {
+      if (!meterKey) return true;
+      const pm = normSearch(poemMeter);
+      const def = CORE_METERS.find(m => m.key === meterKey);
+      const candidates = def ? def.aliases : [meterKey];
+      return candidates.some(a => pm.includes(normSearch(a)));
+    }
 
     let lastPayload = null, lastRagResult = null;
     let allPoems = [], cachedPoems = [], cachedGlossary = [], cachedMessages = [], batchItems = [];
@@ -1203,7 +1305,7 @@
     function updateMeterFilterUI() {
       const bar = document.getElementById("archiveActiveFilterBar");
       if (activeMeterFilter) {
-        document.getElementById("archiveActiveFilterText").textContent = `تصفية حسب البحر: ${activeMeterFilter}`;
+        document.getElementById("archiveActiveFilterText").textContent = `تصفية حسب البَتْ (البحر): ${activeMeterFilter}`;
         bar.classList.add("show");
       } else {
         bar.classList.remove("show");
@@ -1241,7 +1343,7 @@
 
       const metersEl = document.getElementById("metersSlider");
       metersEl.innerHTML = CORE_METERS.map(m => {
-        const count = allPoems.filter(p => normSearch(p.dominant_meter).includes(normSearch(m.key)) || (m.key === "لبير" && normSearch(p.dominant_meter).includes("سغير"))).length;
+        const count = allPoems.filter(p => matchesMeterKey(p.dominant_meter, m.key)).length;
         return `
           <div class="meter-slide" onclick="filterByMeter('${m.key}')">
             <div class="m-title">${m.label}</div>
@@ -1284,7 +1386,8 @@
       const rec = findPoemById(id);
       if (!rec) return;
       document.getElementById("readerTitle").textContent = rec.title || "قصيدة حسانية";
-      document.getElementById("readerMeta").textContent = `${rec.poet || "تراث شفهي"} • ${rec.region || "الصحراء المغربية"} • ${rec.poem_type || "—"} • ${rec.dominant_meter || "—"}`;
+      const zahrTxt = rec.analysis?.zahr_mode ? ` • الظّهر: ${rec.analysis.zahr_mode}` : "";
+      document.getElementById("readerMeta").textContent = `${rec.poet || "تراث شفهي"} • ${rec.region || "الصحراء المغربية"} • ${rec.poem_type || "—"} • ${rec.dominant_meter || "—"}${zahrTxt}`;
       document.getElementById("readerGlossPopup").classList.remove("open");
 
       const localGloss = (rec.analysis && Array.isArray(rec.analysis.glossary)) ? rec.analysis.glossary : [];
@@ -1364,8 +1467,10 @@
     function fillSample(k) { document.getElementById("poemInput").value = SAMPLES[k]; updateLiveCounter(); }
     function updateLiveCounter() {
       const lines = document.getElementById("poemInput").value.split("\n").filter(l => l.trim());
-      const kind = lines.length === 2 ? " • تبراع" : lines.length === 4 ? " • گاف" : lines.length >= 6 ? " • طلعة" : "";
-      document.getElementById("liveCounter").textContent = `${lines.length} أشطر${kind}`;
+      const n = lines.length;
+      const unitLabel = n === 1 ? "تافلويت واحدة" : `${n} تيفلواتن`;
+      const kind = n === 2 ? " • تبراع" : n === 3 ? " • طلعة" : (n === 4 || n === 6 || n === 8) ? " • گاف (كاف)" : n >= 5 ? " • لغن" : "";
+      document.getElementById("liveCounter").textContent = `${unitLabel}${kind}`;
     }
     function switchLabTab(name, btn) {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
@@ -1654,7 +1759,7 @@
       if (!poem_text) return showToast("يرجى إدخال بيت شعري واحد على الأقل.");
       const btn = document.getElementById("analyzeBtn"); btn.disabled = true; btn.textContent = "جاري التحليل العروضي واللساني...";
       try {
-        const data = await safeFetchJson("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ poem_text, model_name: document.getElementById("modelSelect").value, use_ai: true }) });
+        const data = await safeFetchJson("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json", ...(adminPin ? { "x-admin-pin": adminPin } : {}) }, body: JSON.stringify({ poem_text, model_name: document.getElementById("modelSelect").value, use_ai: true }) });
         lastPayload = { ...data, poem_text }; renderResults(data); showToast(data.warning || "اكتمل التحليل العروضي بنجاح!");
       } catch (e) { showToast(e.message); } finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="sparkles"></i> بدء التحليل العروضي واللساني'; refreshIcons(); }
     }
@@ -1665,6 +1770,7 @@
       document.getElementById("resType").textContent = a.poem_type || "—";
       document.getElementById("resMeter").textContent = a.dominant_meter || "—";
       document.getElementById("resRhyme").textContent = a.dominant_rhyme || (a.lines?.[0]?.rhyme_ending || "—");
+      document.getElementById("resZahr").textContent = a.zahr_mode || "—";
       document.getElementById("resContext").textContent = a.cultural_context || "—";
       const notes = a.linguistic_notes || "";
       document.getElementById("resNotesWrap").style.display = notes ? "block" : "none";
@@ -1731,7 +1837,7 @@
     function buildPoemHtmlForPDF(title, poet, region, text, a = {}) {
       const lRows = (a.lines || []).map(l => `<tr><td>${escapeHtml(l.original_line)}</td><td>${escapeHtml(l.phonetic_diacritized)}</td><td>${l.mutaharrikat_count}</td><td>${escapeHtml(l.estimated_meter)}</td><td>${escapeHtml(l.rhyme_ending)}</td></tr>`).join("");
       const gRows = (a.glossary || []).map(g => `<tr><td><strong>${escapeHtml(g.term)}</strong></td><td>${escapeHtml(g.arabic_meaning)}</td><td class="ltr">${escapeHtml(g.english_meaning)}</td></tr>`).join("");
-      return `<h2>${escapeHtml(title)}</h2><div class="meta">الشاعر / الراوي: ${escapeHtml(poet)} | المنطقة: ${escapeHtml(region)} | الجنس: ${escapeHtml(a.poem_type || "—")} | البحر: ${escapeHtml(a.dominant_meter || "—")}</div><div class="poem-block">${escapeHtml(text)}</div>${a.cultural_context ? `<p><strong>السياق الثقافي:</strong> ${escapeHtml(a.cultural_context)}</p>` : ""}${a.linguistic_notes ? `<p><strong>ملاحظات لغوية:</strong> ${escapeHtml(a.linguistic_notes)}</p>` : ""}${lRows ? `<table><thead><tr><th>الشطر</th><th>التشكيل الصوتي</th><th>المتحركات</th><th>البحر</th><th>الروي</th></tr></thead><tbody>${lRows}</tbody></table>` : ""}${gRows ? `<table><thead><tr><th>المفردة</th><th>المعنى الفصيح</th><th>English</th></tr></thead><tbody>${gRows}</tbody></table>` : ""}${a.english_translation ? `<div class="ltr"><strong>English:</strong><br>${escapeHtml(a.english_translation)}</div>` : ""}${a.french_translation ? `<div class="ltr" style="margin-top:8px"><strong>Français:</strong><br>${escapeHtml(a.french_translation)}</div>` : ""}`;
+      return `<h2>${escapeHtml(title)}</h2><div class="meta">الشاعر / الراوي: ${escapeHtml(poet)} | المنطقة: ${escapeHtml(region)} | الوحدة: ${escapeHtml(a.poem_type || "—")} | البَتْ: ${escapeHtml(a.dominant_meter || "—")}${a.zahr_mode ? ` | الظّهر: ${escapeHtml(a.zahr_mode)}` : ""}</div><div class="poem-block">${escapeHtml(text)}</div>${a.cultural_context ? `<p><strong>السياق الثقافي:</strong> ${escapeHtml(a.cultural_context)}</p>` : ""}${a.linguistic_notes ? `<p><strong>ملاحظات لغوية:</strong> ${escapeHtml(a.linguistic_notes)}</p>` : ""}${lRows ? `<table><thead><tr><th>التافلويت</th><th>التشكيل الصوتي</th><th>المتحركات</th><th>البَتْ</th><th>الروي</th></tr></thead><tbody>${lRows}</tbody></table>` : ""}${gRows ? `<table><thead><tr><th>المفردة</th><th>المعنى الفصيح</th><th>English</th></tr></thead><tbody>${gRows}</tbody></table>` : ""}${a.english_translation ? `<div class="ltr"><strong>English:</strong><br>${escapeHtml(a.english_translation)}</div>` : ""}${a.french_translation ? `<div class="ltr" style="margin-top:8px"><strong>Français:</strong><br>${escapeHtml(a.french_translation)}</div>` : ""}`;
     }
     function exportCurrentAnalysisPDF() {
       if (!lastPayload) return showToast("حلّل قصيدة أولاً.");
@@ -1768,11 +1874,48 @@
 
     /* إدارة المشرف */
     function updateAdminUI() {
-      const btn = document.getElementById("adminBtn"), inboxBtn = document.getElementById("inboxBtn");
+      const btn = document.getElementById("adminBtn"), inboxBtn = document.getElementById("inboxBtn"), toolsBtn = document.getElementById("adminToolsBtn");
       document.getElementById("glossAdminCol").style.display = adminPin ? "table-cell" : "none";
-      if (adminPin) { btn.classList.add("admin-on"); btn.innerHTML = '<i data-lucide="unlock"></i> <span class="hide-xs">خروج</span>'; inboxBtn.style.display = "inline-flex"; }
-      else { btn.classList.remove("admin-on"); btn.innerHTML = '<i data-lucide="lock"></i> <span class="hide-xs">المشرف</span>'; inboxBtn.style.display = "none"; }
+      if (adminPin) {
+        btn.classList.add("admin-on"); btn.innerHTML = '<i data-lucide="unlock"></i> <span class="hide-xs">خروج</span>';
+        inboxBtn.style.display = "inline-flex"; toolsBtn.style.display = "inline-flex";
+      } else {
+        btn.classList.remove("admin-on"); btn.innerHTML = '<i data-lucide="lock"></i> <span class="hide-xs">المشرف</span>';
+        inboxBtn.style.display = "none"; toolsBtn.style.display = "none";
+      }
       renderArchiveCards(); renderGlossaryTable(); refreshIcons();
+    }
+    function openAdminToolsModal() {
+      if (!adminPin) return;
+      document.getElementById("adminToolsStatus").style.display = "none";
+      document.getElementById("adminToolsModal").classList.add("open");
+      refreshIcons();
+    }
+    async function runAdminCleanArchive() {
+      if (!adminPin) return;
+      const btn = document.getElementById("cleanArchiveBtn"), st = document.getElementById("adminToolsStatus");
+      btn.disabled = true; btn.textContent = "جاري تنظيف الأرشيف...";
+      try {
+        const res = await safeFetchJson("/api/admin/clean-archive", { method: "POST", headers: { "x-admin-pin": adminPin } });
+        st.textContent = res.message; st.style.display = "block"; showToast(res.message);
+        await Promise.all([loadStats(), loadAllPoems(), loadArchive()]);
+      } catch (e) { showToast(e.message); }
+      finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="sparkles"></i> تشغيل التنظيف التلقائي الآن'; refreshIcons(); }
+    }
+    async function runAdminEnrichGlossary() {
+      if (!adminPin) return;
+      const btn = document.getElementById("enrichGlossaryBtn"), st = document.getElementById("adminToolsStatus");
+      btn.disabled = true; btn.textContent = "جاري تحليل 10 قصائد واستخراج المفردات...";
+      try {
+        const res = await safeFetchJson("/api/admin/enrich-glossary", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
+          body: JSON.stringify({ limit: 10, model_name: document.getElementById("modelSelect").value })
+        });
+        st.textContent = res.message; st.style.display = "block"; showToast(res.message);
+        await Promise.all([loadStats(), loadAllPoems(), loadArchive(), loadGlossary()]);
+      } catch (e) { showToast(e.message); }
+      finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="book-plus"></i> تحليل وإثراء 10 قصائد الآن'; refreshIcons(); }
     }
     function handleAdminClick() {
       if (adminPin) { adminPin = ""; sessionStorage.removeItem("albidan_admin_pin"); updateAdminUI(); showToast("تم الخروج من وضع المشرف."); }
@@ -1850,7 +1993,7 @@
     }
     function renderArchiveCards() {
       const grid = document.getElementById("archiveGrid");
-      const list = cachedPoems.filter(p => !activeMeterFilter || normSearch(p.dominant_meter).includes(normSearch(activeMeterFilter)) || (activeMeterFilter === "لبير" && normSearch(p.dominant_meter).includes("سغير")));
+      const list = cachedPoems.filter(p => matchesMeterKey(p.dominant_meter, activeMeterFilter));
 
       if (!list.length) {
         grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;color:var(--muted);padding:2rem">لم يُعثر على هذا الأثر في الديوان بعد؛ جرّب البحث بكلمة أخرى أو أزل التصفية.</div>';
@@ -1938,7 +2081,7 @@
 
     document.addEventListener("keydown", e => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openSearchModal(); }
-      else if (e.key === "Escape") ["searchModal", "adminModal", "editModal", "inboxModal", "batchModal", "readerModal"].forEach(closeModal);
+      else if (e.key === "Escape") ["searchModal", "adminModal", "editModal", "inboxModal", "batchModal", "readerModal", "adminToolsModal"].forEach(closeModal);
     });
 
     window.addEventListener("DOMContentLoaded", () => {
