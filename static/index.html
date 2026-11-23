@@ -43,7 +43,7 @@
     .brand-name { font-size:1rem; font-weight:800; line-height:1.15; }
     .brand-sub { font-size:0.68rem; color:var(--gold-light); font-weight:700; letter-spacing:0.5px; }
     .nav-views { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
-    .nav-tab { background:transparent; border:1px solid transparent; color:var(--muted); font-family:inherit; font-size:0.85rem; font-weight:700; padding:6px 11px; border-radius:8px; cursor:pointer; transition:0.2s; }
+    .nav-tab { background:transparent; border:1px solid transparent; color:var(--muted); font-family:inherit; font-size:0.84rem; font-weight:700; padding:6px 10px; border-radius:8px; cursor:pointer; transition:0.2s; }
     .nav-tab:hover { color:var(--text); background:var(--bg-soft); }
     .nav-tab.active { background:rgba(212,175,55,0.14); color:var(--gold-light); border-color:var(--border); }
     [data-theme="light"] .nav-tab.active { background:#1B365D; color:#FFFFFF; border-color:#1B365D; }
@@ -103,6 +103,8 @@
     .tab-panel { display:none; }
     .tab-panel.active { display:block; }
     .pill-tag { display:inline-block; font-size:0.73rem; font-weight:700; padding:2px 9px; border-radius:999px; background:rgba(212,175,55,0.14); color:var(--gold-light); border:1px solid var(--border); }
+    .pill-success { background:rgba(34,197,94,0.14); color:#4ADE80; border-color:rgba(34,197,94,0.38); }
+    [data-theme="light"] .pill-success { color:#15803D; background:rgba(21,128,61,0.10); }
     .meta-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:0.85rem; }
     .meta-box { background:var(--bg-soft); border:1px solid var(--border); border-radius:10px; padding:0.6rem; text-align:center; }
     .meta-box small { display:block; font-size:0.72rem; color:var(--muted); }
@@ -138,6 +140,14 @@
     .social-row { display:flex; gap:8px; margin-top:0.85rem; flex-wrap:wrap; }
     .social-fb { background:#1877F2; color:#fff; }
     .social-wa { background:#16A34A; color:#fff; }
+    /* تنسيقات الباحث الذكي الموثّق (Cloud Hybrid RAG) */
+    .rag-filter-grid { display:grid; grid-template-columns:1fr 1fr 1fr 120px; gap:8px; margin-top:0.75rem; }
+    .rag-answer-card { background:var(--bg-soft); border:1px solid var(--border-strong); border-right:4px solid var(--gold); border-radius:12px; padding:1.1rem; margin-top:1rem; }
+    .rag-answer-text { font-size:0.96rem; line-height:1.95; white-space:pre-line; margin-top:0.7rem; color:var(--text); }
+    .rag-sources-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:10px; margin-top:0.75rem; }
+    .rag-source-card { background:var(--bg-soft); border:1px solid var(--border); border-right:3px solid var(--accent); border-radius:10px; padding:0.85rem; }
+    .rag-source-excerpt { font-family:'Amiri',serif; font-size:1.08rem; line-height:1.85; white-space:pre-line; margin-top:0.5rem; padding-top:0.5rem; border-top:1px dashed var(--border); }
+    .rag-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:0.7rem; }
     .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.72); backdrop-filter:blur(5px); display:none; place-items:center; z-index:100; padding:1rem; }
     .modal-backdrop.open { display:grid; }
     .modal-box { width:100%; max-width:560px; background:var(--card); border:1px solid var(--border-strong); border-radius:14px; padding:1.2rem; max-height:86vh; overflow-y:auto; }
@@ -151,8 +161,9 @@
     .toast.show { display:block; }
     footer { margin-top:2.2rem; padding:1.3rem 1rem; border-top:1px solid var(--border); text-align:center; color:var(--muted); font-size:0.8rem; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(4px);} to{opacity:1;transform:translateY(0);} }
-    @media (max-width:940px) { .lab-grid,.trans-grid,.about-grid{grid-template-columns:1fr;} .nav-views{display:none;} .menu-toggle{display:inline-flex;} }
-    @media (max-width:680px) { .ingest-bar{grid-template-columns:1fr 1fr;} .batch-row-grid{grid-template-columns:1fr;} .founder-card{flex-direction:column;text-align:center;} .social-row{justify-content:center;} .hide-xs{display:none;} }
+    @media (max-width:980px) { .lab-grid,.trans-grid,.about-grid{grid-template-columns:1fr;} .nav-views{display:none;} .menu-toggle{display:inline-flex;} }
+    @media (max-width:720px) { .rag-filter-grid{grid-template-columns:1fr 1fr;} }
+    @media (max-width:680px) { .ingest-bar{grid-template-columns:1fr 1fr;} .batch-row-grid,.rag-filter-grid{grid-template-columns:1fr;} .founder-card{flex-direction:column;text-align:center;} .social-row{justify-content:center;} .hide-xs{display:none;} }
   </style>
 </head>
 <body>
@@ -167,6 +178,7 @@
       </div>
       <nav class="nav-views">
         <button class="nav-tab active" data-view="lab" onclick="switchView('lab')">🔬 المختبر والرقمنة</button>
+        <button class="nav-tab" data-view="rag" onclick="switchView('rag')">🧠 الباحث الذكي</button>
         <button class="nav-tab" data-view="archive" onclick="switchView('archive')">📚 المدونة الحسانية</button>
         <button class="nav-tab" data-view="glossary" onclick="switchView('glossary')">📖 المعجم المتنامي</button>
         <button class="nav-tab" data-view="methodology" onclick="switchView('methodology')">📐 المرجع العروضي</button>
@@ -183,6 +195,7 @@
     </div>
     <div class="mobile-menu" id="mobileMenu">
       <button onclick="switchView('lab');toggleMobileMenu()">🔬 المختبر والرقمنة</button>
+      <button onclick="switchView('rag');toggleMobileMenu()">🧠 الباحث الذكي الموثّق</button>
       <button onclick="switchView('archive');toggleMobileMenu()">📚 المدونة الحسانية</button>
       <button onclick="switchView('glossary');toggleMobileMenu()">📖 المعجم المتنامي</button>
       <button onclick="switchView('methodology');toggleMobileMenu()">📐 المرجع العروضي والمنهجي</button>
@@ -194,7 +207,7 @@
     <div class="summary-bar">
       <div class="summary-title">
         <h1>المرجع العلمي الرقمي للشعر الشعبي الحساني</h1>
-        <p>تحليل عروضي صوتي، رقمنة الصور والمخطوطات والدواوين، وتوثيق مرجعي مفتوح للباحثين والشعراء</p>
+        <p>تحليل عروضي صوتي، باحث ذكي هجين موثّق، رقمنة الصور والمخطوطات والدواوين، وتوثيق مرجعي مفتوح للباحثين</p>
       </div>
       <div class="mini-stats">
         <div class="mini-stat"><strong id="statPoems">—</strong> <span>قصيدة</span></div>
@@ -329,6 +342,79 @@
       </div>
     </section>
 
+    <!-- قسم الباحث الذكي الهجين الموثّق (Cloud Hybrid RAG) -->
+    <section id="view-rag" class="view-section">
+      <div class="page-head">
+        <div>
+          <h2>🧠 الباحث الذكي الموثّق في التراث الحساني</h2>
+          <p>بحث هجين (دلالي + معجمي حساني يوحّد گ/ݣ/ڨ) يستخرج الإجابات حصراً من أرشيف ALBIDAN ومعجمه مع تحقق ذاتي أكاديمي</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="pill-tag" id="ragHealthBadge">جاري فحص الذاكرة المعرفية...</span>
+          <button class="btn btn-secondary btn-sm" id="ragSyncBtn" onclick="syncRagArchive()">🔄 مزامنة الأرشيف الآن</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="rag-chips">
+          <button class="btn btn-secondary btn-sm" onclick="setRagSample('ما هي القصائد الموثقة حالياً في الأرشيف وما بحورها؟')">📜 القصائد وبحورها</button>
+          <button class="btn btn-secondary btn-sm" onclick="setRagSample('اشرح لي المفردات الحسانية الموثقة في المعجم مع معانيها')">📖 شرح المفردات الحسانية</button>
+          <button class="btn btn-secondary btn-sm" onclick="setRagSample('أعطني شواهد شعرية حسانية من الأرشيف مع ذكر الشاعر والبحر')">✨ شواهد شعرية موثقة</button>
+        </div>
+
+        <textarea id="ragQueryInput" rows="3" placeholder="اكتب سؤالك البحثي هنا (مثلاً: ما معنى مفردة معينة في المعجم؟ أو أعطني أبياتاً عن الكرم مع بحرها وشاعرها؟)..." onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter') runRagSearch()"></textarea>
+
+        <div class="rag-filter-grid">
+          <input type="text" id="ragPoetFilter" placeholder="فلترة بالشاعر (اختياري)" />
+          <input type="text" id="ragMeterFilter" placeholder="فلترة بالبحر / البتّ (اختياري)" />
+          <select id="ragGenreFilter">
+            <option value="">كل الأجناس (قصائد + معجم)</option>
+            <option value="معجم حساني">معجم حساني</option>
+            <option value="كاف (Gaf)">كاف (Gaf)</option>
+            <option value="تبراع (Tebraa)">تبراع (Tebraa)</option>
+            <option value="طلعة (Tal'aa)">طلعة (Tal'aa)</option>
+          </select>
+          <select id="ragTopK">
+            <option value="3">3 شواهد</option>
+            <option value="5" selected>5 شواهد</option>
+            <option value="8">8 شواهد</option>
+          </select>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:0.85rem">
+          <label style="display:flex;align-items:center;gap:7px;font-size:0.84rem;cursor:pointer;color:var(--muted)">
+            <input type="checkbox" id="ragReflectionToggle" checked style="width:auto" />
+            تفعيل التحقق الذاتي الأكاديمي (يراجع الأبيات ونسبتها للشعراء قبل عرض الإجابة)
+          </label>
+          <button class="btn btn-primary" id="ragAskBtn" onclick="runRagSearch()">🔎 اسأل الباحث الحساني</button>
+        </div>
+
+        <div id="ragEmptyHint" style="text-align:center;padding:2rem 1rem;color:var(--muted);font-size:0.86rem;margin-top:0.75rem;border-top:1px dashed var(--border)">
+          اطرح سؤالك في الأعلى ليقوم المحرك بالبحث الهجين في <strong>القصائد والمعجم الحساني</strong> وتقديم إجابة مدعومة بالشواهد الموثّقة.
+        </div>
+
+        <div id="ragResultWrap" style="display:none">
+          <div class="rag-answer-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                <span class="pill-tag pill-success" id="ragVerifyBadge">✅ موثّقة</span>
+                <span class="pill-tag" id="ragTimingBadge">—</span>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('ragAnswerText').innerText)">📋 نسخ الإجابة</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportRagAnswerPDF()">📕 طباعة PDF</button>
+              </div>
+            </div>
+            <div id="ragVerifyNotes" style="font-size:0.78rem;color:var(--muted);margin-top:0.45rem"></div>
+            <div class="rag-answer-text" id="ragAnswerText"></div>
+          </div>
+
+          <h3 style="font-size:0.96rem;color:var(--gold-light);margin-top:1.1rem">📚 الشواهد والمصادر المعتمدة من أرشيف ALBIDAN</h3>
+          <div class="rag-sources-grid" id="ragSourcesGrid"></div>
+        </div>
+      </div>
+    </section>
+
     <section id="view-archive" class="view-section">
       <div class="page-head">
         <div>
@@ -420,7 +506,7 @@
           <h3>3. منهجية التوثيق والاستيراد الجماعي</h3>
           <ul>
             <li>لتفريغ ديوان طويل من ملف Word بدقة عالية، اترك <strong>سطراً فارغاً</strong> أو علامة <code>---</code> بين كل قصيدة وأخرى، أو استخدم عناوين Word.</li>
-            <li>تُصدَّر المدونة والمعجم بصيغ <strong>Word (.docx)</strong> و<strong>PDF</strong> و<strong>JSONL</strong>.</li>
+            <li>تُصدَّر المدونة والمعجم بصيغ <strong>Word (.docx)</strong> و<strong>PDF</strong> و<strong>JSONL</strong>.</li>
           </ul>
         </div>
       </div>
@@ -582,7 +668,7 @@
       gaf: "الصحرا دار الكرم والجود\nفيها الخيمة والگلب الصافي\nتاريخ أجدادنا المعهود\nيبقى في كل زمن وافي",
       tebraa: "يا گلب اصبر لا تلوم\nالزين يبان ف كل يوم"
     };
-    let lastPayload = null, cachedPoems = [], cachedGlossary = [], cachedMessages = [], batchItems = [];
+    let lastPayload = null, lastRagResult = null, cachedPoems = [], cachedGlossary = [], cachedMessages = [], batchItems = [];
     let citeFormat = "APA", adminPin = sessionStorage.getItem("albidan_admin_pin") || "", editingPoemId = null, captchaA = 3, captchaB = 4;
 
     const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
@@ -596,6 +682,7 @@
       document.querySelectorAll(".view-section").forEach(s => s.classList.remove("active"));
       document.querySelectorAll(".nav-tab").forEach(b => b.classList.toggle("active", b.dataset.view === v));
       document.getElementById(`view-${v}`).classList.add("active");
+      if (v === "rag") loadRagHealth();
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
     function toggleTheme() {
@@ -673,6 +760,129 @@
         img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
         img.src = url;
       });
+    }
+
+    // =========================================================================
+    // دوال الباحث الذكي الموثّق (Cloud Hybrid RAG)
+    // =========================================================================
+    function setRagSample(txt) {
+      document.getElementById("ragQueryInput").value = txt;
+      document.getElementById("ragQueryInput").focus();
+    }
+
+    async function loadRagHealth() {
+      const badge = document.getElementById("ragHealthBadge");
+      if (!badge) return;
+      try {
+        const h = await safeFetchJson("/api/rag/health");
+        badge.textContent = `الذاكرة المعرفية: ${h.indexed_documents} وثيقة • ${h.total_chunks} مقطع`;
+      } catch (e) {
+        badge.textContent = "⚠️ تعذر فحص حالة المحرك";
+      }
+    }
+
+    async function syncRagArchive() {
+      const btn = document.getElementById("ragSyncBtn");
+      btn.disabled = true;
+      btn.textContent = "⏳ جاري مزامنة القصائد والمعجم...";
+      try {
+        const res = await safeFetchJson("/api/rag/sync-albidan", { method: "POST" });
+        showToast(
+          `تمت المزامنة (${res.elapsed_seconds}ث): ${res.poems_scanned} قصيدة و ${res.glossary_scanned} مفردة (${res.indexed_docs} محدّث / ${res.skipped_docs} متخطى).`
+        );
+        await loadRagHealth();
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "🔄 مزامنة الأرشيف الآن";
+      }
+    }
+
+    async function runRagSearch() {
+      const query = (document.getElementById("ragQueryInput").value || "").trim();
+      if (query.length < 2) return showToast("اكتب سؤالاً واضحاً أولاً.");
+      const btn = document.getElementById("ragAskBtn");
+      btn.disabled = true;
+      btn.textContent = "⏳ جاري البحث الهجين وتدقيق الشواهد...";
+
+      const payload = {
+        query,
+        poet: (document.getElementById("ragPoetFilter").value || "").trim() || null,
+        meter: (document.getElementById("ragMeterFilter").value || "").trim() || null,
+        genre: (document.getElementById("ragGenreFilter").value || "").trim() || null,
+        top_k: parseInt(document.getElementById("ragTopK").value, 10) || 5,
+        enable_reflection: document.getElementById("ragReflectionToggle").checked
+      };
+
+      try {
+        const data = await safeFetchJson("/api/rag/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        lastRagResult = data;
+        renderRagResult(data);
+        showToast("اكتمل البحث الأكاديمي الموثّق بنجاح!");
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "🔎 اسأل الباحث الحساني";
+      }
+    }
+
+    function renderRagResult(data) {
+      document.getElementById("ragEmptyHint").style.display = "none";
+      document.getElementById("ragResultWrap").style.display = "block";
+
+      const v = data.verification || {};
+      const t = data.timing || {};
+      document.getElementById("ragVerifyBadge").textContent = `✅ ${v.status || "موثّقة"}`;
+      document.getElementById("ragTimingBadge").textContent =
+        `البحث: ${t.search_seconds ?? "—"}ث | التوليد: ${t.generation_seconds ?? "—"}ث`;
+      document.getElementById("ragVerifyNotes").textContent = v.notes ? `ملاحظة المدقق الأكاديمي: ${v.notes}` : "";
+      document.getElementById("ragAnswerText").textContent = data.answer || "";
+
+      const sources = data.sources || [];
+      const grid = document.getElementById("ragSourcesGrid");
+      if (!sources.length) {
+        grid.innerHTML = '<div class="line-row" style="grid-column:1/-1;color:var(--muted)">لم يُعثر على شواهد مطابقة في الأرشيف المفهرس؛ جرّب الضغط على «🔄 مزامنة الأرشيف الآن» أو تخفيف الفلاتر.</div>';
+        return;
+      }
+
+      grid.innerHTML = sources.map((s, idx) => {
+        const pct = Math.round((Number(s.confidence) || 0) * 100);
+        return `
+          <div class="rag-source-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap">
+              <strong style="font-size:0.9rem;color:var(--gold-light)">${idx + 1}. ${escapeHtml(s.title || "شاهد موثق")}</strong>
+              <span class="pill-tag">صلة: ${pct}%</span>
+            </div>
+            <div style="font-size:0.76rem;color:var(--muted);margin-top:3px">
+              ${escapeHtml(s.poet || "غير محدد")} • ${escapeHtml(s.meter || "—")} • ${escapeHtml(s.genre || "—")}
+            </div>
+            <div style="font-size:0.74rem;color:var(--gold-light);margin-top:2px">${escapeHtml(s.source || "أرشيف ALBIDAN")}</div>
+            <div class="rag-source-excerpt">${escapeHtml(s.excerpt || "")}</div>
+          </div>`;
+      }).join("");
+    }
+
+    function exportRagAnswerPDF() {
+      if (!lastRagResult) return showToast("قم بطرح سؤال أولاً.");
+      const sourcesHtml = (lastRagResult.sources || []).map((s, idx) =>
+        `<div class="poem-block"><strong>${idx + 1}. ${escapeHtml(s.title)}</strong> (${escapeHtml(s.poet)} • ${escapeHtml(s.meter)} • ${escapeHtml(s.source)})<br>${escapeHtml(s.excerpt)}</div>`
+      ).join("");
+      const body = `
+        <h2>السؤال البحثي</h2>
+        <p>${escapeHtml(lastRagResult.query)}</p>
+        <h2>الإجابة الأكاديمية الموثّقة (${escapeHtml(lastRagResult.verification?.status || "موثّقة")})</h2>
+        <div style="white-space:pre-line;margin-bottom:14px">${escapeHtml(lastRagResult.answer)}</div>
+        ${lastRagResult.verification?.notes ? `<p class="meta"><strong>ملاحظة التدقيق:</strong> ${escapeHtml(lastRagResult.verification.notes)}</p>` : ""}
+        <h2>الشواهد والمصادر المعتمدة</h2>
+        ${sourcesHtml || "<p>لا توجد شواهد مرفقة.</p>"}
+      `;
+      printAcademicPDF("إجابة موثّقة من الباحث الذكي الحساني", body);
     }
 
     async function handleImageOCR() {
@@ -1054,7 +1264,7 @@
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openSearchModal(); }
       else if (e.key === "Escape") ["searchModal", "adminModal", "editModal", "inboxModal", "batchModal"].forEach(closeModal);
     });
-    (function init() { if (localStorage.getItem("albidan_theme") === "light") toggleTheme(); resetCaptcha(); updateAdminUI(); loadStats(); loadArchive(); loadGlossary(); })();
+    (function init() { if (localStorage.getItem("albidan_theme") === "light") toggleTheme(); resetCaptcha(); updateAdminUI(); loadStats(); loadArchive(); loadGlossary(); loadRagHealth(); })();
   </script>
 </body>
 </html>
