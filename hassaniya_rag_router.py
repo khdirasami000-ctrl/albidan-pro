@@ -3,8 +3,9 @@ import os
 import re
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
+from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
 from google import genai
 from google.genai import types
@@ -13,28 +14,35 @@ from pymongo import MongoClient, UpdateOne
 from pymongo.collection import Collection
 from pymongo.errors import OperationFailure
 
+load_dotenv()
+
 # ==============================================================================
-# 1. الإعدادات والمتغيرات البيئية (مضبوطة تلقائياً على قاعدة albidan_corpus)
+# 1. الإعدادات والمتغيرات البيئية (متطابقة تماماً مع main.py)
 # ==============================================================================
 MONGODB_URI = (
     os.getenv("MONGODB_URI")
     or os.getenv("MONGO_URI")
     or os.getenv("MONGODB_URL")
     or ""
-)
+).strip()
 MONGODB_DB_NAME = (
     os.getenv("MONGODB_DB_NAME")
     or os.getenv("MONGO_DB_NAME")
     or "albidan_corpus"
+).strip()
+RAG_COLLECTION_NAME = os.getenv("RAG_COLLECTION_NAME", "hassaniya_rag_chunks").strip()
+
+VECTOR_INDEX_NAME = os.getenv("VECTOR_INDEX_NAME", "hassaniya_vector_index").strip()
+TEXT_INDEX_NAME = os.getenv("TEXT_INDEX_NAME", "hassaniya_text_index").strip()
+
+GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
+DEFAULT_GEMINI_MODEL = (
+    os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip() or "gemini-3.5-flash-lite"
 )
-RAG_COLLECTION_NAME = os.getenv("RAG_COLLECTION_NAME", "hassaniya_rag_chunks")
+FALLBACK_GEN_MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-2.5-flash"]
 
-VECTOR_INDEX_NAME = os.getenv("VECTOR_INDEX_NAME", "hassaniya_vector_index")
-TEXT_INDEX_NAME = os.getenv("TEXT_INDEX_NAME", "hassaniya_text_index")
-
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
+EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001").strip()
+EMBEDDING_FALLBACK_MODELS = ["gemini-embedding-001", "text-embedding-004"]
 VECTOR_DIMS = int(os.getenv("VECTOR_DIMS", "768"))
 
 router = APIRouter(prefix="/api/rag", tags=["Hassaniya Cloud Hybrid RAG"])
@@ -51,7 +59,7 @@ def get_rag_collection() -> Collection:
     if not MONGODB_URI:
         raise HTTPException(
             status_code=500,
-            detail="متغير البيئة MONGODB_URI أو MONGO_URI غير مضبوط في إعدادات Render.",
+            detail="متغير البيئة MONGODB_URI غير مضبوط في إعدادات Render.",
         )
 
     if _mongo_client is None:
@@ -142,55 +150,76 @@ def chunk_hassaniya_text(
     return chunks
 
 
-def _pick_first_text(raw: Dict[str, Any], candidate_keys: List[str], default: str = "") -> str:
-    """استخراج أول حقل غير فارغ من قائمة أسماء محتملة لتفادي اختلاف مسميات الحقول."""
-    for key in candidate_keys:
-        val = raw.get(key)
-        if isinstance(val, str) and val.strip():
-            return val.strip()
-        if isinstance(val, list) and val:
-            joined = "\n".join(str(x).strip() for x in val if str(x).strip())
-            if joined:
-                return joined
-    return default
-
-
-def _fallback_serialize(raw: Dict[str, Any], exclude_keys: set) -> str:
-    """تجميع كل الحقول النصية المتاحة في الوثيقة إذا لم تطابق الأسماء القياسية."""
-    parts: List[str] = []
-    for k, v in raw.items():
-        if k in exclude_keys or v is None:
-            continue
-        if isinstance(v, (str, int, float)) and str(v).strip():
-            parts.append(f"{k}: {str(v).strip()}")
-        elif isinstance(v, list) and v:
-            parts.append(f"{k}: " + "، ".join(str(x).strip() for x in v if str(x).strip()))
-    return "\n".join(parts).strip()
-
-
 # ==============================================================================
-# 4. توليد المتجهات الرقمية (Gemini Embeddings)
+# 4. توليد المتجهات والمحتوى مع تبديل احتياطي آمن للنماذج
 # ==============================================================================
+def _unique_models(primary: str, fallbacks: List[str]) -> List[str]:
+    ordered = [primary] if primary else []
+    for m in fallbacks:
+        if m and m not in ordered:
+            ordered.append(m)
+    return ordered
+
+
 def embed_texts(texts: List[str], task_type: str = "RETRIEVAL_DOCUMENT") -> List[List[float]]:
     client = get_genai_client()
-    all_vectors: List[List[float]] = []
-    batch_size = 40
+    candidate_models = _unique_models(EMBEDDING_MODEL, EMBEDDING_FALLBACK_MODELS)
+    last_exc: Optional[Exception] = None
 
-    for i in range(0, len(texts), batch_size):
-        batch = texts[i : i + batch_size]
-        response = client.models.embed_content(
-            model=EMBEDDING_MODEL,
-            contents=batch,
-            config=types.EmbedContentConfig(
-                task_type=task_type,
-                output_dimensionality=VECTOR_DIMS,
-            ),
-        )
-        if not response.embeddings:
-            raise HTTPException(status_code=502, detail="فشل توليد المتجهات من Gemini API.")
-        all_vectors.extend([list(emb.values) for emb in response.embeddings])
+    for model_name in candidate_models:
+        try:
+            all_vectors: List[List[float]] = []
+            batch_size = 40
+            for i in range(0, len(texts), batch_size):
+                batch = texts[i : i + batch_size]
+                response = client.models.embed_content(
+                    model=model_name,
+                    contents=batch,
+                    config=types.EmbedContentConfig(
+                        task_type=task_type,
+                        output_dimensionality=VECTOR_DIMS,
+                    ),
+                )
+                if not response.embeddings:
+                    raise RuntimeError("لم يُعد نموذج التضمين متجهات صالحة.")
+                all_vectors.extend([list(emb.values) for emb in response.embeddings])
+            return all_vectors
+        except Exception as exc:
+            last_exc = exc
 
-    return all_vectors
+    raise HTTPException(
+        status_code=502,
+        detail=f"تعذر توليد المتجهات من Gemini API: {last_exc}",
+    )
+
+
+def _generate_with_fallback(
+    contents: str,
+    system_instruction: str,
+    temperature: float = 0.15,
+) -> Tuple[str, str]:
+    client = get_genai_client()
+    candidate_models = _unique_models(DEFAULT_GEMINI_MODEL, FALLBACK_GEN_MODELS)
+    last_exc: Optional[Exception] = None
+
+    for model_name in candidate_models:
+        try:
+            resp = client.models.generate_content(
+                model=model_name,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    temperature=temperature,
+                ),
+            )
+            return (resp.text or "").strip(), model_name
+        except Exception as exc:
+            last_exc = exc
+
+    raise HTTPException(
+        status_code=502,
+        detail=f"تعذر توليد الإجابة من Gemini API: {last_exc}",
+    )
 
 
 # ==============================================================================
@@ -200,11 +229,11 @@ class PoetryDocumentInput(BaseModel):
     doc_id: str = Field(..., description="المعرّف الفريد للقصيدة أو المادة المعجمية")
     title: str = Field(..., description="العنوان أو الكلمة الحسانية")
     content: str = Field(..., description="النص الكامل للقصيدة أو الشرح")
-    poet: str = Field(default="غير محدد", description="اسم الشاعر أو الراوي")
-    meter: str = Field(default="غير محدد", description="البحر الحساني / البتّ")
-    genre: str = Field(default="شعر حساني", description="النوع: طلعة، ݣاف، تبراع، معجم حساني")
-    source: str = Field(default="أرشيف ALBIDAN", description="المصدر الموثق")
-    lexical_notes: str = Field(default="", description="شرح المفردات إن وُجد")
+    poet: str = Field(default="تراث شفهي / غير معروف", description="اسم الشاعر أو الراوي")
+    meter: str = Field(default="غير محدد", description="البحر الحساني السائد")
+    genre: str = Field(default="شعر حساني", description="الجنس الشعري: تبراع، كاف، طلعة، معجم حساني")
+    source: str = Field(default="أرشيف ALBIDAN", description="المصدر الموثق أو المنطقة")
+    lexical_notes: str = Field(default="", description="السياق الثقافي والملاحظات العروضية واللغوية")
 
 
 class BulkIndexRequest(BaseModel):
@@ -215,7 +244,7 @@ class HybridQueryRequest(BaseModel):
     query: str = Field(..., min_length=2, description="سؤال الباحث حول الشعر الحساني أو المعجم")
     poet: Optional[str] = Field(default=None, description="فلترة اختيارية باسم الشاعر")
     meter: Optional[str] = Field(default=None, description="فلترة اختيارية بالبحر / البتّ")
-    genre: Optional[str] = Field(default=None, description="فلترة اختيارية بالنوع")
+    genre: Optional[str] = Field(default=None, description="فلترة اختيارية بالجنس الشعري")
     top_k: int = Field(default=5, ge=1, le=12)
     enable_reflection: bool = Field(
         default=True,
@@ -233,11 +262,11 @@ def upsert_poetry_documents(docs: List[PoetryDocumentInput]) -> Dict[str, int]:
     for doc in docs:
         header = (
             f"العنوان: {doc.title} | الشاعر: {doc.poet} | "
-            f"البحر (البتّ): {doc.meter} | النوع: {doc.genre} | المصدر: {doc.source}"
+            f"البحر: {doc.meter} | الجنس: {doc.genre} | المصدر: {doc.source}"
         )
         full_body = doc.content.strip()
         if doc.lexical_notes.strip():
-            full_body += f"\n\nشرح المفردات:\n{doc.lexical_notes.strip()}"
+            full_body += f"\n\nملاحظات وسياق:\n{doc.lexical_notes.strip()}"
 
         content_hash = compute_content_hash(f"{header}\n{full_body}")
         existing = col.find_one({"doc_id": doc.doc_id}, {"content_hash": 1})
@@ -458,9 +487,8 @@ def generate_hassaniya_verified_answer(
             "answer": "لم يُعثر في أرشيف منصة ALBIDAN الموثّق على نصوص أو شواهد كافية للإجابة على هذا السؤال.",
             "verification_status": "بدون مصادر",
             "verification_notes": "قاعدة المعرفة لا تحتوي على مقاطع مطابقة حالياً.",
+            "model_used": DEFAULT_GEMINI_MODEL,
         }
-
-    client = get_genai_client()
 
     context_blocks = []
     for i, s in enumerate(sources, start=1):
@@ -469,7 +497,7 @@ def generate_hassaniya_verified_answer(
             f"- العنوان: {s.get('title', 'غير محدد')}\n"
             f"- الشاعر: {s.get('poet', 'غير محدد')}\n"
             f"- البحر (البتّ): {s.get('meter', 'غير محدد')}\n"
-            f"- النوع: {s.get('genre', 'غير محدد')}\n"
+            f"- الجنس: {s.get('genre', 'غير محدد')}\n"
             f"- المصدر: {s.get('source', 'أرشيف ALBIDAN')}\n"
             f"- النص:\n{s.get('text', '')}"
         )
@@ -477,7 +505,7 @@ def generate_hassaniya_verified_answer(
     context_text = "\n\n---\n\n".join(context_blocks)
 
     system_prompt = (
-        "أنت باحث أكاديمي متخصص في الأدب والشعر الشعبي الحساني (الطلعة، الݣيفان، التبراع، "
+        "أنت باحث أكاديمي متخصص في الأدب والشعر الشعبي الحساني (الطلعة، الكاف، التبراع، "
         "البتوت الحسانية، والمعجم الحساني) ضمن منصة ALBIDAN.\n"
         "قواعد علمية صارمة:\n"
         "1. اعتمد حصراً على الشواهد المرفقة في السياق ولا تؤلّف أبياتاً من عندك.\n"
@@ -486,21 +514,18 @@ def generate_hassaniya_verified_answer(
         "4. وثّق إجابتك بذكر رقم الشاهد والمصدر بين قوسين."
     )
 
-    draft_resp = client.models.generate_content(
-        model=GEMINI_MODEL,
+    draft_answer, used_model = _generate_with_fallback(
         contents=f"الشواهد الموثّقة من أرشيف ALBIDAN:\n{context_text}\n\nسؤال الباحث:\n{query}",
-        config=types.GenerateContentConfig(
-            system_instruction=system_prompt,
-            temperature=0.15,
-        ),
+        system_instruction=system_prompt,
+        temperature=0.15,
     )
-    draft_answer = (draft_resp.text or "").strip()
 
     if not enable_reflection:
         return {
             "answer": draft_answer,
             "verification_status": "موثّقة (الوضع السريع)",
             "verification_notes": "تم التوليد من الشواهد الموثقة دون جولة مراجعة ثانية.",
+            "model_used": used_model,
         }
 
     critic_prompt = (
@@ -515,19 +540,15 @@ def generate_hassaniya_verified_answer(
         "الإجابة النهائية المعتمدة فقط."
     )
 
-    critic_resp = client.models.generate_content(
-        model=GEMINI_MODEL,
+    raw_critic, _ = _generate_with_fallback(
         contents=(
             f"سؤال الباحث:\n{query}\n\n"
             f"الشواهد الموثقة:\n{context_text}\n\n"
             f"المسودة المطلوب تدقيقها:\n{draft_answer}"
         ),
-        config=types.GenerateContentConfig(
-            system_instruction=critic_prompt,
-            temperature=0.0,
-        ),
+        system_instruction=critic_prompt,
+        temperature=0.0,
     )
-    raw_critic = (critic_resp.text or "").strip()
 
     status_m = re.search(r"\[\[STATUS\]\]\s*:\s*(PASS|REVISED)", raw_critic, re.IGNORECASE)
     notes_m = re.search(r"\[\[NOTES\]\]\s*:\s*(.+?)(?=\[\[FINAL_ANSWER\]\]|$)", raw_critic, re.DOTALL)
@@ -541,6 +562,7 @@ def generate_hassaniya_verified_answer(
         "answer": final_answer,
         "verification_status": "مُصحّحة أكاديمياً" if status_code == "REVISED" else "موثّقة ومُدقّقة",
         "verification_notes": notes,
+        "model_used": used_model,
     }
 
 
@@ -557,7 +579,7 @@ def rag_health() -> Dict[str, Any]:
         "collection": RAG_COLLECTION_NAME,
         "indexed_documents": len(col.distinct("doc_id")),
         "total_chunks": col.count_documents({}),
-        "model": GEMINI_MODEL,
+        "model": DEFAULT_GEMINI_MODEL,
         "embedding_model": EMBEDDING_MODEL,
     }
 
@@ -577,8 +599,8 @@ def index_documents_endpoint(payload: BulkIndexRequest) -> Dict[str, Any]:
 @router.post("/sync-albidan")
 def sync_albidan_archive() -> Dict[str, Any]:
     """
-    مزامنة تلقائية شاملة لمجموعتي poems و glossary داخل قاعدة albidan_corpus
-    مع التعرف الذكي على أسماء الحقول وتحويلها إلى متجهات بحث هجينة.
+    مزامنة تلقائية شاملة لمجموعتي poems و glossary في قاعدة albidan_corpus
+    وفق بنية الحقول الفعلية في main.py.
     """
     t0 = time.perf_counter()
     batch_docs: List[PoetryDocumentInput] = []
@@ -587,30 +609,40 @@ def sync_albidan_archive() -> Dict[str, Any]:
     poems_col = get_source_collection("poems")
     poems_count = 0
     for raw in poems_col.find({}):
-        doc_id = f"poem::{raw.get('_id')}"
-        title = _pick_first_text(raw, ["title", "name", "heading", "poem_title"], "قصيدة حسانية")
-        poet = _pick_first_text(raw, ["poet", "author", "poet_name", "shair"], "غير محدد")
-        meter = _pick_first_text(raw, ["meter", "bahr", "batt", "rhythm", "wazn"], "غير محدد")
-        genre = _pick_first_text(raw, ["genre", "type", "category", "form"], "شعر حساني")
-        source = _pick_first_text(raw, ["source", "reference", "ref"], "أرشيف ALBIDAN - القصائد")
-        notes = _pick_first_text(raw, ["lexical_notes", "analysis", "explanation", "notes", "summary"], "")
-        content = _pick_first_text(raw, ["content", "text", "body", "poem", "lyrics", "verses"], "")
-
-        if not content:
-            content = _fallback_serialize(raw, {"_id", "embedding", "created_at", "updated_at"})
-        if not content:
+        poem_text = str(raw.get("poem_text") or "").strip()
+        if not poem_text:
             continue
+
+        analysis = raw.get("analysis") or {}
+        doc_id = f"poem::{raw.get('id') or raw.get('_id')}"
+        title = str(raw.get("title") or "قصيدة حسانية").strip()
+        poet = str(raw.get("poet") or "تراث شفهي / غير معروف").strip()
+        region = str(raw.get("region") or "الصحراء المغربية").strip()
+        meter = str(raw.get("dominant_meter") or analysis.get("dominant_meter") or "غير محدد").strip()
+        genre = str(raw.get("poem_type") or analysis.get("poem_type") or "شعر حساني").strip()
+
+        notes_parts: List[str] = []
+        if analysis.get("dominant_rhyme"):
+            notes_parts.append(f"القافية والروي: {analysis['dominant_rhyme']}")
+        if analysis.get("cultural_context"):
+            notes_parts.append(f"السياق الثقافي: {analysis['cultural_context']}")
+        if analysis.get("linguistic_notes"):
+            notes_parts.append(f"ملاحظات عروضية ولغوية: {analysis['linguistic_notes']}")
+        if analysis.get("english_translation"):
+            notes_parts.append(f"English Translation: {analysis['english_translation']}")
+        if analysis.get("french_translation"):
+            notes_parts.append(f"Traduction Française: {analysis['french_translation']}")
 
         batch_docs.append(
             PoetryDocumentInput(
                 doc_id=doc_id,
                 title=title,
-                content=content,
+                content=poem_text,
                 poet=poet,
                 meter=meter,
                 genre=genre,
-                source=source,
-                lexical_notes=notes,
+                source=f"مدونة ALBIDAN — {region}",
+                lexical_notes="\n".join(notes_parts),
             )
         )
         poems_count += 1
@@ -619,39 +651,29 @@ def sync_albidan_archive() -> Dict[str, Any]:
     glossary_col = get_source_collection("glossary")
     glossary_count = 0
     for raw in glossary_col.find({}):
-        doc_id = f"glossary::{raw.get('_id')}"
-        term = _pick_first_text(raw, ["term", "word", "kalima", "title", "entry", "name"], "مفردة حسانية")
-        meaning = _pick_first_text(
-            raw,
-            ["meaning", "definition", "explanation", "description", "content", "text", "sharh"],
-            "",
-        )
-        example = _pick_first_text(raw, ["example", "usage", "verse", "shahid"], "")
-        source = _pick_first_text(raw, ["source", "reference"], "المعجم الحساني - ALBIDAN")
+        term = str(raw.get("term") or "").strip()
+        arabic_meaning = str(raw.get("arabic_meaning") or "").strip()
+        english_meaning = str(raw.get("english_meaning") or "").strip()
+        source_poem = str(raw.get("source_poem_title") or "المعجم الحساني - ALBIDAN").strip()
+
+        if not term and not arabic_meaning:
+            continue
 
         body_parts = [f"المفردة الحسانية: {term}"]
-        if meaning:
-            body_parts.append(f"المعنى والشرح: {meaning}")
-        if example:
-            body_parts.append(f"مثال وشاهد: {example}")
-        if len(body_parts) == 1:
-            fallback = _fallback_serialize(raw, {"_id", "embedding", "created_at", "updated_at"})
-            if fallback:
-                body_parts.append(fallback)
-
-        content = "\n".join(body_parts).strip()
-        if not content:
-            continue
+        if arabic_meaning:
+            body_parts.append(f"المعنى بالعربية الفصحى: {arabic_meaning}")
+        if english_meaning:
+            body_parts.append(f"English Meaning: {english_meaning}")
 
         batch_docs.append(
             PoetryDocumentInput(
-                doc_id=doc_id,
-                title=term,
-                content=content,
+                doc_id=f"glossary::{raw.get('_id') or term}",
+                title=term or "مفردة حسانية",
+                content="\n".join(body_parts),
                 poet="المعجم الحساني",
                 meter="معجم",
                 genre="معجم حساني",
-                source=source,
+                source=f"المعجم الحساني — وردت في: {source_poem}",
             )
         )
         glossary_count += 1
@@ -691,6 +713,7 @@ def ask_hassaniya_rag(req: HybridQueryRequest) -> Dict[str, Any]:
     return {
         "query": req.query,
         "answer": gen_result["answer"],
+        "model_used": gen_result["model_used"],
         "verification": {
             "status": gen_result["verification_status"],
             "notes": gen_result["verification_notes"],
