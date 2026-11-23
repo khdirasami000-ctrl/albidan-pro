@@ -41,6 +41,7 @@ STATIC_DIR.mkdir(exist_ok=True)
 
 MONGODB_URI = os.getenv("MONGODB_URI", "").strip()
 MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "albidan_corpus").strip()
+RAG_COLLECTION_NAME = os.getenv("RAG_COLLECTION_NAME", "hassaniya_rag_chunks").strip()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip() or "gemini-3.5-flash-lite"
 ADMIN_PIN = os.getenv("ADMIN_PIN", "").strip()
@@ -123,6 +124,15 @@ class BatchSaveItem(BaseModel):
 
 class BatchSaveRequest(BaseModel):
     items: List[BatchSaveItem]
+
+
+class BulkDeletePoemsRequest(BaseModel):
+    ids: List[str] = Field(default_factory=list)
+
+
+class DeleteAllArchiveRequest(BaseModel):
+    include_glossary: bool = False
+    include_rag: bool = True
 
 
 class UpdatePoemRequest(BaseModel):
@@ -481,11 +491,63 @@ class ArchiveManager:
 
     def delete_poem(self, record_id: str) -> bool:
         if self.active_mode == "mongodb":
-            return self.mongo_db["poems"].delete_one({"$or": [{"_id": record_id}, {"id": record_id}]}).deleted_count > 0
+            deleted = self.mongo_db["poems"].delete_one({"$or": [{"_id": record_id}, {"id": record_id}]}).deleted_count > 0
+            if deleted:
+                try:
+                    self.mongo_db[RAG_COLLECTION_NAME].delete_many({"doc_id": f"poem::{record_id}"})
+                except Exception:
+                    pass
+            return deleted
         with sqlite3.connect(self.sqlite_path) as conn:
             cur = conn.execute("DELETE FROM poems WHERE id = ?", (record_id,))
             conn.commit()
             return cur.rowcount > 0
+
+    def delete_poems_bulk(self, record_ids: List[str]) -> int:
+        clean_ids = [str(rid).strip() for rid in record_ids if str(rid).strip()]
+        if not clean_ids:
+            return 0
+        if self.active_mode == "mongodb":
+            res = self.mongo_db["poems"].delete_many(
+                {"$or": [{"_id": {"$in": clean_ids}}, {"id": {"$in": clean_ids}}]}
+            )
+            try:
+                rag_doc_ids = [f"poem::{rid}" for rid in clean_ids]
+                self.mongo_db[RAG_COLLECTION_NAME].delete_many({"doc_id": {"$in": rag_doc_ids}})
+            except Exception:
+                pass
+            return int(res.deleted_count)
+        with sqlite3.connect(self.sqlite_path) as conn:
+            placeholders = ",".join("?" for _ in clean_ids)
+            cur = conn.execute(f"DELETE FROM poems WHERE id IN ({placeholders})", clean_ids)
+            conn.commit()
+            return int(cur.rowcount)
+
+    def delete_all_data(self, include_glossary: bool = False, include_rag: bool = True) -> Dict[str, int]:
+        deleted_poems = 0
+        deleted_glossary = 0
+        deleted_rag = 0
+        if self.active_mode == "mongodb":
+            deleted_poems = int(self.mongo_db["poems"].delete_many({}).deleted_count)
+            if include_glossary:
+                deleted_glossary = int(self.mongo_db["glossary"].delete_many({}).deleted_count)
+            if include_rag:
+                try:
+                    rag_filter = {} if include_glossary else {"doc_id": {"$regex": "^poem::"}}
+                    deleted_rag = int(self.mongo_db[RAG_COLLECTION_NAME].delete_many(rag_filter).deleted_count)
+                except Exception:
+                    pass
+        else:
+            with sqlite3.connect(self.sqlite_path) as conn:
+                deleted_poems = int(conn.execute("DELETE FROM poems").rowcount)
+                if include_glossary:
+                    deleted_glossary = int(conn.execute("DELETE FROM glossary").rowcount)
+                conn.commit()
+        return {
+            "deleted_poems": deleted_poems,
+            "deleted_glossary": deleted_glossary,
+            "deleted_rag": deleted_rag,
+        }
 
     def list_glossary(self, q: str = "") -> List[Dict]:
         items: List[Dict] = []
@@ -700,7 +762,7 @@ def require_admin(x_admin_pin: Optional[str]):
         raise HTTPException(status_code=403, detail="رمز المشرف غير صحيح.")
 
 
-app = FastAPI(title="ALBIDAN AI Lab — Academic API", version="3.3.0")
+app = FastAPI(title="ALBIDAN AI Lab — Academic API", version="3.4.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # دمج محرك البحث المعرفي الهجين السحابي (Cloud Hybrid RAG)
@@ -897,6 +959,28 @@ def api_save_poems_batch(req: BatchSaveRequest):
         raise HTTPException(status_code=400, detail="جميع القصائد المحددة فارغة.")
     ids = archive.save_poems_batch(prepared)
     return {"saved_count": len(ids), "ids": ids, "message": f"تم حفظ {len(ids)} قصيدة دفعة واحدة بنجاح!"}
+
+
+@app.post("/api/poems/bulk-delete")
+def api_bulk_delete_poems(req: BulkDeletePoemsRequest, x_admin_pin: Optional[str] = Header(default=None)):
+    require_admin(x_admin_pin)
+    if not req.ids:
+        raise HTTPException(status_code=400, detail="لم يتم تحديد أي قصيدة للحذف.")
+    deleted_count = archive.delete_poems_bulk(req.ids)
+    return {"deleted_count": deleted_count, "message": f"تم حذف {deleted_count} قصيدة دفعة واحدة بنجاح."}
+
+
+@app.post("/api/poems/delete-all")
+def api_delete_all_poems(req: DeleteAllArchiveRequest, x_admin_pin: Optional[str] = Header(default=None)):
+    require_admin(x_admin_pin)
+    stats = archive.delete_all_data(include_glossary=req.include_glossary, include_rag=req.include_rag)
+    return {
+        **stats,
+        "message": (
+            f"تم الحذف الشامل بنجاح (القصائد: {stats['deleted_poems']}، "
+            f"المعجم: {stats['deleted_glossary']}، مقاطع البحث: {stats['deleted_rag']})."
+        ),
+    }
 
 
 @app.put("/api/poems/{record_id}")
