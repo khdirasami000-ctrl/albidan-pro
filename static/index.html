@@ -14,600 +14,236 @@
   <meta property="og:description" content="التقطيع العروضي الحساني، رقمنة القصائد من الصور وملفات Word/PDF، الاستيراد الجماعي للدواوين، المدونة المفتوحة، والمعجم المتنامي." />
   <meta property="og:url" content="__BASE_URL__/" />
   <meta property="og:image" content="__BASE_URL__/static/founder.jpg" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D0B09'/%3E%3Crect x='4' y='4' width='56' height='56' rx='11' fill='none' stroke='%23D8B254' stroke-width='3'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-size='30' fill='%23D8B254'%3E%D8%A8%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D0B09'/%3E%3Crect x='4' y='4' width='56' height='56' rx='11' fill='none' stroke='%23D4AF37' stroke-width='3'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-size='30' fill='%23D4AF37'%3E%F0%9F%90%AA%3C/text%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0D0B09;
-      --bg-soft: #151310;
-      --card: #1A1612;
-      --card-hover: #211C16;
-      --border: rgba(216, 178, 84, 0.18);
-      --border-strong: rgba(216, 178, 84, 0.48);
-      --gold: #D8B254;
-      --gold-light: #EBD07E;
-      --accent: #C86D3B;
-      --danger: #EF4444;
-      --success: #22C55E;
-      --text: #F4EFE6;
-      --muted: #A69C8E;
-      --shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
-      --glass: rgba(13, 11, 9, 0.88);
-      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --bg:#0D0B09; --bg-soft:#15120F; --card:#191511;
+      --border:rgba(212,175,55,0.20); --border-strong:rgba(212,175,55,0.50);
+      --gold:#D4AF37; --gold-light:#E8C968; --accent:#C86D3B;
+      --danger:#EF4444; --success:#22C55E; --text:#F2ECE1; --muted:#A39A8E;
+      --shadow:0 10px 28px rgba(0,0,0,0.35); --glass:rgba(13,11,9,0.90);
     }
     [data-theme="light"] {
-      --bg: #F8F5EE;
-      --bg-soft: #F0EBE0;
-      --card: #FFFFFF;
-      --card-hover: #FCFBF8;
-      --border: #E3DBCC;
-      --border-strong: #1B365D;
-      --gold: #1B365D;
-      --gold-light: #9A6B13;
-      --accent: #A65D3B;
-      --text: #1A2332;
-      --muted: #5A6577;
-      --shadow: 0 10px 26px rgba(27, 54, 93, 0.07);
-      --glass: rgba(248, 245, 238, 0.92);
+      --bg:#F8F6F1; --bg-soft:#F0ECE3; --card:#FFFFFF;
+      --border:#E2DBD0; --border-strong:#1B365D; --gold:#1B365D;
+      --gold-light:#9A6B13; --accent:#9A6B13; --text:#1A2332; --muted:#5A6577;
+      --shadow:0 8px 22px rgba(26,35,50,0.06); --glass:rgba(248,246,241,0.94);
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { font-size: 14.5px; scroll-behavior: smooth; }
-    body {
-      font-family: 'IBM Plex Sans Arabic', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.7;
-      overflow-x: hidden;
-      transition: background 0.3s var(--ease), color 0.3s var(--ease);
-    }
-
-    /* شريط تقدم القراءة العلوي */
-    .scroll-progress {
-      position: fixed; top: 0; right: 0; width: 0%; height: 2.5px;
-      background: linear-gradient(90deg, var(--accent), var(--gold-light));
-      z-index: 200; transition: width 0.1s linear;
-    }
-
-    .container { max-width: 1160px; margin: 0 auto; padding: 0 1.15rem; }
-    svg.lucide { width: 16px; height: 16px; stroke-width: 1.75; flex-shrink: 0; }
-
-    /* الشريط العلوي */
-    .navbar {
-      position: sticky; top: 0; z-index: 60;
-      background: var(--glass);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
-    }
-    .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.65rem 0; }
-    .brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-    .brand-mark {
-      width: 36px; height: 36px; border-radius: 10px;
-      background: linear-gradient(135deg, #E2BE60, #9B711C);
-      color: #14100C; display: grid; place-items: center; flex-shrink: 0;
-      box-shadow: 0 4px 14px rgba(216, 178, 84, 0.25);
-    }
-    [data-theme="light"] .brand-mark { background: linear-gradient(135deg, #1B365D, #2C5282); color: #F8F5EE; }
-    .brand-name { font-size: 1.02rem; font-weight: 700; line-height: 1.15; }
-    .brand-sub { font-size: 0.68rem; color: var(--gold-light); font-weight: 600; letter-spacing: 0.4px; }
-
-    .nav-views { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
-    .nav-tab {
-      background: transparent; border: 1px solid transparent; color: var(--muted);
-      font-family: inherit; font-size: 0.84rem; font-weight: 600;
-      padding: 6px 11px; border-radius: 9px; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 6px;
-      transition: all 0.25s var(--ease);
-    }
-    .nav-tab:hover { color: var(--text); background: var(--bg-soft); }
-    .nav-tab.active { background: rgba(216, 178, 84, 0.14); color: var(--gold-light); border-color: var(--border); }
-    [data-theme="light"] .nav-tab.active { background: #1B365D; color: #FFFFFF; border-color: #1B365D; }
-
-    .nav-actions { display: flex; align-items: center; gap: 6px; }
-    .icon-btn {
-      background: var(--bg-soft); color: var(--text); border: 1px solid var(--border);
-      padding: 6px 10px; border-radius: 9px; cursor: pointer; font-family: inherit;
-      font-weight: 600; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 5px;
-      transition: all 0.22s var(--ease);
-    }
-    .icon-btn:hover { border-color: var(--gold); color: var(--gold-light); transform: translateY(-1px); }
-    .icon-btn.admin-on { border-color: var(--success); color: var(--success); background: rgba(34, 197, 94, 0.10); }
-    .menu-toggle { display: none; }
-    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: inline-block; }
-
-    .mobile-menu {
-      display: none; flex-direction: column; gap: 6px;
-      padding: 0.8rem 1.15rem 1rem; border-top: 1px solid var(--border);
-      background: var(--card); animation: fadeIn 0.2s var(--ease);
-    }
-    .mobile-menu.open { display: flex; }
-    .mobile-menu button {
-      text-align: right; background: var(--bg-soft); border: 1px solid var(--border);
-      color: var(--text); font-family: inherit; font-weight: 600; font-size: 0.9rem;
-      padding: 10px 14px; border-radius: 10px; cursor: pointer;
-      display: flex; align-items: center; gap: 10px; transition: 0.2s;
-    }
-    .mobile-menu button.active { border-color: var(--gold); color: var(--gold-light); background: rgba(216, 178, 84, 0.10); }
-
-    /* الأقسام */
-    main.container { padding-top: 1.2rem; }
-    .view-section { display: none; animation: viewReveal 0.35s var(--ease); }
-    .view-section.active { display: block; }
-    @keyframes viewReveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    .page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 0.85rem; flex-wrap: wrap; margin-bottom: 1.15rem; }
-    .page-head h2 { font-size: 1.28rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .page-head h2 svg.lucide { color: var(--gold-light); width: 20px; height: 20px; }
-    .page-head p { font-size: 0.86rem; color: var(--muted); margin-top: 2px; }
-
-    /* بطاقة الترحيب الافتتاحية (في استكشف الديوان فقط) */
-    .hero-editorial {
-      position: relative; overflow: hidden;
-      background: radial-gradient(circle at 12% 15%, rgba(216, 178, 84, 0.14), transparent 45%),
-                  radial-gradient(circle at 90% 90%, rgba(200, 109, 59, 0.10), transparent 40%),
-                  var(--card);
-      border: 1px solid var(--border);
-      border-radius: 18px; padding: 1.8rem 1.6rem; margin-bottom: 1.6rem;
-      box-shadow: var(--shadow);
-    }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 0.76rem; font-weight: 600; color: var(--gold-light);
-      background: rgba(216, 178, 84, 0.12); border: 1px solid var(--border);
-      padding: 4px 12px; border-radius: 999px; margin-bottom: 0.8rem;
-    }
-    .hero-editorial h1 {
-      font-family: 'Amiri', serif; font-size: clamp(1.75rem, 3.6vw, 2.35rem);
-      font-weight: 700; line-height: 1.3; margin-bottom: 0.5rem;
-    }
-    .hero-editorial .hero-desc { color: var(--muted); font-size: 0.94rem; max-width: 680px; margin-bottom: 1.2rem; }
-    .hero-search-bar {
-      display: flex; gap: 8px; flex-wrap: wrap; max-width: 640px; margin-bottom: 1.3rem;
-    }
-    .hero-search-bar input {
-      flex: 1; min-width: 210px; background: var(--bg-soft); border: 1px solid var(--border-strong);
-      border-radius: 11px; padding: 0.7rem 1rem; font-size: 0.9rem;
-    }
-    .hero-stats {
-      display: flex; flex-wrap: wrap; gap: 1.2rem; padding-top: 1rem;
-      border-top: 1px solid var(--border);
-    }
-    .hero-stat-item { display: flex; align-items: baseline; gap: 6px; font-size: 0.84rem; color: var(--muted); }
-    .hero-stat-item strong { font-size: 1.2rem; color: var(--gold-light); font-weight: 700; }
-
-    /* عناوين الأقسام الفرعية والسلايدرات */
-    .section-bar {
-      display: flex; justify-content: space-between; align-items: center;
-      gap: 0.8rem; margin: 1.6rem 0 0.85rem; flex-wrap: wrap;
-    }
-    .section-bar h3 { font-size: 1.08rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .section-bar h3 svg.lucide { color: var(--gold-light); width: 18px; height: 18px; }
-    .slider-controls { display: flex; gap: 6px; align-items: center; }
-
-    /* سلايدر مختارات الديوان */
-    .snap-slider {
-      display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 12px;
-      scroll-snap-type: x mandatory; scrollbar-width: thin;
-      scrollbar-color: var(--border-strong) transparent;
-    }
-    .snap-slider::-webkit-scrollbar { height: 6px; }
-    .snap-slider::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
-
-    .featured-slide {
-      flex: 0 0 min(86vw, 440px); scroll-snap-align: start;
-      background: linear-gradient(160deg, var(--card), var(--bg-soft));
-      border: 1px solid var(--border); border-top: 2.5px solid var(--gold);
-      border-radius: 16px; padding: 1.35rem;
-      display: flex; flex-direction: column; gap: 0.75rem;
-      transition: transform 0.3s var(--ease), border-color 0.3s var(--ease);
-      box-shadow: var(--shadow);
-    }
-    .featured-slide:hover { transform: translateY(-3px); border-color: var(--border-strong); }
-    .slide-verse {
-      font-family: 'Amiri', serif; font-size: 1.35rem; line-height: 2;
-      color: var(--text); white-space: pre-line;
-      padding: 0.7rem 0.9rem; background: rgba(216, 178, 84, 0.05);
-      border-right: 2.5px solid var(--gold); border-radius: 8px;
-    }
-    .slide-meta { font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-    /* سلايدر البحور الحسانية */
-    .meter-slide {
-      flex: 0 0 215px; scroll-snap-align: start; cursor: pointer;
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 14px; padding: 1rem 1.1rem;
-      display: flex; flex-direction: column; gap: 6px;
-      transition: all 0.25s var(--ease);
-    }
-    .meter-slide:hover { border-color: var(--gold); background: var(--card-hover); transform: translateY(-2px); }
-    .meter-slide .m-title { font-family: 'Amiri', serif; font-size: 1.25rem; font-weight: 700; color: var(--gold-light); }
-    .meter-slide .m-beats { font-size: 0.78rem; color: var(--muted); }
-    .meter-slide .m-count { margin-top: auto; font-size: 0.76rem; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--border); }
-
-    /* سلايدر المعجم الحي */
-    .gloss-slide {
-      flex: 0 0 265px; scroll-snap-align: start; cursor: pointer;
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 14px; padding: 1rem 1.1rem;
-      transition: all 0.25s var(--ease);
-    }
-    .gloss-slide:hover { border-color: var(--gold); transform: translateY(-2px); }
-    .gloss-slide .g-word { font-family: 'Amiri', serif; font-size: 1.35rem; font-weight: 700; color: var(--gold-light); }
-    .gloss-slide .g-ar { font-size: 0.84rem; color: var(--text); margin: 4px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .gloss-slide .g-en { direction: ltr; text-align: left; font-size: 0.76rem; color: var(--muted); font-style: italic; }
-
-    /* البطاقات والأزرار العامة */
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 1.2rem; box-shadow: var(--shadow); }
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-      padding: 0.58rem 1.1rem; border-radius: 10px; font-family: inherit;
-      font-weight: 600; font-size: 0.84rem; cursor: pointer; border: 1px solid transparent;
-      text-decoration: none; transition: all 0.22s var(--ease);
-    }
-    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-    .btn-primary { background: linear-gradient(135deg, #E2BE60, #B8891E); color: #14100C; font-weight: 700; }
-    [data-theme="light"] .btn-primary { background: #1B365D; color: #FFFFFF; }
-    .btn-primary:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); }
-    .btn-secondary { background: var(--bg-soft); color: var(--text); border-color: var(--border); }
-    .btn-secondary:hover:not(:disabled) { border-color: var(--gold); color: var(--gold-light); }
-    .btn-danger { background: rgba(239, 68, 68, 0.12); color: #F87171; border-color: rgba(239, 68, 68, 0.32); }
-    .btn-danger:hover:not(:disabled) { background: #EF4444; color: #FFFFFF; }
-    .btn-sm { padding: 0.4rem 0.78rem; font-size: 0.78rem; border-radius: 8px; }
-
-    /* المختبر */
-    .lab-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 1.2rem; align-items: start; }
-    .ingest-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 0.8rem; }
-    .ingest-btn {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 5px; padding: 0.75rem 0.45rem; border-radius: 11px;
-      border: 1px dashed var(--border-strong); background: var(--bg-soft); color: var(--text);
-      cursor: pointer; font-family: inherit; font-size: 0.78rem; font-weight: 600;
-      transition: all 0.22s var(--ease); text-align: center;
-    }
-    .ingest-btn svg.lucide { width: 19px; height: 19px; color: var(--gold-light); }
-    .ingest-btn:hover:not(:disabled) { border-color: var(--gold); background: rgba(216, 178, 84, 0.08); transform: translateY(-1px); }
-    .ingest-btn:disabled { opacity: 0.55; cursor: wait; }
-    .ingest-btn.highlight { border-style: solid; border-color: var(--gold); background: rgba(216, 178, 84, 0.10); }
-    .ingest-btn span { font-size: 0.68rem; color: var(--muted); font-weight: 400; }
-
-    .advanced-model-box {
-      display: none; background: var(--bg-soft); border: 1px solid var(--border);
-      border-radius: 10px; padding: 0.7rem 0.85rem; margin-bottom: 0.8rem;
-    }
-    .advanced-model-box.open { display: block; animation: fadeIn 0.2s ease; }
-
-    textarea, input[type="text"], input[type="password"], input[type="number"], select {
-      width: 100%; background: var(--bg-soft); color: var(--text);
-      border: 1px solid var(--border); border-radius: 10px;
-      padding: 0.62rem 0.85rem; font-family: inherit; font-size: 0.86rem; outline: none;
-      transition: border-color 0.2s ease;
-    }
-    textarea.poem-editor { font-family: 'Amiri', serif; font-size: 1.24rem; line-height: 2; min-height: 195px; resize: vertical; }
-    textarea:focus, input:focus, select:focus { border-color: var(--gold); }
-    .toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.7rem; align-items: center; }
-
-    .progress-wrap { display: none; background: var(--bg-soft); border: 1px solid var(--border-strong); border-radius: 10px; padding: 0.65rem 0.85rem; margin-bottom: 0.8rem; }
-    .progress-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; gap: 8px; }
-    .progress-track { width: 100%; height: 7px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; margin-top: 6px; }
-    [data-theme="light"] .progress-track { background: #E2DBD0; }
-    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--gold), var(--accent)); transition: width 0.2s ease; }
-    .progress-fill.pulse { animation: pulseBar 1.2s ease-in-out infinite; }
-    @keyframes pulseBar { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
-
-    .tabs { display: flex; gap: 5px; margin-bottom: 0.9rem; background: var(--bg-soft); padding: 4px; border-radius: 11px; border: 1px solid var(--border); }
-    .tab-btn { flex: 1; padding: 7px 8px; border: none; border-radius: 8px; background: transparent; color: var(--muted); font-family: inherit; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: 0.2s; }
-    .tab-btn.active { background: var(--gold); color: #14100C; font-weight: 700; }
-    [data-theme="light"] .tab-btn.active { color: #FFFFFF; }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; animation: fadeIn 0.2s ease; }
-
-    .pill-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 0.73rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: rgba(216, 178, 84, 0.14); color: var(--gold-light); border: 1px solid var(--border); }
-    .pill-success { background: rgba(34, 197, 94, 0.14); color: #4ADE80; border-color: rgba(34, 197, 94, 0.38); }
-    [data-theme="light"] .pill-success { color: #15803D; background: rgba(21, 128, 61, 0.10); }
-
-    .meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 0.85rem; }
-    .meta-box { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px; padding: 0.65rem; text-align: center; }
-    .meta-box small { display: block; font-size: 0.72rem; color: var(--muted); }
-    .meta-box strong { font-size: 0.88rem; color: var(--gold-light); }
-    .line-row { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem 0.9rem; margin-bottom: 0.55rem; }
-    .line-orig { font-family: 'Amiri', serif; font-size: 1.16rem; font-weight: 700; }
-    .line-phon { font-family: 'Amiri', serif; font-size: 1.05rem; color: var(--gold-light); margin: 2px 0 6px; }
-    .beats { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-    .beat-dot { width: 15px; height: 5px; border-radius: 999px; background: linear-gradient(90deg, var(--gold), var(--accent)); }
-    .trans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .trans-card { direction: ltr; text-align: left; background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem; white-space: pre-line; font-size: 0.88rem; line-height: 1.7; }
-    .code-box { direction: ltr; text-align: left; background: #0B0A08; color: #EAE4D9; border: 1px solid var(--border); border-radius: 9px; padding: 0.75rem; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; margin-top: 6px; word-break: break-word; }
-
-    /* الجداول الأكاديمية المتجاوبة (تتحول لبطاقات على الهاتف) */
-    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 13px; }
-    table.academic-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; background: var(--card); }
-    table.academic-table th { background: var(--bg-soft); color: var(--gold-light); font-weight: 700; text-align: right; padding: 0.78rem 0.9rem; border-bottom: 1px solid var(--border); }
-    table.academic-table td { padding: 0.72rem 0.9rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-    table.academic-table tr:last-child td { border-bottom: none; }
-    table.academic-table tr:hover td { background: rgba(216, 178, 84, 0.04); }
-    .term-cell { font-family: 'Amiri', serif; font-size: 1.25rem; font-weight: 700; color: var(--gold-light); }
-
-    /* المدونة والبطاقات */
-    .archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
-    .archive-card {
-      background: var(--card); border: 1px solid var(--border); border-right: 3px solid var(--gold);
-      border-radius: 14px; padding: 1.1rem; display: flex; flex-direction: column; gap: 0.6rem;
-      transition: transform 0.25s var(--ease), border-color 0.25s var(--ease);
-    }
-    .archive-card:hover { transform: translateY(-2px); border-color: var(--border-strong); }
-    .archive-poem {
-      font-family: 'Amiri', serif; font-size: 1.18rem; line-height: 1.95; white-space: pre-line;
-      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
-      cursor: pointer;
-    }
-    .card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 9px; border-top: 1px solid var(--border); }
-    .active-filter-bar { display: none; align-items: center; gap: 8px; margin-bottom: 0.9rem; flex-wrap: wrap; }
-    .active-filter-bar.show { display: flex; }
-
-    /* المرجع العروضي والمؤسس */
-    .ref-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 1.1rem; }
-    .ref-card { background: var(--card); border: 1px solid var(--border); border-radius: 13px; padding: 1.1rem; }
-    .ref-card h3 { font-size: 0.98rem; color: var(--gold-light); margin-bottom: 0.45rem; }
-    .ref-card p, .ref-card li { font-size: 0.86rem; color: var(--muted); line-height: 1.75; }
-    .ref-card ul { padding-right: 1.15rem; }
-
-    .about-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 1.25rem; align-items: start; }
-    .founder-card { background: var(--card); border: 1px solid var(--border); border-top: 3px solid var(--gold); border-radius: 16px; padding: 1.5rem; display: flex; gap: 1.3rem; align-items: center; }
-    .founder-avatar { width: 118px; height: 118px; border-radius: 16px; flex-shrink: 0; overflow: hidden; border: 2px solid var(--gold); display: grid; place-items: center; background: linear-gradient(145deg, #1E3A5F, #13253D 65%, #3B2A1A); color: #FDE68A; }
-    .founder-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
-    .social-row { display: flex; gap: 8px; margin-top: 0.9rem; flex-wrap: wrap; }
-    .social-btn {
-      background: var(--bg-soft); color: var(--text); border: 1px solid var(--border-strong);
-      transition: all 0.25s var(--ease);
-    }
-    .social-btn.fb:hover { border-color: #3B82F6; color: #60A5FA; background: rgba(59, 130, 246, 0.1); }
-    .social-btn.wa:hover { border-color: #22C55E; color: #4ADE80; background: rgba(34, 197, 94, 0.1); }
-
-    /* الباحث الذكي */
-    .rag-filter-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 120px; gap: 8px; margin-top: 0.75rem; }
-    .rag-answer-card { background: var(--bg-soft); border: 1px solid var(--border-strong); border-right: 4px solid var(--gold); border-radius: 13px; padding: 1.2rem; margin-top: 1rem; }
-    .rag-answer-text { font-size: 0.96rem; line-height: 1.95; white-space: pre-line; margin-top: 0.7rem; color: var(--text); }
-    .rag-sources-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; margin-top: 0.75rem; }
-    .rag-source-card { background: var(--bg-soft); border: 1px solid var(--border); border-right: 3px solid var(--accent); border-radius: 11px; padding: 0.9rem; }
-    .rag-source-excerpt { font-family: 'Amiri', serif; font-size: 1.12rem; line-height: 1.9; white-space: pre-line; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
-    .rag-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.75rem; }
-
-    /* نافذة القراءة والتأمل (Zen Reader + Inline Glossary) */
-    .reader-box { max-width: 780px; padding: 1.6rem; }
-    .reader-toolbar {
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
-      padding-bottom: 0.9rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border);
-    }
-    .reader-poem-body {
-      font-family: 'Amiri', serif; font-size: 1.55rem; line-height: 2.35;
-      text-align: center; padding: 1.5rem 1.1rem; margin: 1rem 0;
-      background: radial-gradient(circle at top, rgba(216, 178, 84, 0.07), transparent 65%), var(--bg-soft);
-      border: 1px solid var(--border); border-radius: 14px;
-    }
-    .reader-line { margin-bottom: 0.35rem; }
-    .gloss-inline {
-      border-bottom: 1.5px dotted var(--gold); color: var(--gold-light);
-      cursor: pointer; padding: 0 2px; border-radius: 4px; transition: background 0.2s;
-    }
-    .gloss-inline:hover { background: rgba(216, 178, 84, 0.18); }
-    .gloss-popup-card {
-      display: none; background: var(--card); border: 1px solid var(--gold);
-      border-radius: 12px; padding: 0.9rem 1.05rem; margin: 0.8rem 0;
-      box-shadow: var(--shadow); animation: fadeIn 0.2s ease;
-    }
-    .gloss-popup-card.open { display: block; }
-    .related-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 9px; margin-top: 0.7rem; }
-    .related-mini-card {
-      background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px;
-      padding: 0.75rem; cursor: pointer; transition: 0.2s;
-    }
-    .related-mini-card:hover { border-color: var(--gold); }
-
-    /* النوافذ المنبثقة */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.76); backdrop-filter: blur(6px); display: none; place-items: center; z-index: 100; padding: 0.9rem; }
-    .modal-backdrop.open { display: grid; animation: fadeIn 0.2s ease; }
-    .modal-box { width: 100%; max-width: 580px; background: var(--card); border: 1px solid var(--border-strong); border-radius: 16px; padding: 1.3rem; max-height: 88vh; overflow-y: auto; box-shadow: var(--shadow); }
-    .modal-box.modal-wide { max-width: 860px; }
-    .search-item { padding: 0.7rem; border-radius: 9px; border: 1px solid var(--border); margin-top: 7px; cursor: pointer; background: var(--bg-soft); font-size: 0.86rem; display: flex; align-items: center; gap: 8px; }
-    .search-item:hover { border-color: var(--gold); }
-    .batch-poem-item { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem; margin-bottom: 0.7rem; }
-    .batch-poem-item.unchecked { opacity: 0.45; }
-    .batch-row-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 7px; margin: 6px 0; }
-
-    .skeleton-box {
-      height: 150px; border-radius: 14px; border: 1px solid var(--border);
-      background: linear-gradient(90deg, var(--card) 25%, var(--bg-soft) 50%, var(--card) 75%);
-      background-size: 200% 100%; animation: shimmer 1.4s infinite;
-    }
-    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-    .toast {
-      position: fixed; bottom: 18px; left: 18px; z-index: 130;
-      background: #181410; color: #F5D77F; border: 1px solid var(--gold);
-      padding: 0.7rem 1.1rem; border-radius: 11px; font-weight: 600; font-size: 0.84rem;
-      display: none; box-shadow: var(--shadow); max-width: 90vw;
-    }
-    [data-theme="light"] .toast { background: #1B365D; color: #FFFFFF; }
-    .toast.show { display: block; animation: viewReveal 0.25s var(--ease); }
-
-    footer { margin-top: 2.5rem; padding: 1.4rem 1rem; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 0.82rem; }
-
-    @media (max-width: 1024px) {
-      .lab-grid, .trans-grid, .about-grid { grid-template-columns: 1fr; }
-      .nav-views { display: none; }
-      .menu-toggle { display: inline-flex; }
-    }
-    @media (max-width: 768px) {
-      .hero-editorial { padding: 1.3rem 1.1rem; }
-      .rag-filter-grid { grid-template-columns: 1fr 1fr; }
-      /* تحويل الجداول إلى بطاقات معجمية مريحة على الهاتف */
-      .table-wrap { border: none; background: transparent; overflow: visible; }
-      table.academic-table, table.academic-table thead, table.academic-table tbody, table.academic-table tr, table.academic-table td { display: block; width: 100%; }
-      table.academic-table thead { display: none; }
-      table.academic-table { background: transparent; }
-      table.academic-table tr {
-        background: var(--card); border: 1px solid var(--border); border-right: 3px solid var(--gold);
-        border-radius: 14px; padding: 13px 15px; margin-bottom: 11px; box-shadow: var(--shadow);
-      }
-      table.academic-table td { border: none; padding: 5px 0; text-align: right !important; }
-      table.academic-table td:first-child {
-        font-size: 1.4rem; border-bottom: 1px solid var(--border);
-        padding-bottom: 7px; margin-bottom: 6px;
-      }
-      table.academic-table td[data-label]::before {
-        content: attr(data-label) ": ";
-        font-size: 0.74rem; font-weight: 700; color: var(--muted);
-        display: inline-block; margin-left: 5px;
-      }
-      table.academic-table td.en-cell { direction: ltr; text-align: left !important; color: var(--muted); font-size: 0.84rem; font-style: italic; }
-      table.academic-table td.en-cell::before { display: none; }
-      .reader-poem-body { font-size: 1.32rem; line-height: 2.15; padding: 1.1rem 0.7rem; }
-    }
-    @media (max-width: 680px) {
-      .ingest-bar { grid-template-columns: 1fr 1fr; }
-      .batch-row-grid, .rag-filter-grid { grid-template-columns: 1fr; }
-      .founder-card { flex-direction: column; text-align: center; }
-      .social-row { justify-content: center; }
-      .hide-xs { display: none; }
-    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { font-size:14.5px; scroll-behavior:smooth; }
+    body { font-family:'Cairo',sans-serif; background:var(--bg); color:var(--text); line-height:1.65; overflow-x:hidden; transition:background 0.25s,color 0.25s; }
+    .container { max-width:1140px; margin:0 auto; padding:0 1.15rem; }
+    .navbar { position:sticky; top:0; z-index:60; background:var(--glass); backdrop-filter:blur(14px); border-bottom:1px solid var(--border); }
+    .nav-inner { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; padding:0.65rem 0; }
+    .brand { display:flex; align-items:center; gap:9px; cursor:pointer; }
+    .brand-mark { width:34px; height:34px; border-radius:9px; background:linear-gradient(135deg,#D4AF37,#8C6413); color:#14100C; display:grid; place-items:center; font-size:1.1rem; flex-shrink:0; }
+    .brand-name { font-size:1rem; font-weight:800; line-height:1.15; }
+    .brand-sub { font-size:0.68rem; color:var(--gold-light); font-weight:700; letter-spacing:0.5px; }
+    .nav-views { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+    .nav-tab { background:transparent; border:1px solid transparent; color:var(--muted); font-family:inherit; font-size:0.84rem; font-weight:700; padding:6px 10px; border-radius:8px; cursor:pointer; transition:0.2s; }
+    .nav-tab:hover { color:var(--text); background:var(--bg-soft); }
+    .nav-tab.active { background:rgba(212,175,55,0.14); color:var(--gold-light); border-color:var(--border); }
+    [data-theme="light"] .nav-tab.active { background:#1B365D; color:#FFFFFF; border-color:#1B365D; }
+    .nav-actions { display:flex; align-items:center; gap:6px; }
+    .icon-btn { background:var(--bg-soft); color:var(--text); border:1px solid var(--border); padding:5px 10px; border-radius:8px; cursor:pointer; font-family:inherit; font-weight:700; font-size:0.78rem; display:inline-flex; align-items:center; gap:5px; transition:0.2s; }
+    .icon-btn:hover { border-color:var(--gold); color:var(--gold-light); }
+    .icon-btn.admin-on { border-color:var(--success); color:var(--success); background:rgba(34,197,94,0.10); }
+    .menu-toggle { display:none; }
+    .status-dot { width:7px; height:7px; border-radius:50%; background:var(--success); display:inline-block; }
+    .mobile-menu { display:none; flex-direction:column; gap:5px; padding:0.7rem 1.15rem 0.9rem; border-top:1px solid var(--border); background:var(--card); }
+    .mobile-menu.open { display:flex; }
+    .mobile-menu button { text-align:right; background:var(--bg-soft); border:1px solid var(--border); color:var(--text); font-family:inherit; font-weight:700; font-size:0.88rem; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    .summary-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.8rem; padding:0.9rem 1.1rem; margin:1.2rem 0 1.4rem; background:var(--card); border:1px solid var(--border); border-radius:12px; }
+    .summary-title h1 { font-size:1.2rem; font-weight:800; line-height:1.3; }
+    .summary-title p { font-size:0.84rem; color:var(--muted); }
+    .mini-stats { display:flex; gap:14px; flex-wrap:wrap; }
+    .mini-stat { display:flex; align-items:baseline; gap:5px; font-size:0.82rem; color:var(--muted); }
+    .mini-stat strong { font-size:1.05rem; color:var(--gold-light); font-weight:800; }
+    .view-section { display:none; animation:fadeIn 0.22s ease; }
+    .view-section.active { display:block; }
+    .page-head { display:flex; justify-content:space-between; align-items:flex-end; gap:0.8rem; flex-wrap:wrap; margin-bottom:1.1rem; }
+    .page-head h2 { font-size:1.22rem; font-weight:800; }
+    .page-head p { font-size:0.85rem; color:var(--muted); }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:13px; padding:1.15rem; box-shadow:var(--shadow); }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:0.56rem 1.05rem; border-radius:9px; font-family:inherit; font-weight:700; font-size:0.84rem; cursor:pointer; border:1px solid transparent; text-decoration:none; transition:0.18s; }
+    .btn:disabled { opacity:0.55; cursor:not-allowed; }
+    .btn-primary { background:linear-gradient(135deg,#DEC05E,#B4861C); color:#14100C; }
+    [data-theme="light"] .btn-primary { background:#1B365D; color:#FFFFFF; }
+    .btn-primary:hover:not(:disabled) { filter:brightness(1.06); }
+    .btn-secondary { background:var(--bg-soft); color:var(--text); border-color:var(--border); }
+    .btn-secondary:hover:not(:disabled) { border-color:var(--gold); color:var(--gold-light); }
+    .btn-danger { background:rgba(239,68,68,0.12); color:#F87171; border-color:rgba(239,68,68,0.32); }
+    .btn-danger:hover:not(:disabled) { background:#EF4444; color:#FFFFFF; }
+    .btn-sm { padding:0.38rem 0.72rem; font-size:0.78rem; border-radius:7px; }
+    .lab-grid { display:grid; grid-template-columns:1.05fr 1fr; gap:1.15rem; align-items:start; }
+    .ingest-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-bottom:0.75rem; }
+    .ingest-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0.6rem 0.4rem; border-radius:10px; border:1px dashed var(--border-strong); background:var(--bg-soft); color:var(--text); cursor:pointer; font-family:inherit; font-size:0.78rem; font-weight:700; transition:0.2s; text-align:center; }
+    .ingest-btn:hover:not(:disabled) { border-color:var(--gold); background:rgba(212,175,55,0.08); }
+    .ingest-btn:disabled { opacity:0.55; cursor:wait; }
+    .ingest-btn.highlight { border-style:solid; border-color:var(--gold); background:rgba(212,175,55,0.10); }
+    .ingest-btn span { font-size:0.68rem; color:var(--muted); font-weight:400; }
+    textarea,input[type="text"],input[type="password"],input[type="number"],select { width:100%; background:var(--bg-soft); color:var(--text); border:1px solid var(--border); border-radius:9px; padding:0.6rem 0.82rem; font-family:inherit; font-size:0.86rem; outline:none; }
+    textarea.poem-editor { font-family:'Amiri',serif; font-size:1.18rem; line-height:1.95; min-height:195px; resize:vertical; }
+    textarea:focus,input:focus,select:focus { border-color:var(--gold); }
+    .toolbar { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:0.7rem; align-items:center; }
+    .progress-wrap { display:none; background:var(--bg-soft); border:1px solid var(--border-strong); border-radius:10px; padding:0.65rem 0.85rem; margin-bottom:0.8rem; }
+    .progress-head { display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; gap:8px; }
+    .progress-track { width:100%; height:8px; border-radius:999px; background:rgba(255,255,255,0.08); overflow:hidden; margin-top:6px; }
+    [data-theme="light"] .progress-track { background:#E2DBD0; }
+    .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--gold),var(--accent)); transition:width 0.2s ease; }
+    .progress-fill.pulse { animation:pulseBar 1.2s ease-in-out infinite; }
+    @keyframes pulseBar { 0%,100%{opacity:1;} 50%{opacity:0.45;} }
+    .tabs { display:flex; gap:5px; margin-bottom:0.9rem; background:var(--bg-soft); padding:4px; border-radius:10px; border:1px solid var(--border); }
+    .tab-btn { flex:1; padding:6px 8px; border:none; border-radius:7px; background:transparent; color:var(--muted); font-family:inherit; font-weight:700; font-size:0.82rem; cursor:pointer; }
+    .tab-btn.active { background:var(--gold); color:#14100C; }
+    [data-theme="light"] .tab-btn.active { color:#FFFFFF; }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+    .pill-tag { display:inline-block; font-size:0.73rem; font-weight:700; padding:2px 9px; border-radius:999px; background:rgba(212,175,55,0.14); color:var(--gold-light); border:1px solid var(--border); }
+    .pill-success { background:rgba(34,197,94,0.14); color:#4ADE80; border-color:rgba(34,197,94,0.38); }
+    [data-theme="light"] .pill-success { color:#15803D; background:rgba(21,128,61,0.10); }
+    .meta-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:0.85rem; }
+    .meta-box { background:var(--bg-soft); border:1px solid var(--border); border-radius:10px; padding:0.6rem; text-align:center; }
+    .meta-box small { display:block; font-size:0.72rem; color:var(--muted); }
+    .meta-box strong { font-size:0.88rem; color:var(--gold-light); }
+    .line-row { background:var(--bg-soft); border:1px solid var(--border); border-radius:10px; padding:0.7rem 0.85rem; margin-bottom:0.55rem; }
+    .line-orig { font-family:'Amiri',serif; font-size:1.12rem; font-weight:700; }
+    .line-phon { font-family:'Amiri',serif; font-size:1.02rem; color:var(--gold-light); margin:2px 0 6px; }
+    .beats { display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+    .beat-dot { width:16px; height:6px; border-radius:999px; background:linear-gradient(90deg,var(--gold),var(--accent)); }
+    .trans-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .trans-card { direction:ltr; text-align:left; background:var(--bg-soft); border:1px solid var(--border); border-radius:10px; padding:0.85rem; white-space:pre-line; font-size:0.88rem; line-height:1.7; }
+    .code-box { direction:ltr; text-align:left; background:#0B0A08; color:#EAE4D9; border:1px solid var(--border); border-radius:9px; padding:0.75rem; font-family:monospace; font-size:0.8rem; white-space:pre-wrap; margin-top:6px; word-break:break-word; }
+    .table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:11px; }
+    table.academic-table { width:100%; border-collapse:collapse; font-size:0.86rem; background:var(--card); }
+    table.academic-table th { background:var(--bg-soft); color:var(--gold-light); font-weight:800; text-align:right; padding:0.7rem 0.85rem; border-bottom:1px solid var(--border); }
+    table.academic-table td { padding:0.65rem 0.85rem; border-bottom:1px solid var(--border); vertical-align:top; }
+    table.academic-table tr:last-child td { border-bottom:none; }
+    table.academic-table tr:hover td { background:rgba(212,175,55,0.04); }
+    .term-cell { font-family:'Amiri',serif; font-size:1.15rem; font-weight:700; color:var(--gold-light); }
+    .archive-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:12px; }
+    .archive-card { background:var(--card); border:1px solid var(--border); border-right:3px solid var(--gold); border-radius:12px; padding:1rem; display:flex; flex-direction:column; gap:0.55rem; transition:border-color 0.2s, background 0.2s; }
+    .archive-card.selected-del { border-color:rgba(239,68,68,0.72); border-right-color:#EF4444; background:rgba(239,68,68,0.06); }
+    .archive-poem { font-family:'Amiri',serif; font-size:1.12rem; line-height:1.85; white-space:pre-line; }
+    .card-actions { display:flex; flex-wrap:wrap; gap:5px; margin-top:auto; padding-top:8px; border-top:1px solid var(--border); }
+    .admin-bulk-bar { display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; background:var(--card); border:1px solid rgba(239,68,68,0.38); border-radius:11px; padding:0.7rem 0.95rem; margin-bottom:0.95rem; }
+    .poem-select-cb { width:17px; height:17px; accent-color:#EF4444; cursor:pointer; flex-shrink:0; }
+    .ref-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; margin-bottom:1.1rem; }
+    .ref-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1rem; }
+    .ref-card h3 { font-size:0.98rem; color:var(--gold-light); margin-bottom:0.4rem; }
+    .ref-card p,.ref-card li { font-size:0.85rem; color:var(--muted); line-height:1.7; }
+    .ref-card ul { padding-right:1.1rem; }
+    .persistent-about { margin-top:2.4rem; padding-top:1.7rem; border-top:1px solid var(--border); scroll-margin-top:78px; }
+    .about-grid { display:grid; grid-template-columns:1fr 1.1fr; gap:1.2rem; align-items:start; }
+    .founder-card { background:var(--card); border:1px solid var(--border); border-top:3px solid var(--gold); border-radius:14px; padding:1.4rem; display:flex; gap:1.25rem; align-items:center; }
+    .founder-avatar { width:118px; height:118px; border-radius:16px; flex-shrink:0; overflow:hidden; border:2px solid var(--gold); display:grid; place-items:center; background:linear-gradient(145deg,#1E3A5F,#13253D 65%,#3B2A1A); color:#FDE68A; }
+    .founder-avatar img { width:100%; height:100%; object-fit:cover; object-position:center top; }
+    .social-row { display:flex; gap:8px; margin-top:0.85rem; flex-wrap:wrap; }
+    .social-fb { background:#1877F2; color:#fff; }
+    .social-wa { background:#16A34A; color:#fff; }
+    /* تنسيقات الباحث الذكي الموثّق (Cloud Hybrid RAG) */
+    .rag-filter-grid { display:grid; grid-template-columns:1fr 1fr 1fr 120px; gap:8px; margin-top:0.75rem; }
+    .rag-answer-card { background:var(--bg-soft); border:1px solid var(--border-strong); border-right:4px solid var(--gold); border-radius:12px; padding:1.1rem; margin-top:1rem; }
+    .rag-answer-text { font-size:0.96rem; line-height:1.95; white-space:pre-line; margin-top:0.7rem; color:var(--text); }
+    .rag-sources-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:10px; margin-top:0.75rem; }
+    .rag-source-card { background:var(--bg-soft); border:1px solid var(--border); border-right:3px solid var(--accent); border-radius:10px; padding:0.85rem; }
+    .rag-source-excerpt { font-family:'Amiri',serif; font-size:1.08rem; line-height:1.85; white-space:pre-line; margin-top:0.5rem; padding-top:0.5rem; border-top:1px dashed var(--border); }
+    .rag-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:0.7rem; }
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.72); backdrop-filter:blur(5px); display:none; place-items:center; z-index:100; padding:1rem; }
+    .modal-backdrop.open { display:grid; }
+    .modal-box { width:100%; max-width:560px; background:var(--card); border:1px solid var(--border-strong); border-radius:14px; padding:1.2rem; max-height:86vh; overflow-y:auto; }
+    .modal-box.modal-wide { max-width:860px; }
+    .search-item { padding:0.65rem; border-radius:8px; border:1px solid var(--border); margin-top:7px; cursor:pointer; background:var(--bg-soft); font-size:0.86rem; }
+    .search-item:hover { border-color:var(--gold); }
+    .batch-poem-item { background:var(--bg-soft); border:1px solid var(--border); border-radius:10px; padding:0.85rem; margin-bottom:0.7rem; }
+    .batch-poem-item.unchecked { opacity:0.45; }
+    .batch-row-grid { display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:7px; margin:6px 0; }
+    .toast { position:fixed; bottom:18px; left:18px; z-index:130; background:#162133; color:#FDE68A; border:1px solid var(--gold); padding:0.65rem 1rem; border-radius:10px; font-weight:700; font-size:0.84rem; display:none; box-shadow:var(--shadow); max-width:90vw; }
+    .toast.show { display:block; }
+    footer { margin-top:2.2rem; padding:1.3rem 1rem; border-top:1px solid var(--border); text-align:center; color:var(--muted); font-size:0.8rem; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(4px);} to{opacity:1;transform:translateY(0);} }
+    @media (max-width:980px) { .lab-grid,.trans-grid,.about-grid{grid-template-columns:1fr;} .nav-views{display:none;} .menu-toggle{display:inline-flex;} }
+    @media (max-width:720px) { .rag-filter-grid{grid-template-columns:1fr 1fr;} }
+    @media (max-width:680px) { .ingest-bar{grid-template-columns:1fr 1fr;} .batch-row-grid,.rag-filter-grid{grid-template-columns:1fr;} .founder-card{flex-direction:column;text-align:center;} .social-row{justify-content:center;} .hide-xs{display:none;} }
   </style>
 </head>
 <body>
-  <div class="scroll-progress" id="scrollProgress"></div>
-
   <header class="navbar">
     <div class="container nav-inner">
-      <div class="brand" onclick="switchView('discover')">
-        <div class="brand-mark">
-          <i data-lucide="feather"></i>
-        </div>
+      <div class="brand" onclick="switchView('lab')">
+        <div class="brand-mark">🐪</div>
         <div>
           <div class="brand-name">مختبر البيظان</div>
           <div class="brand-sub">ALBIDAN • المرجع البحثي الحساني</div>
         </div>
       </div>
-
       <nav class="nav-views">
-        <button class="nav-tab active" data-view="discover" onclick="switchView('discover')"><i data-lucide="compass"></i> استكشف الديوان</button>
-        <button class="nav-tab" data-view="archive" onclick="switchView('archive')"><i data-lucide="library"></i> المدونة</button>
-        <button class="nav-tab" data-view="rag" onclick="switchView('rag')"><i data-lucide="sparkles"></i> الباحث الذكي</button>
-        <button class="nav-tab" data-view="glossary" onclick="switchView('glossary')"><i data-lucide="book-open"></i> المعجم</button>
-        <button class="nav-tab" data-view="lab" onclick="switchView('lab')"><i data-lucide="flask-conical"></i> المختبر والرقمنة</button>
-        <button class="nav-tab" data-view="methodology" onclick="switchView('methodology')"><i data-lucide="ruler"></i> المرجع العروضي</button>
-        <button class="nav-tab" data-view="about" onclick="switchView('about')"><i data-lucide="user-round"></i> المؤسس</button>
+        <button class="nav-tab active" data-view="lab" onclick="switchView('lab')">🔬 المختبر والرقمنة</button>
+        <button class="nav-tab" data-view="rag" onclick="switchView('rag')">🧠 الباحث الذكي</button>
+        <button class="nav-tab" data-view="archive" onclick="switchView('archive')">📚 المدونة الحسانية</button>
+        <button class="nav-tab" data-view="glossary" onclick="switchView('glossary')">📖 المعجم المتنامي</button>
+        <button class="nav-tab" data-view="methodology" onclick="switchView('methodology')">📐 المرجع العروضي</button>
+        <button class="nav-tab" onclick="scrollToAbout()">👤 المؤسس والتواصل</button>
       </nav>
-
       <div class="nav-actions">
-        <button class="icon-btn" onclick="openSearchModal()" title="بحث شامل (Ctrl+K)"><i data-lucide="search"></i></button>
-        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل المظهر"><i data-lucide="sun"></i></button>
-        <button class="icon-btn" id="adminBtn" onclick="handleAdminClick()"><i data-lucide="lock"></i> <span class="hide-xs">المشرف</span></button>
-        <button class="icon-btn" id="inboxBtn" style="display:none" onclick="openInboxModal()"><i data-lucide="mail"></i> (<span id="msgCountBadge">0</span>)</button>
+        <button class="icon-btn" onclick="openSearchModal()" title="بحث شامل (Ctrl+K)">🔍</button>
+        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل المظهر">☀️</button>
+        <button class="icon-btn" id="adminBtn" onclick="handleAdminClick()">🔐 <span class="hide-xs">المشرف</span></button>
+        <button class="icon-btn" id="inboxBtn" style="display:none" onclick="openInboxModal()">📬 (<span id="msgCountBadge">0</span>)</button>
         <span class="icon-btn hide-xs" id="serverBadge"><span class="status-dot"></span> جاري الاتصال...</span>
-        <button class="icon-btn menu-toggle" onclick="toggleMobileMenu()" aria-label="القائمة"><i data-lucide="menu"></i></button>
+        <button class="icon-btn menu-toggle" onclick="toggleMobileMenu()">☰</button>
       </div>
     </div>
-
     <div class="mobile-menu" id="mobileMenu">
-      <button class="active" data-view="discover" onclick="switchView('discover');toggleMobileMenu()"><i data-lucide="compass"></i> استكشف الديوان (الرئيسية)</button>
-      <button data-view="archive" onclick="switchView('archive');toggleMobileMenu()"><i data-lucide="library"></i> المدونة الحسانية المفتوحة</button>
-      <button data-view="rag" onclick="switchView('rag');toggleMobileMenu()"><i data-lucide="sparkles"></i> الباحث الذكي الموثّق</button>
-      <button data-view="glossary" onclick="switchView('glossary');toggleMobileMenu()"><i data-lucide="book-open"></i> المعجم الحساني المتنامي</button>
-      <button data-view="lab" onclick="switchView('lab');toggleMobileMenu()"><i data-lucide="flask-conical"></i> المختبر والرقمنة والتحليل</button>
-      <button data-view="methodology" onclick="switchView('methodology');toggleMobileMenu()"><i data-lucide="ruler"></i> المرجع العروضي والمنهجي</button>
-      <button data-view="about" onclick="switchView('about');toggleMobileMenu()"><i data-lucide="user-round"></i> المؤسس والتواصل</button>
+      <button onclick="switchView('lab');toggleMobileMenu()">🔬 المختبر والرقمنة</button>
+      <button onclick="switchView('rag');toggleMobileMenu()">🧠 الباحث الذكي الموثّق</button>
+      <button onclick="switchView('archive');toggleMobileMenu()">📚 المدونة الحسانية</button>
+      <button onclick="switchView('glossary');toggleMobileMenu()">📖 المعجم المتنامي</button>
+      <button onclick="switchView('methodology');toggleMobileMenu()">📐 المرجع العروضي والمنهجي</button>
+      <button onclick="scrollToAbout();toggleMobileMenu()">👤 المؤسس والتواصل</button>
     </div>
   </header>
 
   <main class="container">
-
-    <!-- 1. قسم استكشف الديوان (الواجهة الرئيسية التفاعلية) -->
-    <section id="view-discover" class="view-section active">
-      <div class="hero-editorial">
-        <span class="hero-badge"><i data-lucide="book-marked"></i> المرجع العلمي الرقمي للشعر الشعبي الحساني</span>
-        <h1>غُص في ديوان الصحراء ومعجمها الحيّ</h1>
-        <p class="hero-desc">تصفّح القصائد الحسانية الموثّقة بوضع القراءة والتأمل، اكتشف معاني المفردات داخل الأبيات بلمسة واحدة، وحلّل البحور والتافلويات بأدوات أكاديمية مفتوحة.</p>
-
-        <div class="hero-search-bar">
-          <input type="text" id="heroQuickSearch" placeholder="ابحث عن شاعر، بيت حساني، بحر، أو اطرح سؤالاً بحثياً..." onkeydown="if(event.key==='Enter') runHeroSearch()" />
-          <button class="btn btn-primary" onclick="runHeroSearch()"><i data-lucide="search"></i> بحث في الديوان</button>
-          <button class="btn btn-secondary" onclick="switchView('lab')"><i data-lucide="flask-conical"></i> تحليل قصيدة</button>
-        </div>
-
-        <div class="hero-stats">
-          <div class="hero-stat-item"><strong id="statPoems">—</strong> <span>قصيدة موثّقة</span></div>
-          <div class="hero-stat-item"><strong id="statLines">—</strong> <span>تافلويت (شطر)</span></div>
-          <div class="hero-stat-item"><strong id="statTerms">—</strong> <span>مفردة في المعجم</span></div>
-        </div>
+    <div class="summary-bar">
+      <div class="summary-title">
+        <h1>المرجع العلمي الرقمي للشعر الشعبي الحساني</h1>
+        <p>تحليل عروضي صوتي، باحث ذكي هجين موثّق، رقمنة الصور والمخطوطات والدواوين، وتوثيق مرجعي مفتوح للباحثين</p>
       </div>
+      <div class="mini-stats">
+        <div class="mini-stat"><strong id="statPoems">—</strong> <span>قصيدة</span></div>
+        <div class="mini-stat"><strong id="statLines">—</strong> <span>تافلويت</span></div>
+        <div class="mini-stat"><strong id="statTerms">—</strong> <span>مفردة معجمية</span></div>
+      </div>
+    </div>
 
-      <!-- سلايدر مختارات الديوان -->
-      <div class="section-bar">
-        <h3><i data-lucide="scroll-text"></i> مختارات من الديوان الحساني</h3>
-        <div class="slider-controls">
-          <button class="icon-btn" onclick="scrollSlider('discoverSlider', 380)" aria-label="السابق"><i data-lucide="chevron-right"></i></button>
-          <button class="icon-btn" onclick="scrollSlider('discoverSlider', -380)" aria-label="التالي"><i data-lucide="chevron-left"></i></button>
-          <button class="btn btn-secondary btn-sm" onclick="switchView('archive')">عرض كل الديوان</button>
-        </div>
-      </div>
-      <div class="snap-slider" id="discoverSlider">
-        <div class="skeleton-box" style="flex:0 0 360px"></div>
-        <div class="skeleton-box" style="flex:0 0 360px"></div>
-      </div>
-
-      <!-- سلايدر بحور الشعر الحساني -->
-      <div class="section-bar">
-        <h3><i data-lucide="waves"></i> تصفّح حسب البحور (البتوت)</h3>
-        <button class="btn btn-secondary btn-sm" onclick="switchView('methodology')">دليل العروض الكامل</button>
-      </div>
-      <div class="snap-slider" id="metersSlider"></div>
-
-      <!-- سلايدر نافذة المعجم المتنامي -->
-      <div class="section-bar">
-        <h3><i data-lucide="book-open-text"></i> إضاءات من المعجم الحساني</h3>
-        <button class="btn btn-secondary btn-sm" onclick="switchView('glossary')">فتح المعجم الكامل</button>
-      </div>
-      <div class="snap-slider" id="glossarySlider">
-        <div class="skeleton-box" style="flex:0 0 260px;height:110px"></div>
-      </div>
-    </section>
-
-    <!-- 2. قسم المختبر والرقمنة -->
-    <section id="view-lab" class="view-section">
-      <div class="page-head">
-        <div>
-          <h2><i data-lucide="flask-conical"></i> المختبر العروضي والرقمنة</h2>
-          <p>اكتب قصيدة، صوّر مخطوطاً، فرّغ تسجيلاً صوتياً، أو استورد ديوان Word كاملاً</p>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('advancedModelBox').classList.toggle('open')">
-          <i data-lucide="sliders-horizontal"></i> إعدادات النموذج الذكي
-        </button>
-      </div>
-
-      <div class="advanced-model-box" id="advancedModelBox">
-        <label style="font-size:0.78rem;color:var(--muted);display:block;margin-bottom:5px">اختر محرك التحليل (للمتخصصين):</label>
-        <select id="modelSelect" style="max-width:360px">
-          <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (الأسرع للصوت والصور)</option>
-          <option value="gemini-3.8-flash">gemini-3.8-flash (متوازن)</option>
-          <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (تحليل عميق)</option>
-        </select>
-      </div>
-
+    <section id="view-lab" class="view-section active">
       <div class="lab-grid">
         <div class="card">
+          <div class="page-head" style="margin-bottom:0.8rem">
+            <div>
+              <h2>إدخال أو رقمنة قصائد</h2>
+              <p>اكتب قصيدة واحدة، صوّر مخطوطاً، فرّغ تسجيلاً صوتياً، أو استورد ديوان Word</p>
+            </div>
+            <select id="modelSelect" style="width:auto;padding:5px 8px;font-size:0.8rem">
+              <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (الأسرع للصوت والصور)</option>
+              <option value="gemini-3.8-flash">gemini-3.8-flash (متوازن)</option>
+              <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (تحليل عميق)</option>
+            </select>
+          </div>
+
           <input type="file" id="ocrImageInput" accept="image/*" multiple style="display:none" onchange="handleImageOCR()" />
           <input type="file" id="docFileInput" accept=".docx,.pdf,.txt" style="display:none" onchange="handleDocImport()" />
           <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.m4a,.mp4,.aac,.ogg,.oga,.opus,.webm,.flac" style="display:none" onchange="handleAudioTranscribe()" />
 
           <div class="ingest-bar">
-            <button class="ingest-btn highlight" onclick="openBatchModal()"><i data-lucide="library"></i> عدة قصائد (Word)<span>حفظ ديوان دفعة واحدة</span></button>
-            <button class="ingest-btn" id="ocrBtn" onclick="document.getElementById('ocrImageInput').click()"><i data-lucide="camera"></i> تصوير / صورة<span>ضغط تلقائي وسريع</span></button>
-            <button class="ingest-btn" id="docBtn" onclick="document.getElementById('docFileInput').click()"><i data-lucide="file-text"></i> ملف واحد<span>Word أو PDF</span></button>
-            <button class="ingest-btn" id="audioBtn" onclick="document.getElementById('audioFileInput').click()"><i data-lucide="mic"></i> تفريغ صوتي<span>MP3 / M4A / واتساب</span></button>
+            <button class="ingest-btn highlight" onclick="openBatchModal()">📚 عدة قصائد (Word)<span>حفظ ديوان دفعة واحدة</span></button>
+            <button class="ingest-btn" id="ocrBtn" onclick="document.getElementById('ocrImageInput').click()">📷 تصوير / صورة<span>ضغط تلقائي وسريع</span></button>
+            <button class="ingest-btn" id="docBtn" onclick="document.getElementById('docFileInput').click()">📄 ملف واحد<span>Word أو PDF</span></button>
+            <button class="ingest-btn" id="audioBtn" onclick="document.getElementById('audioFileInput').click()">🎙️ تفريغ صوتي<span>MP3 / M4A / واتساب</span></button>
           </div>
 
           <div class="progress-wrap" id="labProgressWrap">
@@ -619,16 +255,14 @@
           </div>
 
           <div class="toolbar">
-            <button class="btn btn-secondary btn-sm" onclick="fillSample('gaf')">نموذج گاف</button>
+            <button class="btn btn-secondary btn-sm" onclick="fillSample('gaf')">نموذج كاف</button>
             <button class="btn btn-secondary btn-sm" onclick="fillSample('tebraa')">نموذج تبراع</button>
             <button class="btn btn-secondary btn-sm" onclick="document.getElementById('poemInput').value='';updateLiveCounter()">مسح</button>
             <span style="margin-right:auto;font-size:0.78rem;color:var(--gold-light);font-weight:700" id="liveCounter">0 أشطر</span>
           </div>
 
           <textarea id="poemInput" class="poem-editor" oninput="updateLiveCounter()" placeholder="أدخل الأبيات الحسانية هنا (ضع كل تافلويت في سطر مستقل)..."></textarea>
-          <button class="btn btn-primary" style="width:100%;margin-top:0.85rem" id="analyzeBtn" onclick="runAnalysis()">
-            <i data-lucide="sparkles"></i> بدء التحليل العروضي واللساني
-          </button>
+          <button class="btn btn-primary" style="width:100%;margin-top:0.8rem" id="analyzeBtn" onclick="runAnalysis()">🔬 بدء التحليل العروضي واللساني</button>
         </div>
 
         <div class="card">
@@ -650,11 +284,11 @@
                 <div class="meta-box"><small>القافية / الروي</small><strong id="resRhyme">—</strong></div>
               </div>
               <div class="line-row" style="border-right:3px solid var(--gold)">
-                <div style="font-size:0.76rem;color:var(--gold-light);font-weight:700">السياق الثقافي والغرض</div>
+                <div style="font-size:0.76rem;color:var(--gold-light);font-weight:800">السياق الثقافي والغرض</div>
                 <div id="resContext" style="font-size:0.86rem;margin-top:2px"></div>
               </div>
               <div class="line-row" id="resNotesWrap">
-                <div style="font-size:0.76rem;color:var(--gold-light);font-weight:700">ملاحظات لغوية وعروضية</div>
+                <div style="font-size:0.76rem;color:var(--gold-light);font-weight:800">ملاحظات لغوية وعروضية</div>
                 <div id="resNotes" style="font-size:0.85rem;margin-top:2px"></div>
               </div>
               <div id="resLines"></div>
@@ -664,14 +298,14 @@
               <div class="trans-grid">
                 <div class="trans-card">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                    <span style="color:var(--gold-light);font-weight:700;font-size:0.75rem">ENGLISH</span>
+                    <span style="color:var(--gold-light);font-weight:800;font-size:0.75rem">ENGLISH</span>
                     <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('resEn').innerText)">نسخ</button>
                   </div>
                   <div id="resEn"></div>
                 </div>
                 <div class="trans-card">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                    <span style="color:var(--gold-light);font-weight:700;font-size:0.75rem">FRANÇAIS</span>
+                    <span style="color:var(--gold-light);font-weight:800;font-size:0.75rem">FRANÇAIS</span>
                     <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('resFr').innerText)">نسخ</button>
                   </div>
                   <div id="resFr"></div>
@@ -688,15 +322,15 @@
                   <input type="text" id="savePoet" oninput="updateCitation()" placeholder="الشاعر / الراوي" />
                   <input type="text" id="saveRegion" value="بوجدور — الصحراء المغربية" placeholder="المنطقة / المصدر" />
                 </div>
-                <button class="btn btn-primary" onclick="savePoemToArchive()"><i data-lucide="save"></i> حفظ في المدونة وتحديث المعجم</button>
+                <button class="btn btn-primary" onclick="savePoemToArchive()">💾 حفظ في المدونة وتحديث المعجم</button>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                  <button class="btn btn-secondary" onclick="exportCurrentAnalysisDocx()"><i data-lucide="file-down"></i> تنزيل التقرير (Word)</button>
-                  <button class="btn btn-secondary" onclick="exportCurrentAnalysisPDF()"><i data-lucide="printer"></i> تنزيل / طباعة (PDF)</button>
+                  <button class="btn btn-secondary" onclick="exportCurrentAnalysisDocx()">📘 تنزيل التقرير (Word)</button>
+                  <button class="btn btn-secondary" onclick="exportCurrentAnalysisPDF()">📕 تنزيل / طباعة (PDF)</button>
                 </div>
               </div>
               <div style="border-top:1px solid var(--border);padding-top:0.8rem">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap">
-                  <strong style="font-size:0.86rem">الاستشهاد الأكاديمي</strong>
+                  <strong style="font-size:0.86rem">🎓 الاستشهاد الأكاديمي</strong>
                   <div style="display:flex;gap:4px">
                     <button class="btn btn-secondary btn-sm" onclick="setCiteFormat('APA')">APA</button>
                     <button class="btn btn-secondary btn-sm" onclick="setCiteFormat('MLA')">MLA</button>
@@ -712,34 +346,31 @@
       </div>
     </section>
 
-    <!-- 3. قسم الباحث الذكي الهجين الموثّق -->
+    <!-- قسم الباحث الذكي الهجين الموثّق (Cloud Hybrid RAG) -->
     <section id="view-rag" class="view-section">
       <div class="page-head">
         <div>
-          <h2><i data-lucide="sparkles"></i> الباحث الذكي الموثّق في التراث الحساني</h2>
+          <h2>🧠 الباحث الذكي الموثّق في التراث الحساني</h2>
           <p>بحث هجين (دلالي + معجمي حساني يوحّد گ/ݣ/ڨ) يستخرج الإجابات حصراً من أرشيف ALBIDAN ومعجمه مع تحقق ذاتي أكاديمي</p>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span class="pill-tag" id="ragHealthBadge">جاري فحص الذاكرة المعرفية...</span>
-          <button class="btn btn-secondary btn-sm" id="ragSyncBtn" onclick="syncRagArchive()"><i data-lucide="refresh-cw"></i> مزامنة الأرشيف</button>
+          <button class="btn btn-secondary btn-sm" id="ragSyncBtn" onclick="syncRagArchive()">🔄 مزامنة الأرشيف الآن</button>
         </div>
       </div>
 
       <div class="card">
         <div class="rag-chips">
-          <button class="btn btn-secondary btn-sm" onclick="setRagSample('ما هي القصائد الموثقة حالياً في الأرشيف وما بحورها؟')"><i data-lucide="scroll"></i> القصائد وبحورها</button>
-          <button class="btn btn-secondary btn-sm" onclick="setRagSample('اشرح لي المفردات الحسانية الموثقة في المعجم مع معانيها')"><i data-lucide="book-open"></i> شرح المفردات الحسانية</button>
-          <button class="btn btn-secondary btn-sm" onclick="setRagSample('أعطني شواهد شعرية حسانية من الأرشيف مع ذكر الشاعر والبحر')"><i data-lucide="quote"></i> شواهد شعرية موثقة</button>
+          <button class="btn btn-secondary btn-sm" onclick="setRagSample('ما هي القصائد الموثقة حالياً في الأرشيف وما بحورها؟')">📜 القصائد وبحورها</button>
+          <button class="btn btn-secondary btn-sm" onclick="setRagSample('اشرح لي المفردات الحسانية الموثقة في المعجم مع معانيها')">📖 شرح المفردات الحسانية</button>
+          <button class="btn btn-secondary btn-sm" onclick="setRagSample('أعطني شواهد شعرية حسانية من الأرشيف مع ذكر الشاعر والبحر')">✨ شواهد شعرية موثقة</button>
         </div>
 
         <textarea id="ragQueryInput" rows="3" placeholder="اكتب سؤالك البحثي هنا (مثلاً: ما معنى مفردة معينة في المعجم؟ أو أعطني أبياتاً عن الكرم مع بحرها وشاعرها؟)..." onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter') runRagSearch()"></textarea>
 
-        <datalist id="poetsDatalist"></datalist>
-        <datalist id="metersDatalist"></datalist>
-
         <div class="rag-filter-grid">
-          <input type="text" id="ragPoetFilter" list="poetsDatalist" placeholder="فلترة بالشاعر (اختياري)" />
-          <input type="text" id="ragMeterFilter" list="metersDatalist" placeholder="فلترة بالبحر / البتّ (اختياري)" />
+          <input type="text" id="ragPoetFilter" placeholder="فلترة بالشاعر (اختياري)" />
+          <input type="text" id="ragMeterFilter" placeholder="فلترة بالبحر / البتّ (اختياري)" />
           <select id="ragGenreFilter">
             <option value="">كل الأجناس (قصائد + معجم)</option>
             <option value="معجم حساني">معجم حساني</option>
@@ -759,7 +390,7 @@
             <input type="checkbox" id="ragReflectionToggle" checked style="width:auto" />
             تفعيل التحقق الذاتي الأكاديمي (يراجع الأبيات ونسبتها للشعراء قبل عرض الإجابة)
           </label>
-          <button class="btn btn-primary" id="ragAskBtn" onclick="runRagSearch()"><i data-lucide="search"></i> اسأل الباحث الحساني</button>
+          <button class="btn btn-primary" id="ragAskBtn" onclick="runRagSearch()">🔎 اسأل الباحث الحساني</button>
         </div>
 
         <div id="ragEmptyHint" style="text-align:center;padding:2rem 1rem;color:var(--muted);font-size:0.86rem;margin-top:0.75rem;border-top:1px dashed var(--border)">
@@ -770,65 +401,72 @@
           <div class="rag-answer-card">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-                <span class="pill-tag pill-success" id="ragVerifyBadge">موثّقة</span>
+                <span class="pill-tag pill-success" id="ragVerifyBadge">✅ موثّقة</span>
                 <span class="pill-tag" id="ragTimingBadge">—</span>
               </div>
               <div style="display:flex;gap:6px">
-                <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('ragAnswerText').innerText)"><i data-lucide="copy"></i> نسخ الإجابة</button>
-                <button class="btn btn-secondary btn-sm" onclick="exportRagAnswerPDF()"><i data-lucide="printer"></i> طباعة PDF</button>
+                <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('ragAnswerText').innerText)">📋 نسخ الإجابة</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportRagAnswerPDF()">📕 طباعة PDF</button>
               </div>
             </div>
             <div id="ragVerifyNotes" style="font-size:0.78rem;color:var(--muted);margin-top:0.45rem"></div>
             <div class="rag-answer-text" id="ragAnswerText"></div>
           </div>
 
-          <h3 style="font-size:0.96rem;color:var(--gold-light);margin-top:1.1rem">الشواهد والمصادر المعتمدة من أرشيف ALBIDAN</h3>
+          <h3 style="font-size:0.96rem;color:var(--gold-light);margin-top:1.1rem">📚 الشواهد والمصادر المعتمدة من أرشيف ALBIDAN</h3>
           <div class="rag-sources-grid" id="ragSourcesGrid"></div>
         </div>
       </div>
     </section>
 
-    <!-- 4. قسم المدونة الحسانية المفتوحة -->
     <section id="view-archive" class="view-section">
       <div class="page-head">
         <div>
-          <h2><i data-lucide="library"></i> المدونة الحسانية المفتوحة</h2>
-          <p>انقر على أي قصيدة للدخول في وضع القراءة والتأمل مع شرح المفردات التلقائي</p>
+          <h2>📚 المدونة الحسانية المفتوحة</h2>
+          <p>تصفح القصائد الموثقة، استورد دواوين Word جماعياً، أو نزّل المدونة بصيغ Word وPDF</p>
         </div>
         <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
-          <input type="text" id="archiveSearch" placeholder="ابحث في القصائد والشعراء..." style="width:190px" oninput="loadArchive()" />
+          <input type="text" id="archiveSearch" placeholder="🔍 ابحث في القصائد..." style="width:180px" oninput="loadArchive()" />
           <select id="archiveFilter" style="width:auto" onchange="loadArchive()">
-            <option value="الكل">كل الأجناس</option>
-            <option value="كاف">گاف / كاف</option>
+            <option value="الكل">الكل</option>
+            <option value="كاف">كاف</option>
             <option value="تبراع">تبراع</option>
             <option value="طلعة">طلعة</option>
           </select>
-          <button class="btn btn-primary btn-sm" onclick="openBatchModal()"><i data-lucide="upload"></i> استيراد Word</button>
-          <button class="btn btn-secondary btn-sm" onclick="exportArchiveDocx()"><i data-lucide="file-down"></i> Word</button>
-          <button class="btn btn-secondary btn-sm" onclick="exportArchivePDF()"><i data-lucide="printer"></i> PDF</button>
+          <button class="btn btn-primary btn-sm" onclick="openBatchModal()">📚 استيراد جماعي Word</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportArchiveDocx()">📘 تصدير Word</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportArchivePDF()">📕 تصدير PDF</button>
           <a href="/api/export/jsonl" class="btn btn-secondary btn-sm">JSONL</a>
         </div>
       </div>
 
-      <div class="active-filter-bar" id="archiveActiveFilterBar">
-        <span class="pill-tag" id="archiveActiveFilterText"></span>
-        <button class="btn btn-secondary btn-sm" onclick="clearMeterFilter()">إزالة التصفية ×</button>
+      <!-- شريط الحذف الجماعي للمشرف فقط -->
+      <div class="admin-bulk-bar" id="archiveAdminBar">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="pill-tag">🛠️ إدارة المشرف • المحدد: <strong id="selectedPoemsCount">0</strong></span>
+          <button class="btn btn-secondary btn-sm" onclick="selectAllPoems(true)">☑️ تحديد الكل</button>
+          <button class="btn btn-secondary btn-sm" onclick="selectAllPoems(false)">⬜ إلغاء التحديد</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-danger btn-sm" id="deleteSelectedBtn" disabled onclick="deleteSelectedPoems()">🗑️ حذف المحدد (<span id="selectedPoemsBtnCount">0</span>)</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteAllArchive(false)">🔥 حذف جميع القصائد</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteAllArchive(true)">💣 تصفير الموقع بالكامل (القصائد + المعجم + الباحث)</button>
+        </div>
       </div>
 
       <div class="archive-grid" id="archiveGrid"></div>
     </section>
 
-    <!-- 5. قسم المعجم الحساني المتنامي -->
     <section id="view-glossary" class="view-section">
       <div class="page-head">
         <div>
-          <h2><i data-lucide="book-open"></i> المعجم الحساني المتنامي</h2>
-          <p>مسرد علمي يتوسع تلقائياً مع كل قصيدة موثّقة — جاهز للتنزيل بصيغة Word أو PDF</p>
+          <h2>📖 المعجم الحساني المتنامي</h2>
+          <p>مسرد علمي يتوسع تلقائياً مع كل قصيدة موثقة — جاهز للتنزيل بصيغة Word أو PDF</p>
         </div>
         <div style="display:flex;gap:7px;flex-wrap:wrap">
-          <input type="text" id="glossarySearch" placeholder="ابحث عن مفردة أو معنى..." style="width:210px" oninput="loadGlossary()" />
-          <button class="btn btn-primary btn-sm" onclick="exportGlossaryDocx()"><i data-lucide="file-down"></i> تصدير المعجم (Word)</button>
-          <button class="btn btn-secondary btn-sm" onclick="exportGlossaryPDF()"><i data-lucide="printer"></i> تصدير (PDF)</button>
+          <input type="text" id="glossarySearch" placeholder="🔍 ابحث عن مفردة أو معنى..." style="width:210px" oninput="loadGlossary()" />
+          <button class="btn btn-primary btn-sm" onclick="exportGlossaryDocx()">📘 تصدير المعجم (Word)</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportGlossaryPDF()">📕 تصدير (PDF)</button>
         </div>
       </div>
       <div class="table-wrap">
@@ -844,45 +482,24 @@
       </div>
     </section>
 
-    <!-- 6. قسم المرجع العروضي والمنهجي -->
     <section id="view-methodology" class="view-section">
       <div class="page-head">
         <div>
-          <h2><i data-lucide="ruler"></i> المرجع العروضي والمنهجي للشعر الحساني</h2>
+          <h2>📐 المرجع العروضي والمنهجي للشعر الحساني</h2>
           <p>دليل معياري يضبط قواعد التقطيع الصوتي، البحور الرئيسية، وأصول التدوين العلمي المعتمدة في المختبر</p>
         </div>
-        <button class="btn btn-secondary btn-sm" onclick="exportMethodologyPDF()"><i data-lucide="printer"></i> طباعة الدليل (PDF)</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportMethodologyPDF()">📕 طباعة الدليل (PDF)</button>
       </div>
-      <div class="table-wrap" style="margin-bottom:1.15rem">
+      <div class="table-wrap" style="margin-bottom:1.1rem">
         <table class="academic-table">
           <thead>
             <tr><th>البحر الحساني (البت)</th><th>عدد المتحركات / الشطر</th><th>البنية والخصائص الإيقاعية</th><th>الاستعمال الشعري الغالب</th></tr>
           </thead>
           <tbody>
-            <tr>
-              <td class="term-cell">السغير / لبير</td>
-              <td data-label="عدد المتحركات">6 متحركات</td>
-              <td data-label="الخصائص الإيقاعية">إيقاع خفيف وسريع، يكثر في المقطوعات الموجزة والتبراع.</td>
-              <td data-label="الاستعمال الغالب">الغزل الخفيف، المساجلات السريعة، وبعض مقطوعات التبراع.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">لبتيت الناقص</td>
-              <td data-label="عدد المتحركات">7 متحركات</td>
-              <td data-label="الخصائص الإيقاعية">أحد أشهر بحور لغنى، يقوم على توازن نغمي مرن يناسب الإلقاء الهادئ.</td>
-              <td data-label="الاستعمال الغالب">التبراع، الشكوى، الحنين، والوصف العاطفي.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">لبتيت التام</td>
-              <td data-label="عدد المتحركات">8 متحركات</td>
-              <td data-label="الخصائص الإيقاعية">عماد الشعر الحساني وأوسع بحوره انتشاراً في الصحراء المغربية وموريتانيا.</td>
-              <td data-label="الاستعمال الغالب">الگاف والطلعة في الفخر، الكرم، المديح، والحكمة.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">البت لكبير</td>
-              <td data-label="عدد المتحركات">9 متحركات فأكثر</td>
-              <td data-label="الخصائص الإيقاعية">نَفَس شعري ممتد يتسع للتفصيل والسرد التاريخي والوصفي العميق.</td>
-              <td data-label="الاستعمال الغالب">الملاحم، التوثيق التاريخي، والقصائد المطوّلة.</td>
-            </tr>
+            <tr><td class="term-cell">السغير / لبير</td><td>6 متحركات</td><td>إيقاع خفيف وسريع، يكثر في المقطوعات الموجزة والتبراع.</td><td>الغزل الخفيف، المساجلات السريعة، وبعض مقطوعات التبراع.</td></tr>
+            <tr><td class="term-cell">لبتيت الناقص</td><td>7 متحركات</td><td>أحد أشهر بحور لغنى، يقوم على توازن نغمي مرن يناسب الإلقاء الهادئ.</td><td>التبراع، الشكوى، الحنين، والوصف العاطفي.</td></tr>
+            <tr><td class="term-cell">لبتيت التام</td><td>8 متحركات</td><td>عماد الشعر الحساني وأوسع بحوره انتشاراً في الصحراء المغربية وموريتانيا.</td><td>الكاف والطلعة في الفخر، الكرم، المديح، والحكمة.</td></tr>
+            <tr><td class="term-cell">البت لكبير</td><td>9 متحركات فأكثر</td><td>نَفَس شعري ممتد يتسع للتفصيل والسرد التاريخي والوصفي العميق.</td><td>الملاحم، التوثيق التاريخي، والقصائد المطوّلة.</td></tr>
           </tbody>
         </table>
       </div>
@@ -892,8 +509,8 @@
           <ul>
             <li><strong>التافلويت:</strong> الشطر الشعري الواحد، وهو وحدة قياس المتحركات.</li>
             <li><strong>التبراع:</strong> فن نسائي راقٍ يقوم غالباً على شطرين متفقي القافية والوزن.</li>
-            <li><strong>الگاف:</strong> وحدة شعرية من 4 تافلويات، بقافية متعاقبة (أ-ب-أ-ب) غالباً.</li>
-            <li><strong>الطلعة:</strong> قصيدة من 6 تافلويات فأكثر تلتزم نظام قافية مركب وتُختم بالگاف.</li>
+            <li><strong>الكاف:</strong> وحدة شعرية من 4 تافلويات، بقافية متعاقبة (أ-ب-أ-ب) غالباً.</li>
+            <li><strong>الطلعة:</strong> قصيدة من 6 تافلويات فأكثر تلتزم نظام قافية مركب وتُختم بالكاف.</li>
           </ul>
         </div>
         <div class="ref-card">
@@ -914,8 +531,14 @@
       </div>
     </section>
 
-    <!-- 7. قسم المؤسس والتواصل -->
-    <section id="view-about" class="view-section">
+    <!-- قسم المؤسس والتواصل ثابت وظاهر دائماً في أسفل جميع الصفحات -->
+    <section id="persistent-about" class="persistent-about">
+      <div class="page-head" style="margin-bottom:0.9rem">
+        <div>
+          <h2>👤 المؤسس والتواصل والمساهمات</h2>
+          <p>تواصل مباشرة مع مؤسس المختبر أو شارك قصيدة تراثية وملاحظة بحثية لإثراء المدونة الحسانية</p>
+        </div>
+      </div>
       <div class="about-grid">
         <div class="founder-card">
           <div class="founder-avatar">
@@ -924,23 +547,18 @@
           </div>
           <div>
             <span class="pill-tag">مؤسس المشروع</span>
-            <h2 style="font-size:1.35rem;margin:0.45rem 0 0.1rem">أڭــار الحبيب</h2>
-            <div style="color:var(--gold-light);font-weight:600;font-size:0.82rem;margin-bottom:0.6rem">Aggar Lahbib • مؤسس ومطور مختبر البيظان</div>
-            <p style="color:var(--muted);font-size:0.87rem">مؤسس ومطور «مختبر البيظان للذكاء الاصطناعي». يعمل على رقمنة التراث الثقافي الحساني، تحليل العروض الشعري آلياً، وبناء مرجع علمي ومعجمي مفتوح لخدمة الباحثين والشعراء.</p>
+            <h2 style="font-size:1.3rem;margin:0.4rem 0 0.1rem">أڭــار الحبيب</h2>
+            <div style="color:var(--gold-light);font-weight:700;font-size:0.82rem;margin-bottom:0.6rem">Aggar Lahbib • مؤسس ومطور مختبر البيظان</div>
+            <p style="color:var(--muted);font-size:0.86rem">مؤسس ومطور «مختبر البيظان للذكاء الاصطناعي». يعمل على رقمنة التراث الثقافي الحساني، تحليل العروض الشعري آلياً، وبناء مرجع علمي ومعجمي مفتوح لخدمة الباحثين والشعراء.</p>
             <div class="social-row">
-              <a class="btn btn-sm social-btn fb" href="https://web.facebook.com/aggarlahbib/?locale=ar_AR" target="_blank" rel="noopener noreferrer">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                فيسبوك
-              </a>
-              <a class="btn btn-sm social-btn wa" href="https://wa.me/212668208797" target="_blank" rel="noopener noreferrer">
-                <i data-lucide="message-circle"></i> واتساب
-              </a>
+              <a class="btn btn-sm social-fb" href="https://web.facebook.com/aggarlahbib/?locale=ar_AR" target="_blank" rel="noopener noreferrer">فيسبوك</a>
+              <a class="btn btn-sm social-wa" href="https://wa.me/212668208797" target="_blank" rel="noopener noreferrer">واتساب</a>
             </div>
           </div>
         </div>
         <div class="card">
-          <h3 style="font-size:1.05rem;margin-bottom:0.3rem;display:flex;align-items:center;gap:7px"><i data-lucide="send" style="color:var(--gold-light)"></i> شارك قصيدة تراثية أو ملاحظة بحثية</h3>
-          <p style="font-size:0.83rem;color:var(--muted);margin-bottom:0.85rem">تُحفظ المساهمات مباشرة في قاعدة البيانات وتُراجع لتوثيقها في المدونة باسم مرسلها.</p>
+          <h3 style="font-size:1.05rem;margin-bottom:0.3rem">✉️ شارك قصيدة تراثية أو ملاحظة بحثية</h3>
+          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.85rem">تُحفظ المساهمات مباشرة في قاعدة البيانات وتُراجع لتوثيقها في المدونة باسم مرسلها.</p>
           <form onsubmit="submitContactForm(event)" style="display:grid;gap:8px">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
               <input type="text" id="cName" required placeholder="الاسم الكامل *" />
@@ -968,63 +586,12 @@
     <div class="container"><strong style="color:var(--gold-light)">مختبر البيظان للذكاء الاصطناعي — ALBIDAN AI LAB</strong> • © 2026 فكرة وتطوير أڭــار الحبيب</div>
   </footer>
 
-  <!-- نافذة القراءة والتأمل التفاعلية (Zen Reader) -->
-  <div class="modal-backdrop" id="readerModal" onclick="if(event.target===this) closeModal('readerModal')">
-    <div class="modal-box reader-box">
-      <div class="reader-toolbar">
-        <div>
-          <strong id="readerTitle" style="font-size:1.15rem;display:block"></strong>
-          <div id="readerMeta" style="font-size:0.8rem;color:var(--muted)"></div>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center">
-          <button class="icon-btn" onclick="adjustReaderFont(-0.12)" title="تصغير الخط">A-</button>
-          <button class="icon-btn" onclick="adjustReaderFont(0.12)" title="تكبير الخط">A+</button>
-          <button class="btn btn-secondary btn-sm" onclick="closeModal('readerModal')">إغلاق</button>
-        </div>
-      </div>
-
-      <div id="readerGlossHint" style="font-size:0.78rem;color:var(--gold-light);margin-bottom:0.4rem;display:none">
-        الكلمات المخططة بالذهبي موثّقة في المعجم — انقر على أي منها لعرض معناها الفوري.
-      </div>
-
-      <div class="gloss-popup-card" id="readerGlossPopup">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong id="glossPopTerm" style="font-family:'Amiri',serif;font-size:1.35rem;color:var(--gold-light)"></strong>
-          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('readerGlossPopup').classList.remove('open')">×</button>
-        </div>
-        <div id="glossPopAr" style="font-size:0.9rem;margin-top:4px"></div>
-        <div id="glossPopEn" style="direction:ltr;text-align:left;font-size:0.82rem;color:var(--muted);margin-top:3px;font-style:italic"></div>
-      </div>
-
-      <div class="reader-poem-body" id="readerPoemBody"></div>
-
-      <div id="readerContextBox" class="line-row" style="display:none;border-right:3px solid var(--gold)">
-        <div style="font-size:0.76rem;color:var(--gold-light);font-weight:700">السياق الثقافي والغرض</div>
-        <div id="readerContextText" style="font-size:0.88rem;margin-top:3px"></div>
-      </div>
-
-      <div style="display:flex;flex-wrap:wrap;gap:7px;margin:1rem 0;padding-top:0.9rem;border-top:1px solid var(--border)">
-        <button class="btn btn-primary btn-sm" id="readerOpenLabBtn"><i data-lucide="flask-conical"></i> تحليل عروضي في المختبر</button>
-        <button class="btn btn-secondary btn-sm" id="readerCopyBtn"><i data-lucide="copy"></i> نسخ القصيدة</button>
-        <button class="btn btn-secondary btn-sm" id="readerCiteBtn"><i data-lucide="graduation-cap"></i> نسخ التوثيق (APA)</button>
-        <a class="btn btn-secondary btn-sm" id="readerWordBtn" href="#"><i data-lucide="file-down"></i> Word</a>
-        <button class="btn btn-secondary btn-sm" id="readerPdfBtn"><i data-lucide="printer"></i> PDF</button>
-        <button class="btn btn-secondary btn-sm" id="readerPngBtn"><i data-lucide="image"></i> بطاقة مصوّرة</button>
-      </div>
-
-      <div id="readerRelatedWrap" style="margin-top:1.1rem;padding-top:0.9rem;border-top:1px dashed var(--border);display:none">
-        <div style="font-size:0.86rem;font-weight:700;color:var(--gold-light)">تابع الغوص — قصائد على نفس البحر أو لنفس الشاعر:</div>
-        <div class="related-strip" id="readerRelatedStrip"></div>
-      </div>
-    </div>
-  </div>
-
   <!-- نافذة الاستيراد الجماعي لملفات Word -->
   <div class="modal-backdrop" id="batchModal" onclick="if(event.target===this) closeModal('batchModal')">
     <div class="modal-box modal-wide">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
         <div>
-          <strong style="font-size:1.05rem">استيراد وحفظ عدة قصائد دفعة واحدة (Word)</strong>
+          <strong style="font-size:1.05rem">📚 استيراد وحفظ عدة قصائد دفعة واحدة (Word)</strong>
           <div style="font-size:0.78rem;color:var(--muted)">ارفع ملف Word طويل (`.docx`) وسيقوم المختبر بفصل القصائد ومعاينتها قبل حفظها جميعاً في المدونة.</div>
         </div>
         <button class="btn btn-secondary btn-sm" onclick="closeModal('batchModal')">إغلاق</button>
@@ -1039,7 +606,7 @@
           <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer">
             <input type="checkbox" id="batchUseAiSplit" checked style="width:auto" /> تقسيم ذكي بـ Gemini AI (يستخرج العناوين وأسماء الشعراء تلقائياً)
           </label>
-          <button class="btn btn-primary btn-sm" id="batchParseBtn" onclick="parseBatchDocx()">فحص وتقسيم الملف</button>
+          <button class="btn btn-primary btn-sm" id="batchParseBtn" onclick="parseBatchDocx()">🔍 فحص وتقسيم الملف</button>
         </div>
       </div>
       <div class="progress-wrap" id="batchProgressWrap">
@@ -1059,10 +626,10 @@
         <div class="line-row" style="margin-top:0.8rem">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
             <select id="batchSaveMode" style="flex:1;min-width:250px">
-              <option value="fast">حفظ سريع فوري (تحليل عروضي محلي — مثالي لعدد كبير من القصائد)</option>
-              <option value="ai">تحليل أكاديمي بـ Gemini AI + تحديث المعجم لكل قصيدة بالتتابع</option>
+              <option value="fast">⚡ حفظ سريع فوري (تحليل عروضي محلي — مثالي لعدد كبير من القصائد)</option>
+              <option value="ai">🧠 تحليل أكاديمي بـ Gemini AI + تحديث المعجم لكل قصيدة بالتتابع</option>
             </select>
-            <button class="btn btn-primary" id="batchSaveBtn" onclick="saveBatchPoems()">حفظ القصائد المحددة دفعة واحدة</button>
+            <button class="btn btn-primary" id="batchSaveBtn" onclick="saveBatchPoems()">💾 حفظ القصائد المحددة دفعة واحدة</button>
           </div>
         </div>
       </div>
@@ -1073,7 +640,7 @@
   <div class="modal-backdrop" id="searchModal" onclick="if(event.target===this) closeModal('searchModal')">
     <div class="modal-box">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.7rem">
-        <strong>البحث الشامل في المدونة والمعجم</strong>
+        <strong>🔍 البحث الشامل في المدونة والمعجم</strong>
         <button class="btn btn-secondary btn-sm" onclick="closeModal('searchModal')">إغلاق</button>
       </div>
       <input type="text" id="globalSearchInput" placeholder="ابحث بكلمة حسانية، شاعر، بحر، أو معنى..." oninput="runGlobalSearch()" />
@@ -1084,7 +651,7 @@
   <div class="modal-backdrop" id="adminModal" onclick="if(event.target===this) closeModal('adminModal')">
     <div class="modal-box" style="max-width:390px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
-        <strong>تفعيل وضع المشرف</strong>
+        <strong>🔐 تفعيل وضع المشرف</strong>
         <button class="btn btn-secondary btn-sm" onclick="closeModal('adminModal')">إغلاق</button>
       </div>
       <input type="password" id="adminPinInput" placeholder="أدخل رمز المشرف (ADMIN_PIN)..." onkeydown="if(event.key==='Enter') verifyAdminPin()" />
@@ -1095,7 +662,7 @@
   <div class="modal-backdrop" id="editModal" onclick="if(event.target===this) closeModal('editModal')">
     <div class="modal-box">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
-        <strong>تعديل القصيدة</strong>
+        <strong>✏️ تعديل القصيدة</strong>
         <button class="btn btn-secondary btn-sm" onclick="closeModal('editModal')">إغلاق</button>
       </div>
       <div style="display:grid;gap:8px">
@@ -1113,7 +680,7 @@
   <div class="modal-backdrop" id="inboxModal" onclick="if(event.target===this) closeModal('inboxModal')">
     <div class="modal-box">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
-        <strong>رسائل ومساهمات الباحثين</strong>
+        <strong>📬 رسائل ومساهمات الباحثين</strong>
         <button class="btn btn-secondary btn-sm" onclick="closeModal('inboxModal')">إغلاق</button>
       </div>
       <div id="inboxList"></div>
@@ -1127,244 +694,39 @@
       gaf: "الصحرا دار الكرم والجود\nفيها الخيمة والگلب الصافي\nتاريخ أجدادنا المعهود\nيبقى في كل زمن وافي",
       tebraa: "يا گلب اصبر لا تلوم\nالزين يبان ف كل يوم"
     };
-    const CORE_METERS = [
-      { key: "لبير", label: "السغير / لبير", beats: "6 متحركات • إيقاع خفيف" },
-      { key: "لبتيت الناقص", label: "لبتيت الناقص", beats: "7 متحركات • توازن نغمي" },
-      { key: "لبتيت التام", label: "لبتيت التام", beats: "8 متحركات • عماد الشعر الحساني" },
-      { key: "البت لكبير", label: "البت لكبير", beats: "9 متحركات فأكثر • نَفَس ممتد" }
-    ];
-
-    let lastPayload = null, lastRagResult = null;
-    let allPoems = [], cachedPoems = [], cachedGlossary = [], cachedMessages = [], batchItems = [];
+    let lastPayload = null, lastRagResult = null, cachedPoems = [], cachedGlossary = [], cachedMessages = [], batchItems = [];
+    let selectedPoemIds = new Set();
     let citeFormat = "APA", adminPin = sessionStorage.getItem("albidan_admin_pin") || "", editingPoemId = null, captchaA = 3, captchaB = 4;
-    let activeMeterFilter = "", readerFontRem = 1.55;
 
     const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
-    const normSearch = s => String(s ?? "").replace(/[\u0617-\u061A\u064B-\u0652\u0670\u0640]/g, "").replace(/[أإآ]/g, "ا").replace(/[ݣڭڨ]/g, "گ").toLowerCase();
-    const findPoemById = id => allPoems.find(p => p.id === id) || cachedPoems.find(p => p.id === id) || null;
-    function refreshIcons() { if (window.lucide) lucide.createIcons(); }
-
     function showToast(msg) {
       const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
       clearTimeout(window._toastTimer); window._toastTimer = setTimeout(() => t.classList.remove("show"), 4200);
     }
     const closeModal = id => document.getElementById(id).classList.remove("open");
     const toggleMobileMenu = () => document.getElementById("mobileMenu").classList.toggle("open");
-
+    function scrollToAbout() {
+      const el = document.getElementById("persistent-about");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
     function switchView(v) {
+      if (v === "about") return scrollToAbout();
       document.querySelectorAll(".view-section").forEach(s => s.classList.remove("active"));
-      document.querySelectorAll(".nav-tab, .mobile-menu button").forEach(b => b.classList.toggle("active", b.dataset.view === v));
+      document.querySelectorAll(".nav-tab").forEach(b => b.classList.toggle("active", b.dataset.view === v));
       const target = document.getElementById(`view-${v}`);
       if (target) target.classList.add("active");
       if (v === "rag") loadRagHealth();
       window.scrollTo({ top: 0, behavior: "smooth" });
-      refreshIcons();
     }
-
     function toggleTheme() {
       const r = document.documentElement, n = r.getAttribute("data-theme") === "dark" ? "light" : "dark";
-      r.setAttribute("data-theme", n);
-      document.getElementById("themeBtn").innerHTML = n === "dark" ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+      r.setAttribute("data-theme", n); document.getElementById("themeBtn").textContent = n === "dark" ? "☀️" : "🌙";
       localStorage.setItem("albidan_theme", n);
-      refreshIcons();
     }
-
-    function scrollSlider(id, delta) {
-      const el = document.getElementById(id);
-      if (el) el.scrollBy({ left: delta, behavior: "smooth" });
-    }
-
-    function runHeroSearch() {
-      const q = (document.getElementById("heroQuickSearch").value || "").trim();
-      if (!q) return switchView("archive");
-      document.getElementById("archiveSearch").value = q;
-      activeMeterFilter = "";
-      updateMeterFilterUI();
-      loadArchive();
-      switchView("archive");
-    }
-
-    function filterByMeter(meterKey) {
-      activeMeterFilter = meterKey;
-      document.getElementById("archiveSearch").value = "";
-      document.getElementById("archiveFilter").value = "الكل";
-      cachedPoems = [...allPoems];
-      updateMeterFilterUI();
-      renderArchiveCards();
-      switchView("archive");
-    }
-
-    function clearMeterFilter() {
-      activeMeterFilter = "";
-      updateMeterFilterUI();
-      renderArchiveCards();
-    }
-
-    function updateMeterFilterUI() {
-      const bar = document.getElementById("archiveActiveFilterBar");
-      if (activeMeterFilter) {
-        document.getElementById("archiveActiveFilterText").textContent = `تصفية حسب البحر: ${activeMeterFilter}`;
-        bar.classList.add("show");
-      } else {
-        bar.classList.remove("show");
-      }
-    }
-
-    /* بناء شرائح استكشف الديوان (السلايدرات) */
-    function renderDiscoverSection() {
-      const slider = document.getElementById("discoverSlider");
-      if (!allPoems.length) {
-        slider.innerHTML = '<div class="card" style="width:100%;text-align:center;color:var(--muted)">لم تُوثّق قصائد بعد في المدونة.</div>';
-      } else {
-        const featured = allPoems.slice(0, 10);
-        slider.innerHTML = featured.map(p => {
-          const excerpt = (p.poem_text || "").split("\n").filter(l => l.trim()).slice(0, 4).join("\n");
-          const pid = escapeHtml(p.id);
-          return `
-            <article class="featured-slide">
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-                <strong style="font-size:1rem;color:var(--gold-light)">${escapeHtml(p.title || "قصيدة حسانية")}</strong>
-                <span class="pill-tag">${escapeHtml(p.poem_type || "شعر حساني")}</span>
-              </div>
-              <div class="slide-verse">${escapeHtml(excerpt)}</div>
-              <div class="slide-meta">
-                <span>${escapeHtml(p.poet || "تراث شفهي")}</span> •
-                <span>${escapeHtml(p.dominant_meter || "—")}</span>
-              </div>
-              <div style="display:flex;gap:7px;margin-top:auto;padding-top:6px">
-                <button class="btn btn-primary btn-sm" onclick="openZenReaderById('${pid}')"><i data-lucide="book-open"></i> قراءة وتأمل</button>
-                <button class="btn btn-secondary btn-sm" onclick="openPoemInLabById('${pid}')"><i data-lucide="flask-conical"></i> التقطيع العروضي</button>
-              </div>
-            </article>`;
-        }).join("");
-      }
-
-      const metersEl = document.getElementById("metersSlider");
-      metersEl.innerHTML = CORE_METERS.map(m => {
-        const count = allPoems.filter(p => normSearch(p.dominant_meter).includes(normSearch(m.key)) || (m.key === "لبير" && normSearch(p.dominant_meter).includes("سغير"))).length;
-        return `
-          <div class="meter-slide" onclick="filterByMeter('${m.key}')">
-            <div class="m-title">${m.label}</div>
-            <div class="m-beats">${m.beats}</div>
-            <div class="m-count"><span>${count} قصيدة</span><i data-lucide="arrow-left"></i></div>
-          </div>`;
-      }).join("");
-
-      const poetsSet = [...new Set(allPoems.map(p => p.poet).filter(Boolean))];
-      const metersSet = [...new Set(allPoems.map(p => p.dominant_meter).filter(Boolean))];
-      document.getElementById("poetsDatalist").innerHTML = poetsSet.map(v => `<option value="${escapeHtml(v)}"></option>`).join("");
-      document.getElementById("metersDatalist").innerHTML = metersSet.map(v => `<option value="${escapeHtml(v)}"></option>`).join("");
-      refreshIcons();
-    }
-
-    function renderGlossarySlider() {
-      const el = document.getElementById("glossarySlider");
-      if (!cachedGlossary.length) {
-        el.innerHTML = '<div class="card" style="width:100%;color:var(--muted);text-align:center">المعجم ينمو تلقائياً مع كل تحليل وحفظ لقصيدة.</div>';
-        return;
-      }
-      el.innerHTML = cachedGlossary.slice(0, 12).map((g, idx) => `
-        <div class="gloss-slide" onclick="openGlossaryTermByIndex(${idx})">
-          <div class="g-word">${escapeHtml(g.term)}</div>
-          <div class="g-ar">${escapeHtml(g.arabic_meaning)}</div>
-          <div class="g-en">${escapeHtml(g.english_meaning || "")}</div>
-        </div>`).join("");
-    }
-
-    function openGlossaryTermByIndex(idx) {
-      const g = cachedGlossary[idx];
-      if (!g) return;
-      document.getElementById("glossarySearch").value = g.term;
-      loadGlossary();
-      switchView("glossary");
-    }
-
-    /* وضع القراءة والتأمل مع التظليل المعجمي الفوري والقصائد ذات الصلة */
-    function openZenReaderById(id) {
-      const rec = findPoemById(id);
-      if (!rec) return;
-      document.getElementById("readerTitle").textContent = rec.title || "قصيدة حسانية";
-      document.getElementById("readerMeta").textContent = `${rec.poet || "تراث شفهي"} • ${rec.region || "الصحراء المغربية"} • ${rec.poem_type || "—"} • ${rec.dominant_meter || "—"}`;
-      document.getElementById("readerGlossPopup").classList.remove("open");
-
-      const localGloss = (rec.analysis && Array.isArray(rec.analysis.glossary)) ? rec.analysis.glossary : [];
-      const allTermsMap = new Map();
-      [...localGloss, ...cachedGlossary].forEach(g => {
-        const k = normSearch(g.term);
-        if (k && k.length >= 2 && !allTermsMap.has(k)) allTermsMap.set(k, g);
-      });
-
-      let matchedCount = 0;
-      const lines = (rec.poem_text || "").split("\n").filter(l => l.trim());
-      const highlightedHtml = lines.map(line => {
-        const tokens = line.split(/(\s+)/);
-        const processed = tokens.map(tok => {
-          const clean = normSearch(tok.replace(/[.,،؛:!?()«»"']/g, ""));
-          if (clean && allTermsMap.has(clean)) {
-            matchedCount++;
-            const g = allTermsMap.get(clean);
-            return `<span class="gloss-inline" data-term="${escapeHtml(g.term)}" data-ar="${escapeHtml(g.arabic_meaning)}" data-en="${escapeHtml(g.english_meaning || '')}" onclick="showInlineGloss(this)">${escapeHtml(tok)}</span>`;
-          }
-          return escapeHtml(tok);
-        }).join("");
-        return `<div class="reader-line">${processed}</div>`;
-      }).join("");
-
-      const bodyEl = document.getElementById("readerPoemBody");
-      bodyEl.innerHTML = highlightedHtml;
-      bodyEl.style.fontSize = `${readerFontRem}rem`;
-      document.getElementById("readerGlossHint").style.display = matchedCount > 0 ? "block" : "none";
-
-      const ctx = rec.analysis?.cultural_context || "";
-      document.getElementById("readerContextBox").style.display = ctx ? "block" : "none";
-      document.getElementById("readerContextText").textContent = ctx;
-
-      document.getElementById("readerOpenLabBtn").onclick = () => { closeModal("readerModal"); openPoemInLabById(rec.id); };
-      document.getElementById("readerCopyBtn").onclick = () => copyText(`${rec.title}\n${rec.poem_text}\n— ${rec.poet}`);
-      document.getElementById("readerCiteBtn").onclick = () => copyText(`${rec.poet || "تراث شفهي"}. (${new Date().getFullYear()}). "${rec.title}". ALBIDAN AI Lab — Hassaniya Digital Corpus. ${window.location.origin}`);
-      document.getElementById("readerWordBtn").href = `/api/export/poem/${encodeURIComponent(rec.id)}.docx`;
-      document.getElementById("readerPdfBtn").onclick = () => exportSinglePoemPDFById(rec.id);
-      document.getElementById("readerPngBtn").onclick = () => generatePoemCardPNGById(rec.id);
-
-      const related = allPoems
-        .filter(p => p.id !== rec.id && (
-          (rec.dominant_meter && p.dominant_meter === rec.dominant_meter) ||
-          (rec.poet && rec.poet !== "تراث شفهي / غير معروف" && p.poet === rec.poet)
-        ))
-        .slice(0, 3);
-
-      const relWrap = document.getElementById("readerRelatedWrap");
-      if (related.length) {
-        relWrap.style.display = "block";
-        document.getElementById("readerRelatedStrip").innerHTML = related.map(p => `
-          <div class="related-mini-card" onclick="openZenReaderById('${escapeHtml(p.id)}')">
-            <strong style="font-size:0.86rem;color:var(--gold-light);display:block">${escapeHtml(p.title)}</strong>
-            <span style="font-size:0.75rem;color:var(--muted)">${escapeHtml(p.poet)} • ${escapeHtml(p.dominant_meter)}</span>
-          </div>`).join("");
-      } else {
-        relWrap.style.display = "none";
-      }
-
-      document.getElementById("readerModal").classList.add("open");
-      refreshIcons();
-    }
-
-    function showInlineGloss(el) {
-      document.getElementById("glossPopTerm").textContent = el.dataset.term;
-      document.getElementById("glossPopAr").textContent = el.dataset.ar;
-      document.getElementById("glossPopEn").textContent = el.dataset.en;
-      document.getElementById("readerGlossPopup").classList.add("open");
-    }
-
-    function adjustReaderFont(delta) {
-      readerFontRem = Math.min(2.3, Math.max(1.1, readerFontRem + delta));
-      document.getElementById("readerPoemBody").style.fontSize = `${readerFontRem}rem`;
-    }
-
     function fillSample(k) { document.getElementById("poemInput").value = SAMPLES[k]; updateLiveCounter(); }
     function updateLiveCounter() {
       const lines = document.getElementById("poemInput").value.split("\n").filter(l => l.trim());
-      const kind = lines.length === 2 ? " • تبراع" : lines.length === 4 ? " • گاف" : lines.length >= 6 ? " • طلعة" : "";
+      const kind = lines.length === 2 ? " • تبراع" : lines.length === 4 ? " • كاف" : lines.length >= 6 ? " • طلعة" : "";
       document.getElementById("liveCounter").textContent = `${lines.length} أشطر${kind}`;
     }
     function switchLabTab(name, btn) {
@@ -1433,34 +795,50 @@
       });
     }
 
-    /* الباحث الذكي (RAG) */
+    // =========================================================================
+    // دوال الباحث الذكي الموثّق (Cloud Hybrid RAG)
+    // =========================================================================
     function setRagSample(txt) {
       document.getElementById("ragQueryInput").value = txt;
       document.getElementById("ragQueryInput").focus();
     }
+
     async function loadRagHealth() {
       const badge = document.getElementById("ragHealthBadge");
       if (!badge) return;
       try {
         const h = await safeFetchJson("/api/rag/health");
         badge.textContent = `الذاكرة المعرفية: ${h.indexed_documents} وثيقة • ${h.total_chunks} مقطع`;
-      } catch (e) { badge.textContent = "تعذر فحص حالة المحرك"; }
+      } catch (e) {
+        badge.textContent = "⚠️ تعذر فحص حالة المحرك";
+      }
     }
+
     async function syncRagArchive() {
       const btn = document.getElementById("ragSyncBtn");
-      btn.disabled = true; btn.textContent = "جاري المزامنة...";
+      btn.disabled = true;
+      btn.textContent = "⏳ جاري مزامنة القصائد والمعجم...";
       try {
         const res = await safeFetchJson("/api/rag/sync-albidan", { method: "POST" });
-        showToast(`تمت المزامنة (${res.elapsed_seconds}ث): ${res.poems_scanned} قصيدة و ${res.glossary_scanned} مفردة.`);
+        showToast(
+          `تمت المزامنة (${res.elapsed_seconds}ث): ${res.poems_scanned} قصيدة و ${res.glossary_scanned} مفردة (${res.indexed_docs} محدّث / ${res.skipped_docs} متخطى).`
+        );
         await loadRagHealth();
-      } catch (e) { showToast(e.message); }
-      finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-cw"></i> مزامنة الأرشيف'; refreshIcons(); }
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "🔄 مزامنة الأرشيف الآن";
+      }
     }
+
     async function runRagSearch() {
       const query = (document.getElementById("ragQueryInput").value || "").trim();
       if (query.length < 2) return showToast("اكتب سؤالاً واضحاً أولاً.");
       const btn = document.getElementById("ragAskBtn");
-      btn.disabled = true; btn.textContent = "جاري البحث وتدقيق الشواهد...";
+      btn.disabled = true;
+      btn.textContent = "⏳ جاري البحث الهجين وتدقيق الشواهد...";
+
       const payload = {
         query,
         poet: (document.getElementById("ragPoetFilter").value || "").trim() || null,
@@ -1469,25 +847,43 @@
         top_k: parseInt(document.getElementById("ragTopK").value, 10) || 5,
         enable_reflection: document.getElementById("ragReflectionToggle").checked
       };
+
       try {
-        const data = await safeFetchJson("/api/rag/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-        lastRagResult = data; renderRagResult(data); showToast("اكتمل البحث الأكاديمي الموثّق بنجاح!");
-      } catch (e) { showToast(e.message); }
-      finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="search"></i> اسأل الباحث الحساني'; refreshIcons(); }
+        const data = await safeFetchJson("/api/rag/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        lastRagResult = data;
+        renderRagResult(data);
+        showToast("اكتمل البحث الأكاديمي الموثّق بنجاح!");
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "🔎 اسأل الباحث الحساني";
+      }
     }
+
     function renderRagResult(data) {
       document.getElementById("ragEmptyHint").style.display = "none";
       document.getElementById("ragResultWrap").style.display = "block";
-      const v = data.verification || {}, t = data.timing || {};
-      document.getElementById("ragVerifyBadge").textContent = v.status || "موثّقة";
-      document.getElementById("ragTimingBadge").textContent = `البحث: ${t.search_seconds ?? "—"}ث | التوليد: ${t.generation_seconds ?? "—"}ث`;
+
+      const v = data.verification || {};
+      const t = data.timing || {};
+      document.getElementById("ragVerifyBadge").textContent = `✅ ${v.status || "موثّقة"}`;
+      document.getElementById("ragTimingBadge").textContent =
+        `البحث: ${t.search_seconds ?? "—"}ث | التوليد: ${t.generation_seconds ?? "—"}ث`;
       document.getElementById("ragVerifyNotes").textContent = v.notes ? `ملاحظة المدقق الأكاديمي: ${v.notes}` : "";
       document.getElementById("ragAnswerText").textContent = data.answer || "";
-      const sources = data.sources || [], grid = document.getElementById("ragSourcesGrid");
+
+      const sources = data.sources || [];
+      const grid = document.getElementById("ragSourcesGrid");
       if (!sources.length) {
-        grid.innerHTML = '<div class="line-row" style="grid-column:1/-1;color:var(--muted)">لم يُعثر على شواهد مطابقة في الأرشيف المفهرس؛ جرّب الضغط على «مزامنة الأرشيف» أو تخفيف الفلاتر.</div>';
+        grid.innerHTML = '<div class="line-row" style="grid-column:1/-1;color:var(--muted)">لم يُعثر على شواهد مطابقة في الأرشيف المفهرس؛ جرّب الضغط على «🔄 مزامنة الأرشيف الآن» أو تخفيف الفلاتر.</div>';
         return;
       }
+
       grid.innerHTML = sources.map((s, idx) => {
         const pct = Math.round((Number(s.confidence) || 0) * 100);
         return `
@@ -1496,27 +892,32 @@
               <strong style="font-size:0.9rem;color:var(--gold-light)">${idx + 1}. ${escapeHtml(s.title || "شاهد موثق")}</strong>
               <span class="pill-tag">صلة: ${pct}%</span>
             </div>
-            <div style="font-size:0.76rem;color:var(--muted);margin-top:3px">${escapeHtml(s.poet || "غير محدد")} • ${escapeHtml(s.meter || "—")} • ${escapeHtml(s.genre || "—")}</div>
+            <div style="font-size:0.76rem;color:var(--muted);margin-top:3px">
+              ${escapeHtml(s.poet || "غير محدد")} • ${escapeHtml(s.meter || "—")} • ${escapeHtml(s.genre || "—")}
+            </div>
             <div style="font-size:0.74rem;color:var(--gold-light);margin-top:2px">${escapeHtml(s.source || "أرشيف ALBIDAN")}</div>
             <div class="rag-source-excerpt">${escapeHtml(s.excerpt || "")}</div>
           </div>`;
       }).join("");
     }
+
     function exportRagAnswerPDF() {
       if (!lastRagResult) return showToast("قم بطرح سؤال أولاً.");
       const sourcesHtml = (lastRagResult.sources || []).map((s, idx) =>
         `<div class="poem-block"><strong>${idx + 1}. ${escapeHtml(s.title)}</strong> (${escapeHtml(s.poet)} • ${escapeHtml(s.meter)} • ${escapeHtml(s.source)})<br>${escapeHtml(s.excerpt)}</div>`
       ).join("");
-      printAcademicPDF("إجابة موثّقة من الباحث الذكي الحساني", `
-        <h2>السؤال البحثي</h2><p>${escapeHtml(lastRagResult.query)}</p>
+      const body = `
+        <h2>السؤال البحثي</h2>
+        <p>${escapeHtml(lastRagResult.query)}</p>
         <h2>الإجابة الأكاديمية الموثّقة (${escapeHtml(lastRagResult.verification?.status || "موثّقة")})</h2>
         <div style="white-space:pre-line;margin-bottom:14px">${escapeHtml(lastRagResult.answer)}</div>
         ${lastRagResult.verification?.notes ? `<p class="meta"><strong>ملاحظة التدقيق:</strong> ${escapeHtml(lastRagResult.verification.notes)}</p>` : ""}
-        <h2>الشواهد والمصادر المعتمدة</h2>${sourcesHtml || "<p>لا توجد شواهد مرفقة.</p>"}
-      `);
+        <h2>الشواهد والمصادر المعتمدة</h2>
+        ${sourcesHtml || "<p>لا توجد شواهد مرفقة.</p>"}
+      `;
+      printAcademicPDF("إجابة موثّقة من الباحث الذكي الحساني", body);
     }
 
-    /* الرقمنة والاستيراد */
     async function handleImageOCR() {
       const input = document.getElementById("ocrImageInput");
       if (!input.files.length) return;
@@ -1533,6 +934,7 @@
       } catch (e) { showToast(e.message); }
       finally { btn.disabled = false; hideProgress("lab"); input.value = ""; }
     }
+
     async function handleDocImport() {
       const input = document.getElementById("docFileInput");
       if (!input.files.length) return;
@@ -1547,6 +949,7 @@
       } catch (e) { showToast(e.message); }
       finally { btn.disabled = false; hideProgress("lab"); input.value = ""; }
     }
+
     async function handleAudioTranscribe() {
       const input = document.getElementById("audioFileInput");
       if (!input.files.length) return;
@@ -1592,7 +995,7 @@
       document.getElementById("batchItemsList").innerHTML = batchItems.map((item, idx) => `
         <div class="batch-poem-item ${item.selected ? "" : "unchecked"}">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-            <label style="display:flex;align-items:center;gap:7px;font-weight:700;font-size:0.84rem;cursor:pointer">
+            <label style="display:flex;align-items:center;gap:7px;font-weight:800;font-size:0.84rem;cursor:pointer">
               <input type="checkbox" ${item.selected ? "checked" : ""} style="width:auto" onchange="batchItems[${idx}].selected=this.checked;renderBatchItems()" /> قصيدة #${idx + 1}
             </label>
             <button class="btn btn-danger btn-sm" onclick="batchItems.splice(${idx},1);renderBatchItems()">حذف</button>
@@ -1643,20 +1046,19 @@
           setProgress("batch", 100, `اكتمل حفظ ${saved} من أصل ${selected.length} قصيدة!`, false);
           showToast(`تم حفظ ${saved} قصيدة وتحديث المعجم بنجاح!`);
         }
-        await Promise.all([loadStats(), loadAllPoems(), loadArchive(), loadGlossary()]);
+        await Promise.all([loadStats(), loadArchive(), loadGlossary()]);
         setTimeout(() => { closeModal("batchModal"); switchView("archive"); }, 650);
       } catch (e) { showToast(e.message); } finally { btn.disabled = false; }
     }
 
-    /* التحليل والحفظ */
     async function runAnalysis() {
       const poem_text = document.getElementById("poemInput").value.trim();
       if (!poem_text) return showToast("يرجى إدخال بيت شعري واحد على الأقل.");
-      const btn = document.getElementById("analyzeBtn"); btn.disabled = true; btn.textContent = "جاري التحليل العروضي واللساني...";
+      const btn = document.getElementById("analyzeBtn"); btn.disabled = true; btn.textContent = "⏳ جاري التحليل العروضي واللساني...";
       try {
         const data = await safeFetchJson("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ poem_text, model_name: document.getElementById("modelSelect").value, use_ai: true }) });
         lastPayload = { ...data, poem_text }; renderResults(data); showToast(data.warning || "اكتمل التحليل العروضي بنجاح!");
-      } catch (e) { showToast(e.message); } finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="sparkles"></i> بدء التحليل العروضي واللساني'; refreshIcons(); }
+      } catch (e) { showToast(e.message); } finally { btn.disabled = false; btn.textContent = "🔬 بدء التحليل العروضي واللساني"; }
     }
     function renderResults(data) {
       const a = data.analysis || {};
@@ -1700,11 +1102,10 @@
         });
         showToast(`تم التوثيق بنجاح (المعرّف: ${data.id}) وتحديث المعجم!`);
         document.getElementById("saveTitle").value = "";
-        await Promise.all([loadStats(), loadAllPoems(), loadArchive(), loadGlossary()]);
+        await Promise.all([loadStats(), loadArchive(), loadGlossary()]);
       } catch (e) { showToast(e.message); }
     }
 
-    /* التصدير والطباعة */
     async function exportCurrentAnalysisDocx() {
       if (!lastPayload) return showToast("حلّل قصيدة أولاً.");
       try {
@@ -1724,7 +1125,7 @@
       const iframe = document.createElement("iframe"); iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;"; document.body.appendChild(iframe);
       const doc = iframe.contentWindow.document;
       doc.open();
-      doc.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>${escapeHtml(docTitle)}</title><link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"><style>@page{size:A4;margin:16mm;}body{font-family:'IBM Plex Sans Arabic',sans-serif;color:#162133;line-height:1.7;font-size:12.5px;}.pdf-head{border-bottom:2px solid #1B365D;padding-bottom:8px;margin-bottom:16px;}.pdf-head small{color:#9A6B13;font-weight:700;}.pdf-head h1{font-size:18px;color:#1B365D;margin:4px 0 0;}.poem-block{font-family:'Amiri',serif;font-size:16px;line-height:2;background:#FAF8F3;border-right:3px solid #9A6B13;padding:10px 14px;margin:10px 0;white-space:pre-line;}table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11.5px;}th,td{border:1px solid #CBD5E1;padding:6px 8px;text-align:right;}th{background:#1B365D;color:#fff;}.ltr{direction:ltr;text-align:left;white-space:pre-line;}.page-break{page-break-after:always;}h2{font-size:15px;color:#1B365D;margin:12px 0 6px;}.meta{color:#475569;font-size:11.5px;margin-bottom:8px;}</style></head><body><div class="pdf-head"><small>مختبر البيظان للذكاء الاصطناعي — ALBIDAN AI LAB (${new Date().toLocaleDateString('ar-MA')})</small><h1>${escapeHtml(docTitle)}</h1></div>${bodyHtml}</body></html>`);
+      doc.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>${escapeHtml(docTitle)}</title><link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;700;800&display=swap" rel="stylesheet"><style>@page{size:A4;margin:16mm;}body{font-family:'Cairo',sans-serif;color:#162133;line-height:1.7;font-size:12.5px;}.pdf-head{border-bottom:2px solid #1B365D;padding-bottom:8px;margin-bottom:16px;}.pdf-head small{color:#9A6B13;font-weight:700;}.pdf-head h1{font-size:18px;color:#1B365D;margin:4px 0 0;}.poem-block{font-family:'Amiri',serif;font-size:16px;line-height:2;background:#FAF8F3;border-right:3px solid #9A6B13;padding:10px 14px;margin:10px 0;white-space:pre-line;}table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11.5px;}th,td{border:1px solid #CBD5E1;padding:6px 8px;text-align:right;}th{background:#1B365D;color:#fff;}.ltr{direction:ltr;text-align:left;white-space:pre-line;}.page-break{page-break-after:always;}h2{font-size:15px;color:#1B365D;margin:12px 0 6px;}.meta{color:#475569;font-size:11.5px;margin-bottom:8px;}</style></head><body><div class="pdf-head"><small>مختبر البيظان للذكاء الاصطناعي — ALBIDAN AI LAB (${new Date().toLocaleDateString('ar-MA')})</small><h1>${escapeHtml(docTitle)}</h1></div>${bodyHtml}</body></html>`);
       doc.close();
       iframe.onload = () => setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => iframe.remove(), 2000); }, 450);
     }
@@ -1737,7 +1138,7 @@
       if (!lastPayload) return showToast("حلّل قصيدة أولاً.");
       printAcademicPDF("تقرير التحليل العروضي واللساني", buildPoemHtmlForPDF(document.getElementById("saveTitle").value || "تقرير تحليل عروضي حساني", document.getElementById("savePoet").value || "تراث شفهي", document.getElementById("saveRegion").value || "الصحراء المغربية", lastPayload.poem_text, lastPayload.analysis));
     }
-    function exportSinglePoemPDFById(id) { const r = findPoemById(id); if (r) printAcademicPDF(r.title, buildPoemHtmlForPDF(r.title, r.poet, r.region, r.poem_text, r.analysis)); }
+    function exportSinglePoemPDF(idx) { const r = cachedPoems[idx]; if (r) printAcademicPDF(r.title, buildPoemHtmlForPDF(r.title, r.poet, r.region, r.poem_text, r.analysis)); }
     function exportArchivePDF() {
       if (!cachedPoems.length) return showToast("المدونة فارغة حالياً.");
       printAcademicPDF("المدونة الحسانية المفتوحة — ديوان النصوص الموثقة", cachedPoems.map((r, i) => `<div class="${i < cachedPoems.length - 1 ? 'page-break' : ''}">${buildPoemHtmlForPDF(r.title, r.poet, r.region, r.poem_text, r.analysis)}</div>`).join(""));
@@ -1747,32 +1148,102 @@
       printAcademicPDF("المعجم الحساني المتنامي", `<table><thead><tr><th>المفردة</th><th>المعنى بالعربية الفصحى</th><th>English</th><th>المصدر</th></tr></thead><tbody>${cachedGlossary.map(g => `<tr><td><strong>${escapeHtml(g.term)}</strong></td><td>${escapeHtml(g.arabic_meaning)}</td><td class="ltr">${escapeHtml(g.english_meaning)}</td><td>${escapeHtml(g.source_poem_title || "")}</td></tr>`).join("")}</tbody></table>`);
     }
     function exportMethodologyPDF() { const el = document.getElementById("view-methodology").cloneNode(true); el.querySelector(".page-head")?.remove(); printAcademicPDF("المرجع العروضي والمنهجي للشعر الحساني", el.innerHTML); }
-    function generatePoemCardPNGById(id) {
-      const rec = findPoemById(id); if (!rec) return;
+    function generatePoemCardPNG(idx) {
+      const rec = cachedPoems[idx]; if (!rec) return;
       const c = document.createElement("canvas"); c.width = 1080; c.height = 1080;
       const ctx = c.getContext("2d"), grad = ctx.createLinearGradient(0, 0, 1080, 1080);
-      grad.addColorStop(0, "#15120E"); grad.addColorStop(1, "#0B0907"); ctx.fillStyle = grad; ctx.fillRect(0, 0, 1080, 1080);
-      ctx.strokeStyle = "#D8B254"; ctx.lineWidth = 4; ctx.strokeRect(42, 42, 996, 996);
+      grad.addColorStop(0, "#14100C"); grad.addColorStop(1, "#0D0B09"); ctx.fillStyle = grad; ctx.fillRect(0, 0, 1080, 1080);
+      ctx.strokeStyle = "#D4AF37"; ctx.lineWidth = 4; ctx.strokeRect(42, 42, 996, 996);
       ctx.direction = "rtl"; ctx.textAlign = "center";
-      ctx.fillStyle = "#D8B254"; ctx.font = "bold 26px 'IBM Plex Sans Arabic', sans-serif"; ctx.fillText("مختبر البيظان للذكاء الاصطناعي • ALBIDAN AI LAB", 540, 128);
-      ctx.fillStyle = "#F5EFE6"; ctx.font = "700 40px 'IBM Plex Sans Arabic', sans-serif"; ctx.fillText(rec.title || "قصيدة حسانية", 540, 208);
-      ctx.fillStyle = "#C86D3B"; ctx.font = "600 24px 'IBM Plex Sans Arabic', sans-serif"; ctx.fillText(`${rec.poem_type || ""}  •  ${rec.dominant_meter || ""}`, 540, 258);
-      ctx.fillStyle = "#D8B254"; ctx.fillRect(390, 286, 300, 3);
+      ctx.fillStyle = "#D4AF37"; ctx.font = "bold 28px Cairo, sans-serif"; ctx.fillText("🐪 مختبر البيظان للذكاء الاصطناعي • ALBIDAN AI LAB", 540, 128);
+      ctx.fillStyle = "#F5EFE6"; ctx.font = "800 40px Cairo, sans-serif"; ctx.fillText(rec.title || "قصيدة حسانية", 540, 208);
+      ctx.fillStyle = "#C86D3B"; ctx.font = "700 24px Cairo, sans-serif"; ctx.fillText(`${rec.poem_type || ""}  •  ${rec.dominant_meter || ""}`, 540, 258);
+      ctx.fillStyle = "#D4AF37"; ctx.fillRect(390, 286, 300, 3);
       const lines = (rec.poem_text || "").split("\n").filter(l => l.trim()).slice(0, 8), step = lines.length > 5 ? 72 : 88, startY = 540 - ((lines.length - 1) * step) / 2 + 40;
       ctx.fillStyle = "#FFFDF7"; ctx.font = `700 ${lines.length > 5 ? 40 : 48}px Amiri, serif`;
       lines.forEach((line, i) => ctx.fillText(line.trim(), 540, startY + i * step));
-      ctx.fillStyle = "#A99F91"; ctx.font = "600 24px 'IBM Plex Sans Arabic', sans-serif"; ctx.fillText(`${rec.poet || "تراث شفهي"}  |  ${rec.region || "الصحراء المغربية"}`, 540, 945);
+      ctx.fillStyle = "#A99F91"; ctx.font = "700 24px Cairo, sans-serif"; ctx.fillText(`${rec.poet || "تراث شفهي"}  |  ${rec.region || "الصحراء المغربية"}`, 540, 945);
       const a = document.createElement("a"); a.download = `albidan_${rec.id || "poem"}.png`; a.href = c.toDataURL("image/png"); a.click();
       showToast("تم تحميل بطاقة القصيدة المصوّرة!");
     }
 
-    /* إدارة المشرف */
+    // =========================================================================
+    // إدارة المشرف والحذف الجماعي (تحديد متعدد + حذف الكل)
+    // =========================================================================
+    function updateBulkSelectionUI() {
+      const visibleIds = new Set(cachedPoems.map(p => p.id));
+      for (const id of Array.from(selectedPoemIds)) {
+        if (!visibleIds.has(id)) selectedPoemIds.delete(id);
+      }
+      const count = selectedPoemIds.size;
+      const c1 = document.getElementById("selectedPoemsCount");
+      const c2 = document.getElementById("selectedPoemsBtnCount");
+      const delBtn = document.getElementById("deleteSelectedBtn");
+      if (c1) c1.textContent = count;
+      if (c2) c2.textContent = count;
+      if (delBtn) delBtn.disabled = count === 0;
+    }
+
+    function togglePoemSelectionByIdx(idx, checked) {
+      const rec = cachedPoems[idx];
+      if (!rec) return;
+      if (checked) selectedPoemIds.add(rec.id);
+      else selectedPoemIds.delete(rec.id);
+      const card = document.getElementById(`poem-card-${idx}`);
+      if (card) card.classList.toggle("selected-del", checked);
+      updateBulkSelectionUI();
+    }
+
+    function selectAllPoems(state) {
+      if (state) cachedPoems.forEach(p => selectedPoemIds.add(p.id));
+      else selectedPoemIds.clear();
+      renderArchiveCards();
+    }
+
+    async function deleteSelectedPoems() {
+      if (!adminPin) return showToast("فعّل وضع المشرف أولاً.");
+      const ids = Array.from(selectedPoemIds);
+      if (!ids.length) return showToast("حدد قصيدة واحدة على الأقل للحذف.");
+      if (!confirm(`هل أنت متأكد من حذف ${ids.length} قصيدة محددة نهائياً من الموقع وذاكرة البحث؟`)) return;
+      try {
+        const res = await safeFetchJson("/api/poems/bulk-delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
+          body: JSON.stringify({ ids })
+        });
+        selectedPoemIds.clear();
+        showToast(res.message);
+        await Promise.all([loadStats(), loadArchive(), loadRagHealth()]);
+      } catch (e) { showToast(e.message); }
+    }
+
+    async function deleteAllArchive(includeGlossary) {
+      if (!adminPin) return showToast("فعّل وضع المشرف أولاً.");
+      const warnMsg = includeGlossary
+        ? "تحذير نهائي: سيتم حذف جميع القصائد وجميع مفردات المعجم وذاكرة الباحث الذكي بالكامل دون إمكانية التراجع. هل تريد المتابعة؟"
+        : "تحذير: سيتم حذف جميع القصائد المخزّنة في الموقع دفعة واحدة وتفريغ مقاطعها من ذاكرة البحث. هل تريد المتابعة؟";
+      if (!confirm(warnMsg)) return;
+      if (includeGlossary && !confirm("تأكيد ثانٍ: هل أنت متأكد فعلاً من تصفير الموقع بالكامل؟")) return;
+      try {
+        const res = await safeFetchJson("/api/poems/delete-all", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
+          body: JSON.stringify({ include_glossary: includeGlossary, include_rag: true })
+        });
+        selectedPoemIds.clear();
+        showToast(res.message);
+        await Promise.all([loadStats(), loadArchive(), loadGlossary(), loadRagHealth()]);
+      } catch (e) { showToast(e.message); }
+    }
+
     function updateAdminUI() {
       const btn = document.getElementById("adminBtn"), inboxBtn = document.getElementById("inboxBtn");
+      const bulkBar = document.getElementById("archiveAdminBar");
       document.getElementById("glossAdminCol").style.display = adminPin ? "table-cell" : "none";
-      if (adminPin) { btn.classList.add("admin-on"); btn.innerHTML = '<i data-lucide="unlock"></i> <span class="hide-xs">خروج</span>'; inboxBtn.style.display = "inline-flex"; }
-      else { btn.classList.remove("admin-on"); btn.innerHTML = '<i data-lucide="lock"></i> <span class="hide-xs">المشرف</span>'; inboxBtn.style.display = "none"; }
-      renderArchiveCards(); renderGlossaryTable(); refreshIcons();
+      if (bulkBar) bulkBar.style.display = adminPin ? "flex" : "none";
+      if (adminPin) { btn.classList.add("admin-on"); btn.innerHTML = '🔓 <span class="hide-xs">خروج</span>'; inboxBtn.style.display = "inline-flex"; }
+      else { selectedPoemIds.clear(); btn.classList.remove("admin-on"); btn.innerHTML = '🔐 <span class="hide-xs">المشرف</span>'; inboxBtn.style.display = "none"; }
+      renderArchiveCards(); renderGlossaryTable();
     }
     function handleAdminClick() {
       if (adminPin) { adminPin = ""; sessionStorage.removeItem("albidan_admin_pin"); updateAdminUI(); showToast("تم الخروج من وضع المشرف."); }
@@ -1786,8 +1257,8 @@
         showToast("تم تفعيل وضع المشرف بنجاح!");
       } catch (e) { showToast(e.message); }
     }
-    function openEditPoemById(id) {
-      const rec = findPoemById(id); if (!rec) return;
+    function openEditPoem(idx) {
+      const rec = cachedPoems[idx]; if (!rec) return;
       editingPoemId = rec.id;
       document.getElementById("editTitle").value = rec.title || ""; document.getElementById("editPoet").value = rec.poet || "";
       document.getElementById("editRegion").value = rec.region || ""; document.getElementById("editText").value = rec.poem_text || "";
@@ -1797,12 +1268,17 @@
       if (!editingPoemId || !adminPin) return;
       try {
         await safeFetchJson(`/api/poems/${encodeURIComponent(editingPoemId)}`, { method: "PUT", headers: { "Content-Type": "application/json", "x-admin-pin": adminPin }, body: JSON.stringify({ title: document.getElementById("editTitle").value, poet: document.getElementById("editPoet").value, region: document.getElementById("editRegion").value, poem_text: document.getElementById("editText").value }) });
-        closeModal("editModal"); showToast("تم حفظ التعديلات!"); await Promise.all([loadAllPoems(), loadArchive()]);
+        closeModal("editModal"); showToast("تم حفظ التعديلات!"); loadArchive();
       } catch (e) { showToast(e.message); }
     }
-    async function deleteArchivePoemById(id) {
-      const rec = findPoemById(id); if (!rec || !adminPin || !confirm(`حذف القصيدة «${rec.title}» نهائياً؟`)) return;
-      try { await safeFetchJson(`/api/poems/${encodeURIComponent(rec.id)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } }); showToast("تم الحذف."); await Promise.all([loadStats(), loadAllPoems(), loadArchive()]); } catch (e) { showToast(e.message); }
+    async function deleteArchivePoem(idx) {
+      const rec = cachedPoems[idx]; if (!rec || !adminPin || !confirm(`حذف القصيدة «${rec.title}» نهائياً؟`)) return;
+      try {
+        await safeFetchJson(`/api/poems/${encodeURIComponent(rec.id)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } });
+        selectedPoemIds.delete(rec.id);
+        showToast("تم الحذف.");
+        await Promise.all([loadStats(), loadArchive(), loadRagHealth()]);
+      } catch (e) { showToast(e.message); }
     }
     async function deleteGlossaryTerm(idx) {
       const g = cachedGlossary[idx]; if (!g || !adminPin || !confirm(`حذف المفردة «${g.term}»؟`)) return;
@@ -1822,87 +1298,65 @@
       try { await safeFetchJson(`/api/messages/${encodeURIComponent(m.id)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } }); openInboxModal(); loadStats(); } catch (e) { showToast(e.message); }
     }
 
-    /* جلب وعرض البيانات */
     async function loadStats() {
       try {
         const s = await safeFetchJson("/api/stats");
         document.getElementById("statPoems").textContent = s.poems_count; document.getElementById("statLines").textContent = s.lines_count;
         document.getElementById("statTerms").textContent = s.terms_count; document.getElementById("msgCountBadge").textContent = s.messages_count ?? 0;
         document.getElementById("serverBadge").innerHTML = `<span class="status-dot"></span> ${s.db_mode === "mongodb" ? "MongoDB" : "SQLite"}`;
-      } catch (e) { document.getElementById("serverBadge").textContent = "غير متصل"; }
-    }
-    async function loadAllPoems() {
-      try {
-        allPoems = (await safeFetchJson("/api/poems?q=&poem_type=%D8%A7%D9%84%D9%83%D9%84")).items || [];
-        renderDiscoverSection();
-      } catch (e) {}
+      } catch (e) { document.getElementById("serverBadge").textContent = "⚠️ غير متصل"; }
     }
     async function loadArchive() {
       try {
         const q = encodeURIComponent(document.getElementById("archiveSearch").value || ""), t = encodeURIComponent(document.getElementById("archiveFilter").value || "الكل");
-        cachedPoems = (await safeFetchJson(`/api/poems?q=${q}&poem_type=${t}`)).items || [];
-        if (!q && t === encodeURIComponent("الكل")) {
-          allPoems = [...cachedPoems];
-          renderDiscoverSection();
-        }
-        renderArchiveCards();
+        cachedPoems = (await safeFetchJson(`/api/poems?q=${q}&poem_type=${t}`)).items || []; renderArchiveCards();
       } catch (e) {}
     }
     function renderArchiveCards() {
       const grid = document.getElementById("archiveGrid");
-      const list = cachedPoems.filter(p => !activeMeterFilter || normSearch(p.dominant_meter).includes(normSearch(activeMeterFilter)) || (activeMeterFilter === "لبير" && normSearch(p.dominant_meter).includes("سغير")));
-
-      if (!list.length) {
-        grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;color:var(--muted);padding:2rem">لم يُعثر على هذا الأثر في الديوان بعد؛ جرّب البحث بكلمة أخرى أو أزل التصفية.</div>';
+      if (!cachedPoems.length) {
+        grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;color:var(--muted)">لا توجد قصائد مطابقة حالياً.</div>';
+        updateBulkSelectionUI();
         return;
       }
-      grid.innerHTML = list.map(p => {
-        const pid = escapeHtml(p.id);
+      grid.innerHTML = cachedPoems.map((p, idx) => {
+        const isChecked = adminPin && selectedPoemIds.has(p.id);
         return `
-        <div class="archive-card">
+        <div class="archive-card ${isChecked ? "selected-del" : ""}" id="poem-card-${idx}">
           <div style="display:flex;justify-content:space-between;gap:6px;align-items:center">
-            <strong style="font-size:0.96rem;cursor:pointer" onclick="openZenReaderById('${pid}')">${escapeHtml(p.title)}</strong>
+            <div style="display:flex;align-items:center;gap:8px;min-width:0">
+              ${adminPin ? `<input type="checkbox" class="poem-select-cb" ${isChecked ? "checked" : ""} onchange="togglePoemSelectionByIdx(${idx}, this.checked)" title="تحديد للحذف الجماعي" />` : ""}
+              <strong style="font-size:0.95rem">${escapeHtml(p.title)}</strong>
+            </div>
             <span class="pill-tag">${escapeHtml(p.poem_type)}</span>
           </div>
           <div style="font-size:0.78rem;color:var(--muted)">${escapeHtml(p.poet)} • ${escapeHtml(p.region)} • ${escapeHtml(p.dominant_meter)}</div>
-          <div class="archive-poem" onclick="openZenReaderById('${pid}')" title="انقر لوضع القراءة الكاملة">${escapeHtml(p.poem_text)}</div>
+          <div class="archive-poem">${escapeHtml(p.poem_text)}</div>
           <div class="card-actions">
-            <button class="btn btn-primary btn-sm" onclick="openZenReaderById('${pid}')"><i data-lucide="book-open"></i> قراءة</button>
-            <button class="btn btn-secondary btn-sm" onclick="openPoemInLabById('${pid}')">المختبر</button>
+            <button class="btn btn-primary btn-sm" onclick="openArchivePoem(${idx})">فتح</button>
             <a class="btn btn-secondary btn-sm" href="/api/export/poem/${encodeURIComponent(p.id)}.docx">Word</a>
-            <button class="btn btn-secondary btn-sm" onclick="exportSinglePoemPDFById('${pid}')">PDF</button>
-            <button class="btn btn-secondary btn-sm" onclick="generatePoemCardPNGById('${pid}')">صورة</button>
-            ${adminPin ? `<button class="btn btn-secondary btn-sm" onclick="openEditPoemById('${pid}')"><i data-lucide="pencil"></i></button><button class="btn btn-danger btn-sm" onclick="deleteArchivePoemById('${pid}')"><i data-lucide="trash-2"></i></button>` : ""}
+            <button class="btn btn-secondary btn-sm" onclick="exportSinglePoemPDF(${idx})">PDF</button>
+            <button class="btn btn-secondary btn-sm" onclick="generatePoemCardPNG(${idx})">صورة</button>
+            ${adminPin ? `<button class="btn btn-secondary btn-sm" onclick="openEditPoem(${idx})">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteArchivePoem(${idx})">🗑️</button>` : ""}
           </div>
         </div>`;
       }).join("");
-      refreshIcons();
+      updateBulkSelectionUI();
     }
-    function openPoemInLabById(id) {
-      const rec = findPoemById(id); if (!rec) return;
+    function openArchivePoem(idx) {
+      const rec = cachedPoems[idx]; if (!rec) return;
       document.getElementById("poemInput").value = rec.poem_text; document.getElementById("saveTitle").value = rec.title || "";
       document.getElementById("savePoet").value = rec.poet || ""; document.getElementById("saveRegion").value = rec.region || "";
       updateLiveCounter(); lastPayload = { poem_text: rec.poem_text, analysis: rec.analysis, source_engine: rec.source_engine };
       renderResults(lastPayload); switchView("lab");
     }
     async function loadGlossary() {
-      try {
-        cachedGlossary = (await safeFetchJson(`/api/glossary?q=${encodeURIComponent(document.getElementById("glossarySearch").value || "")}`)).items || [];
-        renderGlossaryTable();
-        renderGlossarySlider();
-      } catch (e) {}
+      try { cachedGlossary = (await safeFetchJson(`/api/glossary?q=${encodeURIComponent(document.getElementById("glossarySearch").value || "")}`)).items || []; renderGlossaryTable(); } catch (e) {}
     }
     function renderGlossaryTable() {
       const tbody = document.getElementById("glossaryTableBody");
       if (!cachedGlossary.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem">لا توجد مفردات مطابقة بعد.</td></tr>'; return; }
-      tbody.innerHTML = cachedGlossary.map((g, idx) => `
-        <tr>
-          <td class="term-cell">${escapeHtml(g.term)}</td>
-          <td data-label="المعنى الفصيح">${escapeHtml(g.arabic_meaning)}</td>
-          <td class="en-cell" data-label="English">${escapeHtml(g.english_meaning)}</td>
-          <td data-label="المصدر" style="color:var(--muted);font-size:0.82rem">${escapeHtml(g.source_poem_title || "—")}</td>
-          ${adminPin ? `<td><button class="btn btn-danger btn-sm" onclick="deleteGlossaryTerm(${idx})">حذف</button></td>` : ""}
-        </tr>`).join("");
+      tbody.innerHTML = cachedGlossary.map((g, idx) => `<tr><td class="term-cell">${escapeHtml(g.term)}</td><td>${escapeHtml(g.arabic_meaning)}</td><td style="direction:ltr;text-align:left">${escapeHtml(g.english_meaning)}</td><td style="color:var(--muted);font-size:0.82rem">${escapeHtml(g.source_poem_title || "—")}</td>${adminPin ? `<td><button class="btn btn-danger btn-sm" onclick="deleteGlossaryTerm(${idx})">حذف</button></td>` : ""}</tr>`).join("");
     }
     function resetCaptcha() {
       captchaA = Math.floor(Math.random() * 6) + 2; captchaB = Math.floor(Math.random() * 6) + 1;
@@ -1920,32 +1374,20 @@
     function openSearchModal() { document.getElementById("searchModal").classList.add("open"); document.getElementById("globalSearchInput").focus(); runGlobalSearch(); }
     function selectSearchTerm(idx) { const g = cachedGlossary[idx]; if (!g) return; closeModal("searchModal"); document.getElementById("glossarySearch").value = g.term; loadGlossary(); switchView("glossary"); }
     function runGlobalSearch() {
-      const q = normSearch(document.getElementById("globalSearchInput").value || "");
-      const poems = allPoems.filter(p => !q || normSearch(`${p.title} ${p.poem_text} ${p.poet} ${p.dominant_meter}`).includes(q)).slice(0, 6);
-      const terms = cachedGlossary.map((g, idx) => ({ g, idx })).filter(({ g }) => !q || normSearch(`${g.term} ${g.arabic_meaning} ${g.english_meaning}`).includes(q)).slice(0, 5);
+      const q = (document.getElementById("globalSearchInput").value || "").trim().toLowerCase();
+      const poems = cachedPoems.map((p, idx) => ({ p, idx })).filter(({ p }) => !q || `${p.title} ${p.poem_text} ${p.poet}`.toLowerCase().includes(q)).slice(0, 5);
+      const terms = cachedGlossary.map((g, idx) => ({ g, idx })).filter(({ g }) => !q || `${g.term} ${g.arabic_meaning} ${g.english_meaning}`.toLowerCase().includes(q)).slice(0, 5);
       document.getElementById("globalSearchResults").innerHTML = [
-        ...poems.map(p => `<div class="search-item" onclick="closeModal('searchModal');openZenReaderById('${escapeHtml(p.id)}')"><i data-lucide="scroll-text" style="color:var(--gold-light)"></i> <span><strong>${escapeHtml(p.title)}</strong> — ${escapeHtml(p.poet)}</span></div>`),
-        ...terms.map(({ g, idx }) => `<div class="search-item" onclick="selectSearchTerm(${idx})"><i data-lucide="book-open" style="color:var(--accent)"></i> <span><strong>${escapeHtml(g.term)}</strong> — ${escapeHtml(g.arabic_meaning)}</span></div>`)
-      ].join("") || '<div style="text-align:center;color:var(--muted);padding:1rem">لا توجد نتائج مطابقة.</div>';
-      refreshIcons();
+        ...poems.map(({ p, idx }) => `<div class="search-item" onclick="closeModal('searchModal');openArchivePoem(${idx})">📜 <strong>${escapeHtml(p.title)}</strong> — ${escapeHtml(p.poet)}</div>`),
+        ...terms.map(({ g, idx }) => `<div class="search-item" onclick="selectSearchTerm(${idx})">📖 <strong>${escapeHtml(g.term)}</strong> — ${escapeHtml(g.arabic_meaning)}</div>`)
+      ].join("") || '<div style="text-align:center;color:var(--muted);padding:1rem">لا توجد نتائج.</div>';
     }
     const copyText = txt => navigator.clipboard.writeText(txt).then(() => showToast("تم النسخ!"));
-
-    window.addEventListener("scroll", () => {
-      const h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      document.getElementById("scrollProgress").style.width = h > 0 ? `${(window.scrollY / h) * 100}%` : "0%";
-    }, { passive: true });
-
     document.addEventListener("keydown", e => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openSearchModal(); }
-      else if (e.key === "Escape") ["searchModal", "adminModal", "editModal", "inboxModal", "batchModal", "readerModal"].forEach(closeModal);
+      else if (e.key === "Escape") ["searchModal", "adminModal", "editModal", "inboxModal", "batchModal"].forEach(closeModal);
     });
-
-    window.addEventListener("DOMContentLoaded", () => {
-      if (localStorage.getItem("albidan_theme") === "light") toggleTheme();
-      resetCaptcha(); updateAdminUI(); loadStats(); loadArchive(); loadGlossary(); loadRagHealth();
-      refreshIcons();
-    });
+    (function init() { if (localStorage.getItem("albidan_theme") === "light") toggleTheme(); resetCaptcha(); updateAdminUI(); loadStats(); loadArchive(); loadGlossary(); loadRagHealth(); })();
   </script>
 </body>
 </html>
