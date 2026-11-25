@@ -1,4 +1,144 @@
 import os
+import json
+from typing import Optional
+from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, EmailStr, Field
+
+# =====================================================================
+# 1. الإعدادات الثابتة (تُقرأ من متغيرات البيئة في Render)
+# =====================================================================
+# النطاق الرسمي الثابت لمنع تزوير ترويسة Host
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://albidan.pro").rstrip("/")
+
+# إغلاق الكتابة العامة افتراضياً (لا تُفتح إلا إذا وضعت false يدوياً)
+PROTECT_PUBLIC_WRITES = os.getenv("PROTECT_PUBLIC_WRITES", "true").lower() == "true"
+
+# قائمة النطاقات المسموح لها بالتواصل مع الخادم فقط (CORS)
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "ALLOWED_ORIGINS",
+        "https://albidan.pro,https://www.albidan.pro"
+    ).split(",")
+    if origin.strip()
+]
+
+app = FastAPI(title="ALBIDAN API")
+
+# =====================================================================
+# 2. تفعيل حماية CORS (لائحة الضيوف المسموح لهم)
+# =====================================================================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "X-Admin-Pin"],
+)
+
+# =====================================================================
+# 3. ترويسات الأمان الإجبارية لكل استجابة (حماية المتصفح)
+# =====================================================================
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    # إجبار المتصفح على استخدام HTTPS دائماً
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # منع المتصفح من تخمين نوع الملفات بشكل خاطئ
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    # منع عرض موقعك داخل iframe في مواقع أخرى (منع Clickjacking)
+    response.headers["X-Frame-Options"] = "DENY"
+    # حماية خصوصية الروابط المرجعية
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # سياسة أمان المحتوى (CSP) لتحديد مصادر السكربتات والخطوط المسموحة
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://unpkg.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self';"
+    )
+    return response
+
+# =====================================================================
+# 4. الدوال المساعدة الآمنة (الرابط الثابت + مصفاة XSS)
+# =====================================================================
+def get_base_url() -> str:
+    """ترجع الرابط الرسمي الثابت دائماً دون الاعتماد على طلب المستخدم."""
+    return PUBLIC_BASE_URL
+
+def safe_json_ld(data: dict) -> str:
+    """
+    مصفاة XSS: تحوّل أي علامة < أو > داخل النص إلى رمز آمن
+    حتى لا يتمكن أي نص خبيث من كسر وسم <script> في صفحة القصيدة.
+    """
+    return (
+        json.dumps(data, ensure_ascii=False)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029")
+    )
+
+# =====================================================================
+# 5. نماذج المدخلات بحدود صارمة (منع إغراق الخادم)
+# =====================================================================
+class ContactMessageRequest(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100, description="اسم المرسل")
+    email: Optional[EmailStr] = Field(default=None, description="البريد الإلكتروني")
+    subject: str = Field(default="رسالة عامة", max_length=150, description="الموضوع")
+    message: str = Field(..., min_length=10, max_length=2000, description="نص الرسالة")
+
+class ExportDocxRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200, description="عنوان القصيدة")
+    poem_text: str = Field(..., min_length=5, max_length=15000, description="نص القصيدة")
+    analysis_text: str = Field(default="", max_length=30000, description="نص التحليل")
+
+# =====================================================================
+# 6. أمثلة تطبيقية لكيفية استخدام الدوال داخل مساراتك
+# =====================================================================
+@app.get("/poem/{poem_id}", response_class=HTMLResponse)
+async def render_poem_page(poem_id: str):
+    # مثال لبيانات القصيدة القادمة من قاعدة البيانات
+    base_url = get_base_url()
+    schema_obj = {
+        "@context": "https://schema.org",
+        "@type": "CreativeWork",
+        "genre": "Hassani Poetry",
+        "url": f"{base_url}/poem/{poem_id}",
+        "name": "عنوان القصيدة",
+    }
+
+    # نستخدم safe_json_ld بدلاً من json.dumps مباشرة
+    safe_schema = safe_json_ld(schema_obj)
+
+    html = f"""<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <link rel="canonical" href="{base_url}/poem/{poem_id}" />
+    <script type="application/ld+json">{safe_schema}</script>
+</head>
+<body>
+    <h1>صفحة القصيدة</h1>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
+
+@app.post("/api/contact")
+async def submit_contact(payload: ContactMessageRequest):
+    # إذا تجاوزت الرسالة 2000 حرف، يرفضها FastAPI تلقائياً بخطأ 422 قبل الوصول إلى هنا
+    return {"status": "received", "sender": payload.name}
+
+@app.post("/api/export/analysis.docx")
+async def export_analysis_docx(payload: ExportDocxRequest):
+    # النص هنا مضمون ألا يتجاوز الحدود المسموحة (15 ألف حرف للقصيدة، 30 ألف للتحليل)
+    return {"status": "ready_to_export", "title": payload.title}
+import os
 import re
 import io
 import hmac
