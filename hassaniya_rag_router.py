@@ -1,12 +1,16 @@
 import hashlib
+import hmac
+import logging
 import os
 import re
 import time
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
@@ -15,6 +19,8 @@ from pymongo.collection import Collection
 from pymongo.errors import OperationFailure
 
 load_dotenv()
+
+logger = logging.getLogger("albidan.rag")
 
 # ==============================================================================
 # 1. الإعدادات والمتغيرات البيئية (متطابقة تماماً مع main.py)
@@ -39,11 +45,28 @@ GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or 
 DEFAULT_GEMINI_MODEL = (
     os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip() or "gemini-3.5-flash-lite"
 )
-FALLBACK_GEN_MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-2.5-flash"]
+FALLBACK_GEN_MODELS = [
+    m.strip()
+    for m in os.getenv(
+        "GEMINI_FALLBACK_MODELS",
+        "gemini-3.5-flash-lite,gemini-3.8-flash,gemini-2.5-flash",
+    ).split(",")
+    if m.strip()
+]
 
 EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001").strip()
 EMBEDDING_FALLBACK_MODELS = ["gemini-embedding-001", "text-embedding-004"]
 VECTOR_DIMS = int(os.getenv("VECTOR_DIMS", "768"))
+
+ADMIN_PIN = os.getenv("ADMIN_PIN", "").strip()
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://albidan.pro").strip().rstrip("/")
+try:
+    TRUSTED_PROXY_HOPS = max(0, int(os.getenv("TRUSTED_PROXY_HOPS", "1").strip()))
+except ValueError:
+    TRUSTED_PROXY_HOPS = 1
+
+# إصدار مخطط التطبيع (لتحديث المقاطع القديمة تلقائياً عند أول مزامنة)
+RAG_SCHEMA_VERSION = "v2_gaf_unified"
 
 router = APIRouter(prefix="/api/rag", tags=["Hassaniya Cloud Hybrid RAG"])
 
@@ -52,7 +75,93 @@ _genai_client: Optional[genai.Client] = None
 
 
 # ==============================================================================
-# 2. إدارة الاتصالات المستقرة بين Render وMongoDB Atlas
+# 2. حماية الطلبات (Rate Limiting) وقفل المشرف (مستقل لمنع الاستيراد الدائري)
+# ==============================================================================
+class RagRateLimiter:
+    def __init__(self, max_tracked_keys: int = 4000):
+        self._hits: Dict[str, List[float]] = defaultdict(list)
+        self._admin_failures: Dict[str, List[float]] = defaultdict(list)
+        self._max_tracked_keys = max_tracked_keys
+
+    def _client_ip(self, request: Request) -> str:
+        fwd = request.headers.get("x-forwarded-for", "")
+        if fwd and TRUSTED_PROXY_HOPS > 0:
+            parts = [p.strip() for p in fwd.split(",") if p.strip()]
+            if parts:
+                idx = max(0, len(parts) - TRUSTED_PROXY_HOPS)
+                return parts[idx]
+        return request.client.host if request.client else "unknown"
+
+    def _prune_if_needed(self):
+        if len(self._hits) > self._max_tracked_keys:
+            now = time.time()
+            stale = [k for k, ts in self._hits.items() if not ts or ts[-1] < now - 3600]
+            for k in stale:
+                self._hits.pop(k, None)
+
+    def check_limit(self, request: Request, bucket: str, max_requests: int, window_seconds: int):
+        self._prune_if_needed()
+        ip = self._client_ip(request)
+        key = f"{bucket}:{ip}"
+        now = time.time()
+        cutoff = now - window_seconds
+        recent = [t for t in self._hits[key] if t > cutoff]
+        if len(recent) >= max_requests:
+            raise HTTPException(
+                status_code=429,
+                detail="تم تجاوز الحد المسموح به لأسئلة الباحث الذكي مؤقتاً؛ يرجى المحاولة بعد قليل.",
+            )
+        recent.append(now)
+        self._hits[key] = recent
+
+    def check_admin_lockout(self, request: Request):
+        ip = self._client_ip(request)
+        now = time.time()
+        recent = [t for t in self._admin_failures[ip] if t > now - 300]
+        self._admin_failures[ip] = recent
+        if len(recent) >= 5:
+            raise HTTPException(
+                status_code=429,
+                detail="تم قفل محاولات دخول المشرف لمدة 5 دقائق بسبب تكرار الرمز الخاطئ.",
+            )
+
+    def record_admin_failure(self, request: Request):
+        ip = self._client_ip(request)
+        self._admin_failures[ip].append(time.time())
+
+    def clear_admin_failures(self, request: Request):
+        ip = self._client_ip(request)
+        self._admin_failures.pop(ip, None)
+
+
+rag_rate_limiter = RagRateLimiter()
+
+
+def is_valid_admin_pin(x_admin_pin: Optional[str]) -> bool:
+    if not ADMIN_PIN:
+        return False
+    provided = (x_admin_pin or "").strip()
+    return bool(provided) and hmac.compare_digest(provided, ADMIN_PIN)
+
+
+def require_rag_admin(x_admin_pin: Optional[str], request: Request):
+    if not ADMIN_PIN:
+        raise HTTPException(
+            status_code=503,
+            detail="لم يتم ضبط متغير البيئة ADMIN_PIN على الخادم؛ يرجى إضافته في إعدادات Render.",
+        )
+    rag_rate_limiter.check_admin_lockout(request)
+    if not is_valid_admin_pin(x_admin_pin):
+        rag_rate_limiter.record_admin_failure(request)
+        raise HTTPException(
+            status_code=403,
+            detail="هذه العملية مخصصة للمشرف فقط؛ يرجى تفعيل وضع المشرف أولاً.",
+        )
+    rag_rate_limiter.clear_admin_failures(request)
+
+
+# ==============================================================================
+# 3. إدارة الاتصالات المستقرة بين Render وMongoDB Atlas
 # ==============================================================================
 def get_rag_collection() -> Collection:
     global _mongo_client
@@ -93,23 +202,33 @@ def get_genai_client() -> genai.Client:
 
 
 # ==============================================================================
-# 3. التطبيع اللغوي للشعر الحساني والتقطيع الذكي
+# 4. التطبيع اللغوي للشعر الحساني (موحد على گ مثل main.py) والتقطيع الذكي
 # ==============================================================================
 def normalize_hassaniya(text: str) -> str:
-    """توحيد الحرف الحساني (گ / ڨ / ڭ -> ݣ) وإزالة التشكيل للبحث المعجمي الدقيق."""
+    """توحيد القاف المعقودة (ݣ / ڭ / ڨ / ڤ -> گ) وإزالة التشكيل للبحث المعجمي الدقيق."""
     if not text:
         return ""
-    text = re.sub(r"[\u064B-\u065F\u0670\u0640]", "", text)
-    text = re.sub(r"[گڨڭ]", "ݣ", text)
+    text = re.sub(r"[\u0610-\u061A\u064B-\u065F\u0670\u0640]", "", text)
+    text = re.sub(r"[ݣڭڨڤ]", "گ", text)
     text = re.sub(r"[إأآٱ]", "ا", text)
     text = text.replace("ى", "ي").replace("ة", "ه")
-    text = re.sub(r"[^\w\sݣ]", " ", text)
+    text = re.sub(r"[^\w\sگ]", " ", text)
     text = re.sub(r"\s+", " ", text).strip().lower()
     return text
 
 
 def compute_content_hash(payload_text: str) -> str:
-    return hashlib.sha256(payload_text.encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"{RAG_SCHEMA_VERSION}|{payload_text}".encode("utf-8")).hexdigest()
+
+
+def extract_poem_id(doc_id: Optional[str]) -> Optional[str]:
+    if not doc_id:
+        return None
+    s = str(doc_id).strip()
+    if s.startswith("poem::"):
+        pid = s[len("poem::") :].strip()
+        return pid or None
+    return None
 
 
 def chunk_hassaniya_text(
@@ -151,7 +270,7 @@ def chunk_hassaniya_text(
 
 
 # ==============================================================================
-# 4. توليد المتجهات والمحتوى مع تبديل احتياطي آمن للنماذج
+# 5. توليد المتجهات والمحتوى مع تسجيل الأخطاء وتبديل احتياطي آمن
 # ==============================================================================
 def _unique_models(primary: str, fallbacks: List[str]) -> List[str]:
     ordered = [primary] if primary else []
@@ -185,11 +304,12 @@ def embed_texts(texts: List[str], task_type: str = "RETRIEVAL_DOCUMENT") -> List
                 all_vectors.extend([list(emb.values) for emb in response.embeddings])
             return all_vectors
         except Exception as exc:
+            logger.error("RAG embedding failed on model '%s': %s", model_name, exc)
             last_exc = exc
 
     raise HTTPException(
         status_code=502,
-        detail=f"تعذر توليد المتجهات من Gemini API: {last_exc}",
+        detail="تعذر توليد المتجهات من خدمة الذكاء الاصطناعي حالياً؛ يرجى مراجعة سجل الخادم أو المحاولة لاحقاً.",
     )
 
 
@@ -212,48 +332,52 @@ def _generate_with_fallback(
                     temperature=temperature,
                 ),
             )
-            return (resp.text or "").strip(), model_name
+            text = (resp.text or "").strip()
+            if text:
+                return text, model_name
+            raise RuntimeError("أعاد النموذج استجابة نصية فارغة.")
         except Exception as exc:
+            logger.error("RAG generation failed on model '%s': %s", model_name, exc)
             last_exc = exc
 
     raise HTTPException(
         status_code=502,
-        detail=f"تعذر توليد الإجابة من Gemini API: {last_exc}",
+        detail="تعذر توليد الإجابة من خدمة الذكاء الاصطناعي حالياً؛ يرجى المحاولة بعد قليل.",
     )
 
 
 # ==============================================================================
-# 5. نماذج البيانات (Pydantic Schemas)
+# 6. نماذج البيانات (Pydantic Schemas) بحدود صارمة للمدخلات
 # ==============================================================================
 class PoetryDocumentInput(BaseModel):
-    doc_id: str = Field(..., description="المعرّف الفريد للقصيدة أو المادة المعجمية")
-    title: str = Field(..., description="العنوان أو الكلمة الحسانية")
-    content: str = Field(..., description="النص الكامل للقصيدة أو الشرح")
-    poet: str = Field(default="تراث شفهي / غير معروف", description="اسم الشاعر أو الراوي")
-    meter: str = Field(default="غير محدد", description="البحر الحساني السائد")
-    genre: str = Field(default="شعر حساني", description="الجنس الشعري: تبراع، كاف، طلعة، معجم حساني")
-    source: str = Field(default="أرشيف ALBIDAN", description="المصدر الموثق أو المنطقة")
-    lexical_notes: str = Field(default="", description="السياق الثقافي والملاحظات العروضية واللغوية")
+    doc_id: str = Field(..., min_length=1, max_length=120, description="المعرّف الفريد للقصيدة أو المادة المعجمية")
+    title: str = Field(..., min_length=1, max_length=250, description="العنوان أو الكلمة الحسانية")
+    content: str = Field(..., min_length=1, max_length=25000, description="النص الكامل للقصيدة أو الشرح")
+    poet: str = Field(default="تراث شفهي / غير معروف", max_length=150, description="اسم الشاعر أو الراوي")
+    meter: str = Field(default="غير محدد", max_length=120, description="البحر الحساني السائد")
+    genre: str = Field(default="شعر حساني", max_length=100, description="الجنس الشعري: تبراع، كاف، طلعة، معجم حساني")
+    source: str = Field(default="أرشيف ALBIDAN", max_length=250, description="المصدر الموثق أو المنطقة")
+    lexical_notes: str = Field(default="", max_length=15000, description="السياق الثقافي والملاحظات العروضية واللغوية")
 
 
 class BulkIndexRequest(BaseModel):
-    documents: List[PoetryDocumentInput]
+    documents: List[PoetryDocumentInput] = Field(..., min_length=1, max_length=150)
 
 
 class HybridQueryRequest(BaseModel):
-    query: str = Field(..., min_length=2, description="سؤال الباحث حول الشعر الحساني أو المعجم")
-    poet: Optional[str] = Field(default=None, description="فلترة اختيارية باسم الشاعر")
-    meter: Optional[str] = Field(default=None, description="فلترة اختيارية بالبحر / البتّ")
-    genre: Optional[str] = Field(default=None, description="فلترة اختيارية بالجنس الشعري")
-    top_k: int = Field(default=5, ge=1, le=12)
+    query: str = Field(..., min_length=2, max_length=600, description="سؤال الباحث حول الشعر الحساني أو المعجم")
+    poet: Optional[str] = Field(default=None, max_length=120, description="فلترة اختيارية باسم الشاعر")
+    meter: Optional[str] = Field(default=None, max_length=120, description="فلترة اختيارية بالبحر / البتّ")
+    genre: Optional[str] = Field(default=None, max_length=80, description="فلترة اختيارية بالجنس الشعري")
+    top_k: int = Field(default=5, ge=1, le=10)
     enable_reflection: bool = Field(
         default=True,
-        description="تفعيل التحقق الذاتي الأكاديمي لمنع تحريف الأبيات أو خلط البحور",
+        description="تفعيل المراجعة الآلية الذاتية لمنع تحريف الأبيات أو خلط البحور",
     )
 
 
 # ==============================================================================
-# 6. الفهرسة الذكية (تتخطى النصوص غير المعدّلة بالبصمة الرقمية)
+# 7. الفهرسة الذكية (تتخطى النصوص غير المعدّلة بالبصمة الرقمية)
 # ==============================================================================
 def upsert_poetry_documents(docs: List[PoetryDocumentInput]) -> Dict[str, int]:
     col = get_rag_collection()
@@ -261,7 +385,7 @@ def upsert_poetry_documents(docs: List[PoetryDocumentInput]) -> Dict[str, int]:
 
     for doc in docs:
         header = (
-            f"العنوان: {doc.title} | الشاعر: {doc.poet} | "
+            f"المعرّف: {doc.doc_id} | العنوان: {doc.title} | الشاعر: {doc.poet} | "
             f"البحر: {doc.meter} | الجنس: {doc.genre} | المصدر: {doc.source}"
         )
         full_body = doc.content.strip()
@@ -314,16 +438,16 @@ def upsert_poetry_documents(docs: List[PoetryDocumentInput]) -> Dict[str, int]:
 
 
 # ==============================================================================
-# 7. محرك البحث الهجين (Vector Search + Atlas Search + RRF)
+# 8. محرك البحث الهجين (Vector Search + Atlas Search + RRF)
 # ==============================================================================
 def _build_pre_filter(req: HybridQueryRequest) -> Dict[str, Any]:
     filt: Dict[str, Any] = {}
-    if req.poet:
-        filt["poet"] = req.poet
-    if req.meter:
-        filt["meter"] = req.meter
-    if req.genre:
-        filt["genre"] = req.genre
+    if req.poet and req.poet.strip():
+        filt["poet"] = req.poet.strip()
+    if req.meter and req.meter.strip():
+        filt["meter"] = req.meter.strip()
+    if req.genre and req.genre.strip():
+        filt["genre"] = req.genre.strip()
     return filt
 
 
@@ -358,7 +482,8 @@ def _vector_search(col: Collection, query_vector: List[float], req: HybridQueryR
     ]
     try:
         return list(col.aggregate(pipeline))
-    except OperationFailure:
+    except OperationFailure as exc:
+        logger.warning("Atlas $vectorSearch failed (index '%s'): %s", VECTOR_INDEX_NAME, exc)
         return []
 
 
@@ -412,7 +537,8 @@ def _atlas_lexical_search(col: Collection, query: str, req: HybridQueryRequest, 
 
     try:
         return list(col.aggregate(pipeline))
-    except OperationFailure:
+    except OperationFailure as exc:
+        logger.warning("Atlas $search failed (index '%s'), falling back to regex: %s", TEXT_INDEX_NAME, exc)
         tokens = [t for t in norm_query.split() if len(t) >= 2][:6]
         if not tokens:
             return []
@@ -475,7 +601,7 @@ def _fuse_rrf(
 
 
 # ==============================================================================
-# 8. التوليد الأكاديمي والتحقق الذاتي عبر Gemini API
+# 9. التوليد بالذكاء الاصطناعي مع الإسناد لمعرّفات القصائد ووسم AI الشفاف
 # ==============================================================================
 def generate_hassaniya_verified_answer(
     query: str,
@@ -485,15 +611,19 @@ def generate_hassaniya_verified_answer(
     if not sources:
         return {
             "answer": "لم يُعثر في أرشيف منصة ALBIDAN الموثّق على نصوص أو شواهد كافية للإجابة على هذا السؤال.",
-            "verification_status": "بدون مصادر",
+            "verification_status": "بدون مصادر مطابقة",
             "verification_notes": "قاعدة المعرفة لا تحتوي على مقاطع مطابقة حالياً.",
             "model_used": DEFAULT_GEMINI_MODEL,
         }
 
     context_blocks = []
     for i, s in enumerate(sources, start=1):
+        doc_id = s.get("doc_id") or "غير محدد"
+        poem_id = extract_poem_id(doc_id)
+        id_line = f"معرّف القصيدة: {poem_id} (doc_id: {doc_id})" if poem_id else f"معرّف المادة: {doc_id}"
         block = (
             f"[الشاهد {i}]\n"
+            f"- {id_line}\n"
             f"- العنوان: {s.get('title', 'غير محدد')}\n"
             f"- الشاعر: {s.get('poet', 'غير محدد')}\n"
             f"- البحر (البتّ): {s.get('meter', 'غير محدد')}\n"
@@ -505,13 +635,13 @@ def generate_hassaniya_verified_answer(
     context_text = "\n\n---\n\n".join(context_blocks)
 
     system_prompt = (
-        "أنت باحث أكاديمي متخصص في الأدب والشعر الشعبي الحساني (الطلعة، الكاف، التبراع، "
-        "البتوت الحسانية، والمعجم الحساني) ضمن منصة ALBIDAN.\n"
+        "أنت مساعد بحثي متخصص في الأدب والشعر الشعبي الحساني («لغن»: الطلعة، الكاف، التبراع، "
+        "بحور لَبْتُوتَة، والمعجم الحساني) ضمن منصة ALBIDAN.\n"
         "قواعد علمية صارمة:\n"
-        "1. اعتمد حصراً على الشواهد المرفقة في السياق ولا تؤلّف أبياتاً من عندك.\n"
-        "2. انقل الشواهد الحسانية بلفظها وحروفها كما وردت في المصدر.\n"
+        "1. اعتمد حصراً على الشواهد المرفقة في السياق ولا تؤلّف أبياتاً من عندك أبداً.\n"
+        "2. انقل الشواهد الحسانية بلفظها وحروفها كما وردت في المصدر دون تغيير.\n"
         "3. لا تنسب أي بيت لشاعر أو بحر لم يرد صراحةً في الشواهد.\n"
-        "4. وثّق إجابتك بذكر رقم الشاهد والمصدر بين قوسين."
+        "4. وثّق كل استشهاد بذكر رقم الشاهد ومعرّف القصيدة/المادة صراحةً بين قوسين، مثل: (الشاهد 1، معرّف: abc12345)."
     )
 
     draft_answer, used_model = _generate_with_fallback(
@@ -523,19 +653,19 @@ def generate_hassaniya_verified_answer(
     if not enable_reflection:
         return {
             "answer": draft_answer,
-            "verification_status": "موثّقة (الوضع السريع)",
-            "verification_notes": "تم التوليد من الشواهد الموثقة دون جولة مراجعة ثانية.",
+            "verification_status": "توليد آلي (AI — الوضع السريع)",
+            "verification_notes": "إجابة مولّدة آلياً من الشواهد المرفقة دون جولة مراجعة ثانية؛ يُنصح بالرجوع للمصادر الأصلية.",
             "model_used": used_model,
         }
 
     critic_prompt = (
-        "أنت مدقق أكاديمي صارم في التراث الحساني. راجع المسودة التالية مقابل الشواهد الموثّقة فقط:\n"
+        "أنت مدقق آلي صارم للنصوص في التراث الحساني. راجع المسودة التالية مقابل الشواهد المرفقة فقط:\n"
         "- تأكد من تطابق الأبيات الحسانية حرفياً مع الشواهد دون تحريف.\n"
-        "- تأكد من صحة نسبة كل بيت لشاعره وبحره ومصدره.\n"
+        "- تأكد من صحة نسبة كل بيت لشاعره وبحره ومصدره ومن ذكر معرّف القصيدة (ID) عند الاستشهاد.\n"
         "- احذف أي استنتاج غير مسنود بنص صريح في الشواهد.\n"
         "التزم حرفياً بهذا القالب:\n"
         "[[STATUS]]: PASS أو REVISED\n"
-        "[[NOTES]]: سطر واحد يوضح نتيجة التدقيق\n"
+        "[[NOTES]]: سطر واحد يوضح نتيجة المراجعة الآلية\n"
         "[[FINAL_ANSWER]]:\n"
         "الإجابة النهائية المعتمدة فقط."
     )
@@ -544,7 +674,7 @@ def generate_hassaniya_verified_answer(
         contents=(
             f"سؤال الباحث:\n{query}\n\n"
             f"الشواهد الموثقة:\n{context_text}\n\n"
-            f"المسودة المطلوب تدقيقها:\n{draft_answer}"
+            f"المسودة المطلوب مراجعتها:\n{draft_answer}"
         ),
         system_instruction=critic_prompt,
         temperature=0.0,
@@ -556,18 +686,22 @@ def generate_hassaniya_verified_answer(
 
     final_answer = ans_m.group(1).strip() if ans_m and ans_m.group(1).strip() else draft_answer
     status_code = status_m.group(1).upper() if status_m else "PASS"
-    notes = notes_m.group(1).strip() if notes_m else "تمت مطابقة الأبيات ونسبتها للمصادر المرفقة."
+    notes = notes_m.group(1).strip() if notes_m else "تمت المطابقة الآلية للأبيات ونسبتها للمصادر المرفقة."
 
     return {
         "answer": final_answer,
-        "verification_status": "مُصحّحة أكاديمياً" if status_code == "REVISED" else "موثّقة ومُدقّقة",
+        "verification_status": (
+            "مراجعة آلية (AI) — نُقّحت مقابل الشواهد"
+            if status_code == "REVISED"
+            else "مراجعة آلية (AI) — مطابقة للشواهد"
+        ),
         "verification_notes": notes,
         "model_used": used_model,
     }
 
 
 # ==============================================================================
-# 9. نقاط النهاية البرمجية (FastAPI Endpoints)
+# 10. نقاط النهاية البرمجية (FastAPI Endpoints)
 # ==============================================================================
 @router.get("/health")
 def rag_health() -> Dict[str, Any]:
@@ -581,12 +715,18 @@ def rag_health() -> Dict[str, Any]:
         "total_chunks": col.count_documents({}),
         "model": DEFAULT_GEMINI_MODEL,
         "embedding_model": EMBEDDING_MODEL,
+        "schema_version": RAG_SCHEMA_VERSION,
     }
 
 
 @router.post("/index")
-def index_documents_endpoint(payload: BulkIndexRequest) -> Dict[str, Any]:
-    """فهرسة قصيدة أو نص جديد مباشرة."""
+def index_documents_endpoint(
+    payload: BulkIndexRequest,
+    request: Request,
+    x_admin_pin: Optional[str] = Header(default=None),
+) -> Dict[str, Any]:
+    """فهرسة قصيدة أو نص جديد مباشرة (محمية بصلاحيات المشرف)."""
+    require_rag_admin(x_admin_pin, request)
     t0 = time.perf_counter()
     stats = upsert_poetry_documents(payload.documents)
     return {
@@ -597,11 +737,15 @@ def index_documents_endpoint(payload: BulkIndexRequest) -> Dict[str, Any]:
 
 
 @router.post("/sync-albidan")
-def sync_albidan_archive() -> Dict[str, Any]:
+def sync_albidan_archive(
+    request: Request,
+    x_admin_pin: Optional[str] = Header(default=None),
+) -> Dict[str, Any]:
     """
     مزامنة تلقائية شاملة لمجموعتي poems و glossary في قاعدة albidan_corpus
-    وفق بنية الحقول الفعلية في main.py.
+    مع تنظيف المقاطع اليتيمة للقصائد أو المفردات المحذوفة (محمية للمشرف فقط).
     """
+    require_rag_admin(x_admin_pin, request)
     t0 = time.perf_counter()
     batch_docs: List[PoetryDocumentInput] = []
 
@@ -614,7 +758,8 @@ def sync_albidan_archive() -> Dict[str, Any]:
             continue
 
         analysis = raw.get("analysis") or {}
-        doc_id = f"poem::{raw.get('id') or raw.get('_id')}"
+        raw_id = str(raw.get("id") or raw.get("_id")).strip()
+        doc_id = f"poem::{raw_id}"
         title = str(raw.get("title") or "قصيدة حسانية").strip()
         poet = str(raw.get("poet") or "تراث شفهي / غير معروف").strip()
         region = str(raw.get("region") or "الصحراء المغربية").strip()
@@ -624,6 +769,8 @@ def sync_albidan_archive() -> Dict[str, Any]:
         notes_parts: List[str] = []
         if analysis.get("dominant_rhyme"):
             notes_parts.append(f"القافية والروي: {analysis['dominant_rhyme']}")
+        if analysis.get("zahr_mode"):
+            notes_parts.append(f"الظّهر (المقام): {analysis['zahr_mode']}")
         if analysis.get("cultural_context"):
             notes_parts.append(f"السياق الثقافي: {analysis['cultural_context']}")
         if analysis.get("linguistic_notes"):
@@ -636,13 +783,13 @@ def sync_albidan_archive() -> Dict[str, Any]:
         batch_docs.append(
             PoetryDocumentInput(
                 doc_id=doc_id,
-                title=title,
-                content=poem_text,
-                poet=poet,
-                meter=meter,
-                genre=genre,
-                source=f"مدونة ALBIDAN — {region}",
-                lexical_notes="\n".join(notes_parts),
+                title=title[:250],
+                content=poem_text[:25000],
+                poet=poet[:150],
+                meter=meter[:120],
+                genre=genre[:100],
+                source=f"مدونة ALBIDAN — {region} (معرّف: {raw_id})"[:250],
+                lexical_notes="\n".join(notes_parts)[:15000],
             )
         )
         poems_count += 1
@@ -667,30 +814,47 @@ def sync_albidan_archive() -> Dict[str, Any]:
 
         batch_docs.append(
             PoetryDocumentInput(
-                doc_id=f"glossary::{raw.get('_id') or term}",
-                title=term or "مفردة حسانية",
-                content="\n".join(body_parts),
+                doc_id=f"glossary::{raw.get('_id') or term}"[:120],
+                title=(term or "مفردة حسانية")[:250],
+                content="\n".join(body_parts)[:25000],
                 poet="المعجم الحساني",
                 meter="معجم",
                 genre="معجم حساني",
-                source=f"المعجم الحساني — وردت في: {source_poem}",
+                source=f"المعجم الحساني — وردت في: {source_poem}"[:250],
             )
         )
         glossary_count += 1
 
     stats = upsert_poetry_documents(batch_docs)
+
+    # 3. تنظيف المقاطع اليتيمة (القصائد أو المفردات التي حُذفت من المصدر)
+    rag_col = get_rag_collection()
+    active_doc_ids = [d.doc_id for d in batch_docs]
+    prune_filter: Dict[str, Any] = {"doc_id": {"$regex": "^(poem|glossary)::"}}
+    if active_doc_ids:
+        prune_filter["doc_id"]["$nin"] = active_doc_ids
+    pruned_chunks = int(rag_col.delete_many(prune_filter).deleted_count)
+
     return {
-        "message": "تمت مزامنة أرشيف ALBIDAN بنجاح.",
+        "message": "تمت مزامنة أرشيف ALBIDAN وتنظيف المقاطع القديمة بنجاح.",
         "poems_scanned": poems_count,
         "glossary_scanned": glossary_count,
+        "pruned_orphan_chunks": pruned_chunks,
         "elapsed_seconds": round(time.perf_counter() - t0, 2),
         **stats,
     }
 
 
 @router.post("/ask")
-def ask_hassaniya_rag(req: HybridQueryRequest) -> Dict[str, Any]:
-    """البحث الهجين (الدلالي + المعجمي الحساني) وتوليد إجابة أكاديمية موثّقة."""
+def ask_hassaniya_rag(
+    req: HybridQueryRequest,
+    request: Request,
+    x_admin_pin: Optional[str] = Header(default=None),
+) -> Dict[str, Any]:
+    """البحث الهجين (الدلالي + المعجمي الحساني) وتوليد إجابة مسنودة بمعرّفات القصائد ووسم AI."""
+    if not is_valid_admin_pin(x_admin_pin):
+        rag_rate_limiter.check_limit(request, "rag_ask", max_requests=15, window_seconds=3600)
+
     t_search = time.perf_counter()
     col = get_rag_collection()
 
@@ -710,9 +874,30 @@ def ask_hassaniya_rag(req: HybridQueryRequest) -> Dict[str, Any]:
     )
     gen_seconds = round(time.perf_counter() - t_gen, 2)
 
+    formatted_sources = []
+    for s in fused_sources:
+        doc_id = s.get("doc_id")
+        poem_id = extract_poem_id(doc_id)
+        formatted_sources.append(
+            {
+                "doc_id": doc_id,
+                "poem_id": poem_id,
+                "poem_url": f"{PUBLIC_BASE_URL}/poem/{quote(poem_id)}" if poem_id else None,
+                "title": s.get("title"),
+                "poet": s.get("poet"),
+                "meter": s.get("meter"),
+                "genre": s.get("genre"),
+                "source": s.get("source"),
+                "confidence": s.get("confidence"),
+                "excerpt": s.get("text"),
+            }
+        )
+
     return {
         "query": req.query,
         "answer": gen_result["answer"],
+        "ai_generated": True,
+        "ai_disclaimer": "إجابة مولّدة آلياً بالذكاء الاصطناعي بالاعتماد على الشواهد المرفقة من أرشيف ALBIDAN؛ يُنصح بمراجعة النص الأصلي للقصيدة عند الاستشهاد الأكاديمي.",
         "model_used": gen_result["model_used"],
         "verification": {
             "status": gen_result["verification_status"],
@@ -722,17 +907,5 @@ def ask_hassaniya_rag(req: HybridQueryRequest) -> Dict[str, Any]:
             "search_seconds": search_seconds,
             "generation_seconds": gen_seconds,
         },
-        "sources": [
-            {
-                "doc_id": s.get("doc_id"),
-                "title": s.get("title"),
-                "poet": s.get("poet"),
-                "meter": s.get("meter"),
-                "genre": s.get("genre"),
-                "source": s.get("source"),
-                "confidence": s.get("confidence"),
-                "excerpt": s.get("text"),
-            }
-            for s in fused_sources
-        ],
+        "sources": formatted_sources,
     }
