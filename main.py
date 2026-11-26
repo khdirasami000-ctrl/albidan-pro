@@ -1,144 +1,4 @@
 import os
-import json
-from typing import Optional
-from fastapi import FastAPI, Request, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, EmailStr, Field
-
-# =====================================================================
-# 1. الإعدادات الثابتة (تُقرأ من متغيرات البيئة في Render)
-# =====================================================================
-# النطاق الرسمي الثابت لمنع تزوير ترويسة Host
-PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://albidan.pro").rstrip("/")
-
-# إغلاق الكتابة العامة افتراضياً (لا تُفتح إلا إذا وضعت false يدوياً)
-PROTECT_PUBLIC_WRITES = os.getenv("PROTECT_PUBLIC_WRITES", "true").lower() == "true"
-
-# قائمة النطاقات المسموح لها بالتواصل مع الخادم فقط (CORS)
-ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in os.getenv(
-        "ALLOWED_ORIGINS",
-        "https://albidan.pro,https://www.albidan.pro"
-    ).split(",")
-    if origin.strip()
-]
-
-app = FastAPI(title="ALBIDAN API")
-
-# =====================================================================
-# 2. تفعيل حماية CORS (لائحة الضيوف المسموح لهم)
-# =====================================================================
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Authorization", "Content-Type", "X-Admin-Pin"],
-)
-
-# =====================================================================
-# 3. ترويسات الأمان الإجبارية لكل استجابة (حماية المتصفح)
-# =====================================================================
-@app.middleware("http")
-async def add_security_headers(request: Request, call_next):
-    response = await call_next(request)
-    # إجبار المتصفح على استخدام HTTPS دائماً
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    # منع المتصفح من تخمين نوع الملفات بشكل خاطئ
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    # منع عرض موقعك داخل iframe في مواقع أخرى (منع Clickjacking)
-    response.headers["X-Frame-Options"] = "DENY"
-    # حماية خصوصية الروابط المرجعية
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    # سياسة أمان المحتوى (CSP) لتحديد مصادر السكربتات والخطوط المسموحة
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://unpkg.com; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        "font-src 'self' https://fonts.gstatic.com; "
-        "img-src 'self' data: https:; "
-        "connect-src 'self';"
-    )
-    return response
-
-# =====================================================================
-# 4. الدوال المساعدة الآمنة (الرابط الثابت + مصفاة XSS)
-# =====================================================================
-def get_base_url() -> str:
-    """ترجع الرابط الرسمي الثابت دائماً دون الاعتماد على طلب المستخدم."""
-    return PUBLIC_BASE_URL
-
-def safe_json_ld(data: dict) -> str:
-    """
-    مصفاة XSS: تحوّل أي علامة < أو > داخل النص إلى رمز آمن
-    حتى لا يتمكن أي نص خبيث من كسر وسم <script> في صفحة القصيدة.
-    """
-    return (
-        json.dumps(data, ensure_ascii=False)
-        .replace("<", "\\u003c")
-        .replace(">", "\\u003e")
-        .replace("&", "\\u0026")
-        .replace("\u2028", "\\u2028")
-        .replace("\u2029", "\\u2029")
-    )
-
-# =====================================================================
-# 5. نماذج المدخلات بحدود صارمة (منع إغراق الخادم)
-# =====================================================================
-class ContactMessageRequest(BaseModel):
-    name: str = Field(..., min_length=2, max_length=100, description="اسم المرسل")
-    email: Optional[EmailStr] = Field(default=None, description="البريد الإلكتروني")
-    subject: str = Field(default="رسالة عامة", max_length=150, description="الموضوع")
-    message: str = Field(..., min_length=10, max_length=2000, description="نص الرسالة")
-
-class ExportDocxRequest(BaseModel):
-    title: str = Field(..., min_length=1, max_length=200, description="عنوان القصيدة")
-    poem_text: str = Field(..., min_length=5, max_length=15000, description="نص القصيدة")
-    analysis_text: str = Field(default="", max_length=30000, description="نص التحليل")
-
-# =====================================================================
-# 6. أمثلة تطبيقية لكيفية استخدام الدوال داخل مساراتك
-# =====================================================================
-@app.get("/poem/{poem_id}", response_class=HTMLResponse)
-async def render_poem_page(poem_id: str):
-    # مثال لبيانات القصيدة القادمة من قاعدة البيانات
-    base_url = get_base_url()
-    schema_obj = {
-        "@context": "https://schema.org",
-        "@type": "CreativeWork",
-        "genre": "Hassani Poetry",
-        "url": f"{base_url}/poem/{poem_id}",
-        "name": "عنوان القصيدة",
-    }
-
-    # نستخدم safe_json_ld بدلاً من json.dumps مباشرة
-    safe_schema = safe_json_ld(schema_obj)
-
-    html = f"""<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <link rel="canonical" href="{base_url}/poem/{poem_id}" />
-    <script type="application/ld+json">{safe_schema}</script>
-</head>
-<body>
-    <h1>صفحة القصيدة</h1>
-</body>
-</html>"""
-    return HTMLResponse(content=html)
-
-@app.post("/api/contact")
-async def submit_contact(payload: ContactMessageRequest):
-    # إذا تجاوزت الرسالة 2000 حرف، يرفضها FastAPI تلقائياً بخطأ 422 قبل الوصول إلى هنا
-    return {"status": "received", "sender": payload.name}
-
-@app.post("/api/export/analysis.docx")
-async def export_analysis_docx(payload: ExportDocxRequest):
-    # النص هنا مضمون ألا يتجاوز الحدود المسموحة (15 ألف حرف للقصيدة، 30 ألف للتحليل)
-    return {"status": "ready_to_export", "title": payload.title}
-import os
 import re
 import io
 import hmac
@@ -146,6 +6,7 @@ import time
 import json
 import uuid
 import html
+import logging
 import sqlite3
 import tempfile
 from collections import defaultdict, Counter
@@ -179,17 +40,44 @@ except ImportError:
 
 load_dotenv()
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("albidan")
+
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 STATIC_DIR.mkdir(exist_ok=True)
 
+# =============================================================================
+# 0. إعدادات البيئة والأمان
+# =============================================================================
 MONGODB_URI = os.getenv("MONGODB_URI", "").strip()
 MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "albidan_corpus").strip()
 RAG_COLLECTION_NAME = os.getenv("RAG_COLLECTION_NAME", "hassaniya_rag_chunks").strip()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip() or "gemini-3.5-flash-lite"
 ADMIN_PIN = os.getenv("ADMIN_PIN", "").strip()
-PROTECT_PUBLIC_WRITES = os.getenv("PROTECT_PUBLIC_WRITES", "false").strip().lower() == "true"
+
+# إغلاق الكتابة العامة افتراضياً (الأمان أولاً)
+PROTECT_PUBLIC_WRITES = os.getenv("PROTECT_PUBLIC_WRITES", "true").strip().lower() == "true"
+
+# النطاق الرسمي الثابت لمنع حقن ترويسة Host
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://albidan.pro").strip().rstrip("/")
+
+# قائمة النطاقات المسموح لها بالاتصال بالخادم (CORS)
+ALLOWED_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv(
+        "ALLOWED_ORIGINS",
+        "https://albidan.pro,https://www.albidan.pro",
+    ).split(",")
+    if origin.strip()
+]
+
+# عدد الوسطاء الموثوقين أمام الخادم (على Render = 1، وفي التشغيل المحلي بدون وسيط = 0)
+try:
+    TRUSTED_PROXY_HOPS = max(0, int(os.getenv("TRUSTED_PROXY_HOPS", "1").strip()))
+except ValueError:
+    TRUSTED_PROXY_HOPS = 1
 
 ALLOWED_MODELS = {
     "gemini-3.5-flash-lite",
@@ -205,13 +93,14 @@ AUDIO_MIME_MAP = {
 }
 IMAGE_MIME_MAP = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
 FILES_API_THRESHOLD = 2 * 1024 * 1024
+MAX_ANALYSIS_JSON_BYTES = 250_000  # حد أقصى 250 كيلوبايت لبيانات التحليل المرسلة للتصدير
 
 DEFAULT_POET_LABEL = "تراث شفهي / غير معروف"
 DEFAULT_REGION_LABEL = "الصحراء المغربية"
 
 
 # =============================================================================
-# 1. التطبيع اللغوي الحساني وتنظيف العناوين وأسماء الشعراء
+# 1. التطبيع اللغوي الحساني وتنظيف العناوين وأسماء الشعراء + أدوات الأمان
 # =============================================================================
 ARABIC_DIACRITICS_RE = re.compile(r"[\u0610-\u061A\u064B-\u065F\u0670\u0640]")
 POET_EMBED_PATTERNS = [
@@ -250,7 +139,6 @@ def clean_poet_name(poet: str) -> str:
     p = (poet or "").strip()
     if not p:
         return DEFAULT_POET_LABEL
-    # إزالة التكرار مثل "الشاعر/الراوي: الشاعر حمداتي..." -> "حمداتي..."
     for _ in range(3):
         cleaned = REDUNDANT_POET_PREFIX_RE.sub("", p).strip()
         if cleaned == p:
@@ -285,28 +173,51 @@ def build_poem_search_text(title: str, poet: str, region: str, poem_text: str, d
     return f"{normalize_hassaniya(joined)} {normalize_hassaniya(joined, unify_gaf_to_kaf=True)}"
 
 
-def get_base_url(request: Request) -> str:
-    base_url = str(request.base_url).rstrip("/")
-    if base_url.startswith("http://") and "localhost" not in base_url and "127.0.0.1" not in base_url:
-        base_url = base_url.replace("http://", "https://", 1)
-    return base_url
+def get_base_url() -> str:
+    """إرجاع النطاق الرسمي الثابت بدلاً من الاعتماد على ترويسة Host القادمة من العميل."""
+    return PUBLIC_BASE_URL
+
+
+def safe_json_ld(data: dict) -> str:
+    """تهريب مخرجات JSON-LD لمنع كسر وسم <script> وتنفيذ هجمات XSS المخزّنة."""
+    return (
+        json.dumps(data, ensure_ascii=False)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029")
+    )
 
 
 # =============================================================================
-# 2. حماية الطلبات (Rate Limiting) ومكافحة تخمين رمز المشرف
+# 2. حماية الطلبات (Rate Limiting) ومكافحة تخمين رمز المشرف وتزوير IP
 # =============================================================================
 class SimpleRateLimiter:
-    def __init__(self):
+    def __init__(self, max_tracked_keys: int = 5000):
         self._hits: Dict[str, List[float]] = defaultdict(list)
         self._admin_failures: Dict[str, List[float]] = defaultdict(list)
+        self._max_tracked_keys = max_tracked_keys
 
     def _client_ip(self, request: Request) -> str:
         fwd = request.headers.get("x-forwarded-for", "")
-        if fwd:
-            return fwd.split(",")[0].strip()
+        if fwd and TRUSTED_PROXY_HOPS > 0:
+            parts = [p.strip() for p in fwd.split(",") if p.strip()]
+            if parts:
+                # نأخذ العنوان الذي أضافه الوسيط الموثوق (Render) من اليمين وليس أول قيمة قابلة للتزوير
+                idx = max(0, len(parts) - TRUSTED_PROXY_HOPS)
+                return parts[idx]
         return request.client.host if request.client else "unknown"
 
+    def _prune_if_needed(self):
+        if len(self._hits) > self._max_tracked_keys:
+            now = time.time()
+            stale = [k for k, ts in self._hits.items() if not ts or ts[-1] < now - 3600]
+            for k in stale:
+                self._hits.pop(k, None)
+
     def check_limit(self, request: Request, bucket: str, max_requests: int, window_seconds: int):
+        self._prune_if_needed()
         ip = self._client_ip(request)
         key = f"{bucket}:{ip}"
         now = time.time()
@@ -367,7 +278,7 @@ def require_admin(x_admin_pin: Optional[str], request: Optional[Request] = None)
 
 
 # =============================================================================
-# 3. نماذج البيانات (Pydantic Models)
+# 3. نماذج البيانات (Pydantic Models) مع حدود صارمة للمدخلات
 # =============================================================================
 class AILineAnalysis(BaseModel):
     original_line: str = Field(description="التافلويت (الشطر) الأصلية كما أدخلها الباحث")
@@ -407,35 +318,35 @@ class BatchSplitResult(BaseModel):
 
 
 class AnalyzeRequest(BaseModel):
-    poem_text: str
-    model_name: str = DEFAULT_GEMINI_MODEL
+    poem_text: str = Field(..., min_length=2, max_length=15000)
+    model_name: str = Field(default=DEFAULT_GEMINI_MODEL, max_length=80)
     use_ai: bool = True
 
 
 class SavePoemRequest(BaseModel):
-    title: str
-    poet: str = DEFAULT_POET_LABEL
-    region: str = DEFAULT_REGION_LABEL
-    poem_text: str
+    title: str = Field(..., max_length=250)
+    poet: str = Field(default=DEFAULT_POET_LABEL, max_length=150)
+    region: str = Field(default=DEFAULT_REGION_LABEL, max_length=120)
+    poem_text: str = Field(..., min_length=2, max_length=20000)
     analysis: Dict
-    source_engine: str = "AI"
+    source_engine: str = Field(default="AI", max_length=80)
 
 
 class BatchSaveItem(BaseModel):
-    title: str = ""
-    poet: str = DEFAULT_POET_LABEL
-    region: str = DEFAULT_REGION_LABEL
-    poem_text: str
+    title: str = Field(default="", max_length=250)
+    poet: str = Field(default=DEFAULT_POET_LABEL, max_length=150)
+    region: str = Field(default=DEFAULT_REGION_LABEL, max_length=120)
+    poem_text: str = Field(..., min_length=2, max_length=20000)
     analysis: Optional[Dict] = None
-    source_engine: str = "Local (Batch Word)"
+    source_engine: str = Field(default="Local (Batch Word)", max_length=80)
 
 
 class BatchSaveRequest(BaseModel):
-    items: List[BatchSaveItem]
+    items: List[BatchSaveItem] = Field(..., max_length=200)
 
 
 class BulkDeletePoemsRequest(BaseModel):
-    ids: List[str] = Field(default_factory=list)
+    ids: List[str] = Field(default_factory=list, max_length=500)
 
 
 class DeleteAllArchiveRequest(BaseModel):
@@ -444,30 +355,30 @@ class DeleteAllArchiveRequest(BaseModel):
 
 
 class UpdatePoemRequest(BaseModel):
-    title: str
-    poet: str
-    region: str
-    poem_text: str
+    title: str = Field(..., min_length=1, max_length=250)
+    poet: str = Field(..., max_length=150)
+    region: str = Field(..., max_length=120)
+    poem_text: str = Field(..., min_length=2, max_length=20000)
 
 
 class ExportAnalysisDocxRequest(BaseModel):
-    title: str = "تقرير تحليل عروضي حساني"
-    poet: str = DEFAULT_POET_LABEL
-    region: str = DEFAULT_REGION_LABEL
-    poem_text: str
+    title: str = Field(default="تقرير تحليل عروضي حساني", max_length=250)
+    poet: str = Field(default=DEFAULT_POET_LABEL, max_length=150)
+    region: str = Field(default=DEFAULT_REGION_LABEL, max_length=120)
+    poem_text: str = Field(..., min_length=1, max_length=20000)
     analysis: Dict
 
 
 class ContactMessageRequest(BaseModel):
-    name: str
-    contact: str = ""
-    category: str = "تواصل بحثي"
-    message: str
+    name: str = Field(..., min_length=2, max_length=100)
+    contact: str = Field(default="", max_length=150)
+    category: str = Field(default="تواصل بحثي", max_length=80)
+    message: str = Field(..., min_length=5, max_length=2000)
 
 
 class EnrichGlossaryRequest(BaseModel):
     limit: int = Field(default=10, ge=1, le=25)
-    model_name: str = DEFAULT_GEMINI_MODEL
+    model_name: str = Field(default=DEFAULT_GEMINI_MODEL, max_length=80)
 
 
 # =============================================================================
@@ -675,7 +586,7 @@ def doc_to_stream(doc: Document, filename: str) -> StreamingResponse:
 
 
 # =============================================================================
-# 5. المحرك العروضي المحلي المحسّن (يحل خطأ 1 أو 3 متحركات في النصوص جزئية التشكيل)
+# 5. المحرك العروضي المحلي المحسّن
 # =============================================================================
 class LocalHassaniyaEngine:
     short_vowels = set("َُِ")
@@ -700,11 +611,9 @@ class LocalHassaniyaEngine:
         total_consonants = max(1, len(consonants))
 
         vowel_marks = sum(1 for ch in norm if ch in self.short_vowels or ch in self.tanween)
-        # لا نعتمد عدّ الحركات إلا إذا كان الشطر مشكولاً تشكيلاً كثيفاً (وليس حركة أو حركتين عارضتين)
         if vowel_marks >= 5 and (vowel_marks / total_consonants) >= 0.38:
             return vowel_marks
 
-        # تقدير صوتي حساني للنصوص غير المشكولة أو جزئية التشكيل (مع مراعاة الابتداء بالساكن)
         est = 0.0
         for raw_w in norm.split():
             w = ARABIC_DIACRITICS_RE.sub("", raw_w)
@@ -719,7 +628,6 @@ class LocalHassaniyaEngine:
             elif c_count == 2:
                 est += 1.35
             else:
-                # في الحسانية يسقط متحرك الابتداء غالباً وتُسكن نهايات الكلمات
                 est += max(1.5, c_count * 0.62)
 
         return max(4, min(14, int(round(est))))
@@ -813,6 +721,7 @@ class ArchiveManager:
                 self.status_message = f"متصل سحابياً بـ MongoDB Atlas ({db_name})"
                 self._ensure_mongo_indexes()
             except Exception as exc:
+                logger.warning("MongoDB connection failed, falling back to SQLite: %s", exc)
                 self.status_message = f"تعذر الاتصال بـ MongoDB ({exc})؛ تم التحويل إلى SQLite."
                 self._init_sqlite()
         else:
@@ -832,8 +741,8 @@ class ArchiveManager:
             self.mongo_db["glossary"].create_index([("term", ASCENDING)])
             self.mongo_db["glossary"].create_index([("normalized_term", ASCENDING)])
             self.mongo_db["messages"].create_index([("created_at", DESCENDING)])
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Failed ensuring MongoDB indexes: %s", exc)
 
     def _init_sqlite(self):
         with sqlite3.connect(self.sqlite_path) as conn:
@@ -865,7 +774,7 @@ class ArchiveManager:
         analysis = payload.analysis or {}
         dominant_meter = analysis.get("dominant_meter", "قيد التدقيق العروضي")
         poem_type = analysis.get("poem_type", "غير محدد")
-        verification_status = "تحليل أكاديمي آلي" if str(payload.source_engine).startswith("AI") else "قيد التدقيق العروضي"
+        verification_status = "تحليل آلي (غير مراجَع)" if str(payload.source_engine).startswith("AI") else "قيد التدقيق العروضي"
 
         return {
             "id": record_id,
@@ -1080,7 +989,7 @@ class ArchiveManager:
                         "dominant_meter": dominant_meter,
                         "poem_type": poem_type,
                         "source_engine": source_engine,
-                        "verification_status": "تحليل أكاديمي آلي" if source_engine.startswith("AI") else "قيد التدقيق العروضي",
+                        "verification_status": "تحليل آلي (غير مراجَع)" if source_engine.startswith("AI") else "قيد التدقيق العروضي",
                         "search_text": search_text,
                     }
                 },
@@ -1434,6 +1343,7 @@ def generate_content_safe(client: genai.Client, preferred_model: str, contents, 
                 kwargs["config"] = config
             return client.models.generate_content(**kwargs), model
         except Exception as exc:
+            logger.error("Gemini call failed on model '%s': %s", model, exc)
             last_exc = exc
     raise last_exc if last_exc else RuntimeError("تعذر الاتصال بخدمة Gemini.")
 
@@ -1476,22 +1386,22 @@ def analyze_with_gemini(poem_text: str, model_name: str) -> Tuple[Dict, str]:
     sys_inst = """أنت باحث أكاديمي وعروضي متخصص في الشعر الشعبي الحساني («لغن») وبحوره («لَبْتُوتَة»، ومفردها «بَتْ»). التزم بدقة بالمنهجية التالية:
 1. أساس الوزن في «لغن»: عدّ الحروف المتحركة في الوحدة الشعرية المسماة «تافلويت» (جمعها «تيفلواتن») مع إهمال السواكن؛ فالحرف المتحرك يُعدّ واحداً، وإذا تبعه ساكن يُضمّ إليه في التقطيع الإيقاعي، مع مراعاة الابتداء بالساكن واستخدام حرف (گ) للقاف المعقودة.
 2. وحدات «لغن» وأجناسه:
-   - الطلعة: وحدة شائعة تتكوّن من ثلاث «تيفلواتن» برويّ واحد.
-   - الكاف (الگاف): وحدة تتكوّن غالباً من أربع أو ست أو ثماني «تيفلواتن».
-   - التبراع: فن نسائي يقوم غالباً على تافلويتين متفقتي القافية والوزن.
-   - الظّهر: المقام أو النغم الموسيقي الذي يرافق أداء البحر ويمنحه لحنه الخاص (اذكره في حقل zahr_mode إن أمكن تحديده).
+  - الطلعة: وحدة شائعة تتكوّن من ثلاث «تيفلواتن» برويّ واحد.
+  - الكاف (الگاف): وحدة تتكوّن غالباً من أربع أو ست أو ثماني «تيفلواتن».
+  - التبراع: فن نسائي يقوم غالباً على تافلويتين متفقتي القافية والوزن.
+  - الظّهر: المقام أو النغم الموسيقي الذي يرافق أداء البحر ويمنحه لحنه الخاص (اذكره في حقل zahr_mode إن أمكن تحديده).
 3. أبرز بحور «لَبْتُوتَة» المعتمدة في التصنيف:
-   - التيدوم (من أقدم البحور المعروفة في الموزون الحساني).
-   - البت الكبير (من الأبحر الجامعة، يجمع أوزاناً من مراحل سابقة، 9 متحركات فأكثر).
-   - بوعمران (7 متحركات — مشهور في الفخر والحماسة).
-   - المزارگ (موضوعات اجتماعية وشعبية).
-   - المصارع (الفخر والمآثر).
-   - إملخ واسغير (القصائد القصيرة والمواضيع العاطفية؛ اسغير 6 متحركات).
-   - الواكدي (الغزل والحب).
-   - أحويويص (بحر حماسي له تقطيع ومقاطع مميزة).
-   - الدگسري (إيقاع سريع يناسب الاحتفالات).
-   - المشكل (الألغاز الشعرية).
-   - بحور أخرى: إمريميدة، لبتيت التام (8 متحركات)، لبتيت الناقص (7 متحركات)، السروزي، الرسم، لبير (6 متحركات)، بغزز، بت اثنين، بت اثلاثة، وحثو اجراد.
+  - التيدوم (من أقدم البحور المعروفة في الموزون الحساني).
+  - البت الكبير (من الأبحر الجامعة، يجمع أوزاناً من مراحل سابقة، 9 متحركات فأكثر).
+  - بوعمران (7 متحركات — مشهور في الفخر والحماسة).
+  - المزارگ (موضوعات اجتماعية وشعبية).
+  - المصارع (الفخر والمآثر).
+  - إملخ واسغير (القصائد القصيرة والمواضيع العاطفية؛ اسغير 6 متحركات).
+  - الواكدي (الغزل والحب).
+  - أحويويص (بحر حماسي له تقطيع ومقاطع مميزة).
+  - الدگسري (إيقاع سريع يناسب الاحتفالات).
+  - المشكل (الألغاز الشعرية).
+  - بحور أخرى: إمريميدة، لبتيت التام (8 متحركات)، لبتيت الناقص (7 متحركات)، السروزي، الرسم، لبير (6 متحركات)، بغزز، بت اثنين، بت اثلاثة، وحثو اجراد.
 4. استخرج أهم المفردات الحسانية الأصيلة مع شرحها بالعربية الفصحى والإنجليزية.
 5. قدّم ترجمة أدبية دقيقة للإنجليزية والفرنسية."""
     cfg = types.GenerateContentConfig(
@@ -1564,16 +1474,36 @@ def extract_pdf_sync(raw: bytes, model_name: str) -> Tuple[str, str]:
 # =============================================================================
 # 8. تطبيق FastAPI وترويسات الأمان والـ SEO/GEO
 # =============================================================================
-app = FastAPI(title="ALBIDAN AI Lab — Academic Hassaniya Corpus API", version="4.1.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app = FastAPI(title="ALBIDAN AI Lab — Academic Hassaniya Corpus API", version="4.2.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Admin-Pin"],
+)
 
 
 @app.middleware("http")
 async def security_headers_middleware(request: Request, call_next):
     response = await call_next(request)
+    response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
-    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' data: https://fonts.gstatic.com; "
+            "img-src 'self' data: blob: https:; "
+            "media-src 'self' data: blob: https:; "
+            "connect-src 'self' data: blob:;"
+        ),
+    )
     return response
 
 
@@ -1590,11 +1520,11 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)
-def serve_home(request: Request):
+def serve_home():
     index_file = STATIC_DIR / "index.html"
     if not index_file.exists():
         raise HTTPException(status_code=404, detail="ملف الواجهة static/index.html غير موجود.")
-    base_url = get_base_url(request)
+    base_url = get_base_url()
     return HTMLResponse(content=index_file.read_text(encoding="utf-8").replace("__BASE_URL__", base_url))
 
 
@@ -1602,11 +1532,11 @@ def serve_home(request: Request):
 # صفحات SEO ومحركات البحث بالذكاء الاصطناعي (SSR Poems + Sitemap + llms.txt)
 # -----------------------------------------------------------------------------
 @app.get("/poem/{record_id}", response_class=HTMLResponse)
-def serve_poem_ssr(record_id: str, request: Request):
+def serve_poem_ssr(record_id: str):
     rec = archive.get_poem(record_id)
     if not rec:
         raise HTTPException(status_code=404, detail="القصيدة غير موجودة.")
-    base_url = get_base_url(request)
+    base_url = get_base_url()
     canonical = f"{base_url}/poem/{quote(rec['id'])}"
     analysis = rec.get("analysis") or {}
     title = rec.get("title") or "قصيدة حسانية"
@@ -1620,9 +1550,7 @@ def serve_poem_ssr(record_id: str, request: Request):
     schema_obj = {
         "@context": "https://schema.org",
         "@type": "CreativeWork",
-        "additionalType": "https://schema.org/Poem",
         "name": title,
-        "author": {"@type": "Person", "name": poet},
         "inLanguage": ["mey", "ar"],
         "genre": ptype,
         "spatialCoverage": region,
@@ -1630,6 +1558,9 @@ def serve_poem_ssr(record_id: str, request: Request):
         "url": canonical,
         "publisher": {"@type": "Organization", "name": "ALBIDAN AI Lab — مختبر البيظان"},
     }
+    if not is_default_poet(poet):
+        schema_obj["author"] = {"@type": "Person", "name": poet}
+
     en_trans = analysis.get("english_translation") or ""
     fr_trans = analysis.get("french_translation") or ""
     context = analysis.get("cultural_context") or ""
@@ -1647,7 +1578,7 @@ def serve_poem_ssr(record_id: str, request: Request):
   <meta property="og:description" content="{html.escape(excerpt)}" />
   <meta property="og:url" content="{canonical}" />
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">{json.dumps(schema_obj, ensure_ascii=False)}</script>
+  <script type="application/ld+json">{safe_json_ld(schema_obj)}</script>
   <style>
     body{{margin:0;background:#0D0B09;color:#F4EFE6;font-family:'IBM Plex Sans Arabic',sans-serif;line-height:1.8;padding:1.5rem 1rem}}
     .wrap{{max-width:780px;margin:0 auto;background:#1A1612;border:1px solid rgba(216,178,84,.25);border-top:3px solid #D8B254;border-radius:16px;padding:1.8rem}}
@@ -1681,8 +1612,8 @@ def serve_poem_ssr(record_id: str, request: Request):
 
 
 @app.get("/sitemap.xml")
-def serve_sitemap(request: Request):
-    base_url = get_base_url(request)
+def serve_sitemap():
+    base_url = get_base_url()
     poems = archive.list_poems()
     urls = [f"<url><loc>{base_url}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>"]
     for p in poems:
@@ -1692,8 +1623,8 @@ def serve_sitemap(request: Request):
 
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
-def serve_robots(request: Request):
-    base_url = get_base_url(request)
+def serve_robots():
+    base_url = get_base_url()
     return (
         "User-agent: *\n"
         "Allow: /\n"
@@ -1708,8 +1639,8 @@ def serve_robots(request: Request):
 
 
 @app.get("/llms.txt", response_class=PlainTextResponse)
-def serve_llms_txt(request: Request):
-    base_url = get_base_url(request)
+def serve_llms_txt():
+    base_url = get_base_url()
     stats = archive.get_stats()
     return f"""# ALBIDAN — Digital Corpus & Prosody Lab of Hassaniya Poetry (مختبر وديوان البيظان)
 
@@ -1744,7 +1675,7 @@ def serve_llms_txt(request: Request):
 # -----------------------------------------------------------------------------
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "db_mode": archive.active_mode, "version": "4.1.0"}
+    return {"status": "ok", "db_mode": archive.active_mode, "version": "4.2.0"}
 
 
 @app.get("/api/stats")
@@ -1802,7 +1733,8 @@ async def api_admin_enrich_glossary(
             archive.update_poem_analysis(rec["id"], analysis, f"AI ({used_model})")
             enriched += 1
             added_terms += len(analysis.get("glossary") or [])
-        except Exception:
+        except Exception as exc:
+            logger.error("Failed enriching poem %s: %s", rec.get("id"), exc)
             failed += 1
 
     return {
@@ -1828,6 +1760,7 @@ async def api_analyze(req: AnalyzeRequest, request: Request, x_admin_pin: Option
             analysis, used_model = await run_in_threadpool(analyze_with_gemini, text, model)
             source_engine = f"AI ({used_model})"
         except Exception as exc:
+            logger.error("Analyze with Gemini failed: %s", exc)
             analysis, source_engine = local_engine.analyze(text), "Local (Fallback)"
             warning = f"تعذر الاتصال بـ Gemini ({exc})، تم العرض بالمحرك المحلي."
     else:
@@ -1858,6 +1791,7 @@ async def api_transcribe(
     try:
         text, used_model = await run_in_threadpool(transcribe_audio_sync, audio_bytes, mime_type, ext or ".mp3", model_name)
     except Exception as exc:
+        logger.error("Audio transcription failed: %s", exc)
         raise HTTPException(status_code=500, detail=f"تعذر تفريغ الصوت: {exc}")
     finally:
         del audio_bytes
@@ -1894,6 +1828,7 @@ async def api_ocr_images(
     try:
         text, used_model = await run_in_threadpool(ocr_images_sync, images_data, model_name)
     except Exception as exc:
+        logger.error("Image OCR failed: %s", exc)
         raise HTTPException(status_code=500, detail=f"تعذر قراءة الصورة: {exc}")
     finally:
         del images_data
@@ -1929,6 +1864,7 @@ async def api_import_file(
     except HTTPException:
         raise
     except Exception as exc:
+        logger.error("File import failed: %s", exc)
         raise HTTPException(status_code=500, detail=f"تعذر استيراد الملف: {exc}")
     finally:
         del raw
@@ -1972,6 +1908,7 @@ async def api_import_batch_docx(
             items, used_model = await run_in_threadpool(split_poems_with_gemini, plain_text, model_name, default_poet, default_region)
             method = f"ai ({used_model})"
         except Exception as exc:
+            logger.error("Batch AI split failed: %s", exc)
             warning = f"تعذر التقسيم الذكي ({exc})، تم التحويل للتقسيم الهيكلي السريع."
     if not items:
         if ext == ".docx":
@@ -1995,10 +1932,10 @@ async def api_import_batch_docx(
 
 @app.get("/api/poems")
 def api_list_poems(
-    q: str = Query(""),
-    poem_type: str = Query("الكل"),
-    poet: str = Query(""),
-    meter: str = Query(""),
+    q: str = Query("", max_length=200),
+    poem_type: str = Query("الكل", max_length=80),
+    poet: str = Query("", max_length=120),
+    meter: str = Query("", max_length=120),
 ):
     return {"items": archive.list_poems(q=q, poem_type=poem_type, poet=poet, meter=meter)}
 
@@ -2080,7 +2017,7 @@ def api_delete_poem(record_id: str, request: Request, x_admin_pin: Optional[str]
 
 
 @app.get("/api/glossary")
-def api_list_glossary(q: str = Query("")):
+def api_list_glossary(q: str = Query("", max_length=200)):
     return {"items": archive.list_glossary(q=q)}
 
 
@@ -2115,7 +2052,9 @@ def api_delete_message(msg_id: str, request: Request, x_admin_pin: Optional[str]
 
 
 @app.get("/api/export/glossary.docx")
-def api_export_glossary_docx(q: str = Query("")):
+def api_export_glossary_docx(request: Request, q: str = Query("", max_length=200), x_admin_pin: Optional[str] = Header(default=None)):
+    if not is_valid_admin_pin(x_admin_pin):
+        rate_limiter.check_limit(request, "export_docx", max_requests=20, window_seconds=3600)
     items = archive.list_glossary(q=q)
     doc = create_base_arabic_doc("المعجم الحساني المتنامي", f"تاريخ التصدير: {datetime.now().strftime('%Y-%m-%d')}  |  عدد المفردات الموثقة: {len(items)}")
     tbl = doc.add_table(rows=1, cols=4)
@@ -2137,14 +2076,25 @@ def api_export_glossary_docx(q: str = Query("")):
 
 
 @app.post("/api/export/analysis.docx")
-def api_export_analysis_docx(req: ExportAnalysisDocxRequest):
+def api_export_analysis_docx(
+    req: ExportAnalysisDocxRequest,
+    request: Request,
+    x_admin_pin: Optional[str] = Header(default=None),
+):
+    if not is_valid_admin_pin(x_admin_pin):
+        rate_limiter.check_limit(request, "export_docx", max_requests=20, window_seconds=3600)
+    analysis_size = len(json.dumps(req.analysis, ensure_ascii=False).encode("utf-8"))
+    if analysis_size > MAX_ANALYSIS_JSON_BYTES:
+        raise HTTPException(status_code=413, detail="حجم بيانات التحليل المرسلة للتصدير يتجاوز الحد المسموح.")
     doc = create_base_arabic_doc("تقرير التحليل العروضي واللساني", f"تاريخ الإصدار: {datetime.now().strftime('%Y-%m-%d')}")
     append_poem_section_to_doc(doc, req.title, req.poet, req.region, req.poem_text, req.analysis)
     return doc_to_stream(doc, "albidan_poem_analysis.docx")
 
 
 @app.get("/api/export/poem/{record_id}.docx")
-def api_export_single_poem_docx(record_id: str):
+def api_export_single_poem_docx(record_id: str, request: Request, x_admin_pin: Optional[str] = Header(default=None)):
+    if not is_valid_admin_pin(x_admin_pin):
+        rate_limiter.check_limit(request, "export_docx", max_requests=40, window_seconds=3600)
     rec = archive.get_poem(record_id)
     if not rec:
         raise HTTPException(status_code=404, detail="القصيدة غير موجودة.")
@@ -2154,7 +2104,14 @@ def api_export_single_poem_docx(record_id: str):
 
 
 @app.get("/api/export/poems.docx")
-def api_export_all_poems_docx(q: str = Query(""), poem_type: str = Query("الكل")):
+def api_export_all_poems_docx(
+    request: Request,
+    q: str = Query("", max_length=200),
+    poem_type: str = Query("الكل", max_length=80),
+    x_admin_pin: Optional[str] = Header(default=None),
+):
+    if not is_valid_admin_pin(x_admin_pin):
+        rate_limiter.check_limit(request, "export_docx", max_requests=10, window_seconds=3600)
     poems = archive.list_poems(q=q, poem_type=poem_type)
     doc = create_base_arabic_doc("المدونة الحسانية المفتوحة — ديوان النصوص الموثقة", f"تاريخ التصدير: {datetime.now().strftime('%Y-%m-%d')}  |  عدد القصائد: {len(poems)}")
     for idx, rec in enumerate(poems):
@@ -2165,7 +2122,9 @@ def api_export_all_poems_docx(q: str = Query(""), poem_type: str = Query("الك
 
 
 @app.get("/api/export/jsonl")
-def api_export_jsonl():
+def api_export_jsonl(request: Request, x_admin_pin: Optional[str] = Header(default=None)):
+    if not is_valid_admin_pin(x_admin_pin):
+        rate_limiter.check_limit(request, "export_jsonl", max_requests=15, window_seconds=3600)
     content = "\n".join(json.dumps(p, ensure_ascii=False) for p in archive.list_poems())
     return StreamingResponse(
         io.BytesIO(content.encode("utf-8")),
