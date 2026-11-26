@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
   <style>
     :root {
       --bg: #0D0B09;
@@ -64,8 +64,18 @@
       overflow-x: hidden;
       transition: background 0.3s var(--ease), color 0.3s var(--ease);
     }
+    .skip-link {
+      position: absolute; top: -100px; right: 12px;
+      background: var(--gold); color: #14100C;
+      padding: 8px 14px; border-radius: 8px; font-weight: 700;
+      z-index: 300; text-decoration: none;
+    }
+    .skip-link:focus { top: 10px; }
+    :focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+    }
 
-    /* شريط تقدم القراءة العلوي */
     .scroll-progress {
       position: fixed; top: 0; right: 0; width: 0%; height: 2.5px;
       background: linear-gradient(90deg, var(--accent), var(--gold-light));
@@ -84,7 +94,10 @@
       border-bottom: 1px solid var(--border);
     }
     .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.65rem 0; }
-    .brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .brand {
+      display: flex; align-items: center; gap: 10px; cursor: pointer;
+      background: none; border: none; color: inherit; font-family: inherit; text-align: right;
+    }
     .brand-mark {
       width: 36px; height: 36px; border-radius: 10px;
       background: linear-gradient(135deg, #E2BE60, #9B711C);
@@ -145,7 +158,7 @@
     .page-head h2 svg.lucide { color: var(--gold-light); width: 20px; height: 20px; }
     .page-head p { font-size: 0.86rem; color: var(--muted); margin-top: 2px; }
 
-    /* بطاقة الترحيب الافتتاحية (في استكشف الديوان فقط) */
+    /* بطاقة الترحيب الافتتاحية */
     .hero-editorial {
       position: relative; overflow: hidden;
       background: radial-gradient(circle at 12% 15%, rgba(216, 178, 84, 0.14), transparent 45%),
@@ -166,30 +179,21 @@
       font-weight: 700; line-height: 1.3; margin-bottom: 0.5rem;
     }
     .hero-editorial .hero-desc { color: var(--muted); font-size: 0.94rem; max-width: 680px; margin-bottom: 1.2rem; }
-    .hero-search-bar {
-      display: flex; gap: 8px; flex-wrap: wrap; max-width: 640px; margin-bottom: 1.3rem;
-    }
+    .hero-search-bar { display: flex; gap: 8px; flex-wrap: wrap; max-width: 640px; margin-bottom: 1.3rem; }
     .hero-search-bar input {
       flex: 1; min-width: 210px; background: var(--bg-soft); border: 1px solid var(--border-strong);
       border-radius: 11px; padding: 0.7rem 1rem; font-size: 0.9rem;
     }
-    .hero-stats {
-      display: flex; flex-wrap: wrap; gap: 1.2rem; padding-top: 1rem;
-      border-top: 1px solid var(--border);
-    }
+    .hero-stats { display: flex; flex-wrap: wrap; gap: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--border); }
     .hero-stat-item { display: flex; align-items: baseline; gap: 6px; font-size: 0.84rem; color: var(--muted); }
     .hero-stat-item strong { font-size: 1.2rem; color: var(--gold-light); font-weight: 700; }
 
     /* عناوين الأقسام الفرعية والسلايدرات */
-    .section-bar {
-      display: flex; justify-content: space-between; align-items: center;
-      gap: 0.8rem; margin: 1.6rem 0 0.85rem; flex-wrap: wrap;
-    }
+    .section-bar { display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin: 1.6rem 0 0.85rem; flex-wrap: wrap; }
     .section-bar h3 { font-size: 1.08rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
     .section-bar h3 svg.lucide { color: var(--gold-light); width: 18px; height: 18px; }
     .slider-controls { display: flex; gap: 6px; align-items: center; }
 
-    /* سلايدر مختارات الديوان */
     .snap-slider {
       display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 12px;
       scroll-snap-type: x mandatory; scrollbar-width: thin;
@@ -216,7 +220,6 @@
     }
     .slide-meta { font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-    /* سلايدر البحور الحسانية */
     .meter-slide {
       flex: 0 0 215px; scroll-snap-align: start; cursor: pointer;
       background: var(--card); border: 1px solid var(--border);
@@ -229,7 +232,6 @@
     .meter-slide .m-beats { font-size: 0.78rem; color: var(--muted); }
     .meter-slide .m-count { margin-top: auto; font-size: 0.76rem; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--border); }
 
-    /* سلايدر المعجم الحي */
     .gloss-slide {
       flex: 0 0 265px; scroll-snap-align: start; cursor: pointer;
       background: var(--card); border: 1px solid var(--border);
@@ -241,7 +243,7 @@
     .gloss-slide .g-ar { font-size: 0.84rem; color: var(--text); margin: 4px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .gloss-slide .g-en { direction: ltr; text-align: left; font-size: 0.76rem; color: var(--muted); font-style: italic; }
 
-    /* البطاقات والأزرار العامة */
+    /* البطاقات والأزرار */
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 1.2rem; box-shadow: var(--shadow); }
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 7px;
@@ -275,10 +277,7 @@
     .ingest-btn.highlight { border-style: solid; border-color: var(--gold); background: rgba(216, 178, 84, 0.10); }
     .ingest-btn span { font-size: 0.68rem; color: var(--muted); font-weight: 400; }
 
-    .advanced-model-box {
-      display: none; background: var(--bg-soft); border: 1px solid var(--border);
-      border-radius: 10px; padding: 0.7rem 0.85rem; margin-bottom: 0.8rem;
-    }
+    .advanced-model-box { display: none; background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem 0.85rem; margin-bottom: 0.8rem; }
     .advanced-model-box.open { display: block; animation: fadeIn 0.2s ease; }
 
     textarea, input[type="text"], input[type="password"], input[type="number"], select {
@@ -323,7 +322,7 @@
     .trans-card { direction: ltr; text-align: left; background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem; white-space: pre-line; font-size: 0.88rem; line-height: 1.7; }
     .code-box { direction: ltr; text-align: left; background: #0B0A08; color: #EAE4D9; border: 1px solid var(--border); border-radius: 9px; padding: 0.75rem; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; margin-top: 6px; word-break: break-word; }
 
-    /* الجداول الأكاديمية المتجاوبة (تتحول لبطاقات على الهاتف) */
+    /* الجداول الأكاديمية */
     .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 13px; }
     table.academic-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; background: var(--card); }
     table.academic-table th { background: var(--bg-soft); color: var(--gold-light); font-weight: 700; text-align: right; padding: 0.78rem 0.9rem; border-bottom: 1px solid var(--border); }
@@ -349,7 +348,7 @@
     .active-filter-bar { display: none; align-items: center; gap: 8px; margin-bottom: 0.9rem; flex-wrap: wrap; }
     .active-filter-bar.show { display: flex; }
 
-    /* شريط إدارة الحذف الجماعي للمشرف فقط */
+    /* شريط إدارة الحذف الجماعي وتحديد عدد محدد للمشرف */
     .admin-bulk-bar {
       display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
       background: linear-gradient(135deg, rgba(216, 178, 84, 0.08), rgba(239, 68, 68, 0.06));
@@ -358,22 +357,21 @@
     }
     .admin-bulk-bar.show { display: flex; animation: fadeIn 0.2s ease; }
     .admin-bulk-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .select-n-group {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--bg-soft); border: 1px solid var(--border);
+      border-radius: 9px; padding: 2px 5px;
+    }
+    .select-n-group input[type="number"] {
+      width: 64px; padding: 4px 6px; text-align: center; font-size: 0.8rem;
+    }
     .archive-card.selected-card {
       border-color: var(--danger); border-right-color: var(--danger);
       background: rgba(239, 68, 68, 0.06);
     }
-    .poem-select-label {
-      display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
-      user-select: none; flex-shrink: 0;
-    }
-    .poem-select-cb {
-      width: 18px !important; height: 18px; accent-color: var(--danger);
-      cursor: pointer; border-radius: 5px;
-    }
-    .danger-zone-box {
-      background: rgba(239, 68, 68, 0.07); border: 1px solid rgba(239, 68, 68, 0.35);
-      border-radius: 12px; padding: 0.95rem 1rem; margin-bottom: 0.9rem;
-    }
+    .poem-select-label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; flex-shrink: 0; }
+    .poem-select-cb { width: 18px !important; height: 18px; accent-color: var(--danger); cursor: pointer; border-radius: 5px; }
+    .danger-zone-box { background: rgba(239, 68, 68, 0.07); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 12px; padding: 0.95rem 1rem; margin-bottom: 0.9rem; }
     .wipe-option {
       display: flex; align-items: flex-start; gap: 9px; padding: 0.7rem 0.85rem;
       border-radius: 10px; border: 1px solid var(--border); background: var(--bg-soft);
@@ -382,27 +380,14 @@
     .wipe-option:hover { border-color: var(--danger); }
     .wipe-option input[type="radio"] { width: auto; margin-top: 4px; accent-color: var(--danger); }
 
-    /* قسم المؤسس والتواصل الدائم أسفل كل الصفحات */
-    .persistent-about {
-      margin-top: 3rem; padding-top: 2rem;
-      border-top: 1px solid var(--border);
-    }
-    .persistent-about-head {
-      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-      margin-bottom: 1.1rem;
-    }
-    .persistent-about-head h2 {
-      font-size: 1.18rem; font-weight: 700; display: flex; align-items: center; gap: 8px;
-    }
+    /* قسم المؤسس والتواصل */
+    .persistent-about { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); }
+    .persistent-about-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 1.1rem; }
+    .persistent-about-head h2 { font-size: 1.18rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
     .persistent-about-head h2 svg.lucide { color: var(--gold-light); width: 19px; height: 19px; }
     .persistent-about.highlight-pulse { animation: aboutPulse 0.9s var(--ease); }
-    @keyframes aboutPulse {
-      0% { transform: scale(1); }
-      30% { transform: scale(1.008); }
-      100% { transform: scale(1); }
-    }
+    @keyframes aboutPulse { 0% { transform: scale(1); } 30% { transform: scale(1.008); } 100% { transform: scale(1); } }
 
-    /* المرجع العروضي والمؤسس */
     .ref-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 1.1rem; }
     .ref-card { background: var(--card); border: 1px solid var(--border); border-radius: 13px; padding: 1.1rem; }
     .ref-card h3 { font-size: 0.98rem; color: var(--gold-light); margin-bottom: 0.45rem; }
@@ -414,10 +399,7 @@
     .founder-avatar { width: 118px; height: 118px; border-radius: 16px; flex-shrink: 0; overflow: hidden; border: 2px solid var(--gold); display: grid; place-items: center; background: linear-gradient(145deg, #1E3A5F, #13253D 65%, #3B2A1A); color: #FDE68A; }
     .founder-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
     .social-row { display: flex; gap: 8px; margin-top: 0.9rem; flex-wrap: wrap; }
-    .social-btn {
-      background: var(--bg-soft); color: var(--text); border: 1px solid var(--border-strong);
-      transition: all 0.25s var(--ease);
-    }
+    .social-btn { background: var(--bg-soft); color: var(--text); border: 1px solid var(--border-strong); transition: all 0.25s var(--ease); }
     .social-btn.fb:hover { border-color: #3B82F6; color: #60A5FA; background: rgba(59, 130, 246, 0.1); }
     .social-btn.wa:hover { border-color: #22C55E; color: #4ADE80; background: rgba(34, 197, 94, 0.1); }
 
@@ -430,12 +412,9 @@
     .rag-source-excerpt { font-family: 'Amiri', serif; font-size: 1.12rem; line-height: 1.9; white-space: pre-line; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
     .rag-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.75rem; }
 
-    /* نافذة القراءة والتأمل (Zen Reader + Inline Glossary) */
+    /* نافذة القراءة والتأمل */
     .reader-box { max-width: 780px; padding: 1.6rem; }
-    .reader-toolbar {
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
-      padding-bottom: 0.9rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border);
-    }
+    .reader-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: 0.9rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); }
     .reader-poem-body {
       font-family: 'Amiri', serif; font-size: 1.55rem; line-height: 2.35;
       text-align: center; padding: 1.5rem 1.1rem; margin: 1rem 0;
@@ -443,22 +422,12 @@
       border: 1px solid var(--border); border-radius: 14px;
     }
     .reader-line { margin-bottom: 0.35rem; }
-    .gloss-inline {
-      border-bottom: 1.5px dotted var(--gold); color: var(--gold-light);
-      cursor: pointer; padding: 0 2px; border-radius: 4px; transition: background 0.2s;
-    }
+    .gloss-inline { border-bottom: 1.5px dotted var(--gold); color: var(--gold-light); cursor: pointer; padding: 0 2px; border-radius: 4px; transition: background 0.2s; }
     .gloss-inline:hover { background: rgba(216, 178, 84, 0.18); }
-    .gloss-popup-card {
-      display: none; background: var(--card); border: 1px solid var(--gold);
-      border-radius: 12px; padding: 0.9rem 1.05rem; margin: 0.8rem 0;
-      box-shadow: var(--shadow); animation: fadeIn 0.2s ease;
-    }
+    .gloss-popup-card { display: none; background: var(--card); border: 1px solid var(--gold); border-radius: 12px; padding: 0.9rem 1.05rem; margin: 0.8rem 0; box-shadow: var(--shadow); animation: fadeIn 0.2s ease; }
     .gloss-popup-card.open { display: block; }
     .related-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 9px; margin-top: 0.7rem; }
-    .related-mini-card {
-      background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px;
-      padding: 0.75rem; cursor: pointer; transition: 0.2s;
-    }
+    .related-mini-card { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem; cursor: pointer; transition: 0.2s; }
     .related-mini-card:hover { border-color: var(--gold); }
 
     /* النوافذ المنبثقة */
@@ -490,15 +459,11 @@
 
     footer { margin-top: 2.5rem; padding: 1.4rem 1rem; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 0.82rem; }
 
-    @media (max-width: 1024px) {
-      .lab-grid, .trans-grid, .about-grid { grid-template-columns: 1fr; }
-      .nav-views { display: none; }
-      .menu-toggle { display: inline-flex; }
-    }
+    @media (max-width: 1120px) { .nav-views { display: none; } .menu-toggle { display: inline-flex; } }
+    @media (max-width: 1024px) { .lab-grid, .trans-grid, .about-grid { grid-template-columns: 1fr; } }
     @media (max-width: 768px) {
       .hero-editorial { padding: 1.3rem 1.1rem; }
       .rag-filter-grid { grid-template-columns: 1fr 1fr; }
-      /* تحويل الجداول إلى بطاقات معجمية مريحة على الهاتف */
       .table-wrap { border: none; background: transparent; overflow: visible; }
       table.academic-table, table.academic-table thead, table.academic-table tbody, table.academic-table tr, table.academic-table td { display: block; width: 100%; }
       table.academic-table thead { display: none; }
@@ -508,15 +473,8 @@
         border-radius: 14px; padding: 13px 15px; margin-bottom: 11px; box-shadow: var(--shadow);
       }
       table.academic-table td { border: none; padding: 5px 0; text-align: right !important; }
-      table.academic-table td:first-child {
-        font-size: 1.4rem; border-bottom: 1px solid var(--border);
-        padding-bottom: 7px; margin-bottom: 6px;
-      }
-      table.academic-table td[data-label]::before {
-        content: attr(data-label) ": ";
-        font-size: 0.74rem; font-weight: 700; color: var(--muted);
-        display: inline-block; margin-left: 5px;
-      }
+      table.academic-table td:first-child { font-size: 1.4rem; border-bottom: 1px solid var(--border); padding-bottom: 7px; margin-bottom: 6px; }
+      table.academic-table td[data-label]::before { content: attr(data-label) ": "; font-size: 0.74rem; font-weight: 700; color: var(--muted); display: inline-block; margin-left: 5px; }
       table.academic-table td.en-cell { direction: ltr; text-align: left !important; color: var(--muted); font-size: 0.84rem; font-style: italic; }
       table.academic-table td.en-cell::before { display: none; }
       .reader-poem-body { font-size: 1.32rem; line-height: 2.15; padding: 1.1rem 0.7rem; }
@@ -531,38 +489,37 @@
   </style>
 </head>
 <body>
+  <a href="#mainContent" class="skip-link">تخطي إلى المحتوى الرئيسي</a>
   <div class="scroll-progress" id="scrollProgress"></div>
 
   <header class="navbar">
     <div class="container nav-inner">
-      <div class="brand" onclick="switchView('discover')">
-        <div class="brand-mark">
-          <i data-lucide="feather"></i>
-        </div>
+      <button type="button" class="brand" onclick="switchView('discover')" aria-label="العودة للرئيسية">
+        <div class="brand-mark"><i data-lucide="feather"></i></div>
         <div>
           <div class="brand-name">مختبر البيظان</div>
           <div class="brand-sub">ALBIDAN • المرجع البحثي الحساني</div>
         </div>
-      </div>
+      </button>
 
-      <nav class="nav-views">
-        <button class="nav-tab active" data-view="discover" onclick="switchView('discover')"><i data-lucide="compass"></i> استكشف الديوان</button>
-        <button class="nav-tab" data-view="archive" onclick="switchView('archive')"><i data-lucide="library"></i> المدونة</button>
-        <button class="nav-tab" data-view="rag" onclick="switchView('rag')"><i data-lucide="sparkles"></i> الباحث الذكي</button>
-        <button class="nav-tab" data-view="glossary" onclick="switchView('glossary')"><i data-lucide="book-open"></i> المعجم</button>
-        <button class="nav-tab" data-view="lab" onclick="switchView('lab')"><i data-lucide="flask-conical"></i> المختبر والرقمنة</button>
-        <button class="nav-tab" data-view="methodology" onclick="switchView('methodology')"><i data-lucide="ruler"></i> المرجع العروضي</button>
-        <button class="nav-tab" data-view="about" onclick="scrollToFounder()"><i data-lucide="user-round"></i> المؤسس والتواصل</button>
+      <nav class="nav-views" role="tablist" aria-label="التنقل الرئيسي">
+        <button class="nav-tab active" role="tab" aria-selected="true" data-view="discover" onclick="switchView('discover')"><i data-lucide="compass"></i> استكشف الديوان</button>
+        <button class="nav-tab" role="tab" aria-selected="false" data-view="archive" onclick="switchView('archive')"><i data-lucide="library"></i> المدونة</button>
+        <button class="nav-tab" role="tab" aria-selected="false" data-view="rag" onclick="switchView('rag')"><i data-lucide="sparkles"></i> الباحث الذكي</button>
+        <button class="nav-tab" role="tab" aria-selected="false" data-view="glossary" onclick="switchView('glossary')"><i data-lucide="book-open"></i> المعجم</button>
+        <button class="nav-tab" role="tab" aria-selected="false" data-view="lab" onclick="switchView('lab')"><i data-lucide="flask-conical"></i> المختبر والرقمنة</button>
+        <button class="nav-tab" role="tab" aria-selected="false" data-view="methodology" onclick="switchView('methodology')"><i data-lucide="ruler"></i> المرجع العروضي</button>
+        <button class="nav-tab" role="tab" aria-selected="false" data-view="about" onclick="scrollToFounder()"><i data-lucide="user-round"></i> المؤسس والتواصل</button>
       </nav>
 
       <div class="nav-actions">
-        <button class="icon-btn" onclick="openSearchModal()" title="بحث شامل (Ctrl+K)"><i data-lucide="search"></i></button>
-        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل المظهر"><i data-lucide="sun"></i></button>
-        <button class="icon-btn" id="adminBtn" onclick="handleAdminClick()"><i data-lucide="lock"></i> <span class="hide-xs">المشرف</span></button>
-        <button class="icon-btn" id="adminToolsBtn" style="display:none" onclick="openAdminToolsModal()" title="أدوات صيانة الأرشيف والمعجم"><i data-lucide="wrench"></i> <span class="hide-xs">صيانة</span></button>
-        <button class="icon-btn" id="inboxBtn" style="display:none" onclick="openInboxModal()"><i data-lucide="mail"></i> (<span id="msgCountBadge">0</span>)</button>
+        <button class="icon-btn" onclick="openSearchModal()" title="بحث شامل (Ctrl+K)" aria-label="بحث شامل"><i data-lucide="search"></i></button>
+        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل المظهر" aria-label="تبديل المظهر الليلي والنهاري"><i data-lucide="sun"></i></button>
+        <button class="icon-btn" id="adminBtn" onclick="handleAdminClick()" aria-label="دخول أو خروج المشرف"><i data-lucide="lock"></i> <span class="hide-xs">المشرف</span></button>
+        <button class="icon-btn" id="adminToolsBtn" style="display:none" onclick="openAdminToolsModal()" title="أدوات صيانة الأرشيف والمعجم" aria-label="أدوات الصيانة"><i data-lucide="wrench"></i> <span class="hide-xs">صيانة</span></button>
+        <button class="icon-btn" id="inboxBtn" style="display:none" onclick="openInboxModal()" aria-label="صندوق الرسائل"><i data-lucide="mail"></i> (<span id="msgCountBadge">0</span>)</button>
         <span class="icon-btn hide-xs" id="serverBadge"><span class="status-dot"></span> جاري الاتصال...</span>
-        <button class="icon-btn menu-toggle" onclick="toggleMobileMenu()" aria-label="القائمة"><i data-lucide="menu"></i></button>
+        <button class="icon-btn menu-toggle" onclick="toggleMobileMenu()" aria-label="فتح القائمة"><i data-lucide="menu"></i></button>
       </div>
     </div>
 
@@ -577,9 +534,9 @@
     </div>
   </header>
 
-  <main class="container">
+  <main id="mainContent" class="container">
 
-    <!-- 1. قسم استكشف الديوان (الواجهة الرئيسية التفاعلية) -->
+    <!-- 1. قسم استكشف الديوان -->
     <section id="view-discover" class="view-section active">
       <div class="hero-editorial">
         <span class="hero-badge"><i data-lucide="book-marked"></i> المرجع العلمي الرقمي لشعر «لغن» الحساني</span>
@@ -599,7 +556,6 @@
         </div>
       </div>
 
-      <!-- سلايدر مختارات الديوان -->
       <div class="section-bar">
         <h3><i data-lucide="scroll-text"></i> مختارات من الديوان الحساني</h3>
         <div class="slider-controls">
@@ -613,7 +569,6 @@
         <div class="skeleton-box" style="flex:0 0 360px"></div>
       </div>
 
-      <!-- سلايدر بحور «لغن» (لَبْتُوتَة) -->
       <div class="section-bar">
         <h3><i data-lucide="waves"></i> تصفّح حسب بحور «لغن» (لَبْتُوتَة)</h3>
         <div class="slider-controls">
@@ -624,7 +579,6 @@
       </div>
       <div class="snap-slider" id="metersSlider"></div>
 
-      <!-- سلايدر نافذة المعجم المتنامي -->
       <div class="section-bar">
         <h3><i data-lucide="book-open-text"></i> إضاءات من المعجم الحساني</h3>
         <button class="btn btn-secondary btn-sm" onclick="switchView('glossary')">فتح المعجم الكامل</button>
@@ -647,7 +601,7 @@
       </div>
 
       <div class="advanced-model-box" id="advancedModelBox">
-        <label style="font-size:0.78rem;color:var(--muted);display:block;margin-bottom:5px">اختر محرك التحليل (للمتخصصين):</label>
+        <label for="modelSelect" style="font-size:0.78rem;color:var(--muted);display:block;margin-bottom:5px">اختر محرك التحليل (للمتخصصين):</label>
         <select id="modelSelect" style="max-width:360px">
           <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (الأسرع للصوت والصور)</option>
           <option value="gemini-3.8-flash">gemini-3.8-flash (متوازن)</option>
@@ -691,10 +645,10 @@
         </div>
 
         <div class="card">
-          <div class="tabs">
-            <button class="tab-btn active" onclick="switchLabTab('prosody', this)">العروض والتقطيع</button>
-            <button class="tab-btn" onclick="switchLabTab('trans', this)">الترجمة والمعجم</button>
-            <button class="tab-btn" onclick="switchLabTab('export', this)">التوثيق والتصدير</button>
+          <div class="tabs" role="tablist">
+            <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchLabTab('prosody', this)">العروض والتقطيع</button>
+            <button class="tab-btn" role="tab" aria-selected="false" onclick="switchLabTab('trans', this)">الترجمة والمعجم</button>
+            <button class="tab-btn" role="tab" aria-selected="false" onclick="switchLabTab('export', this)">التوثيق والتصدير</button>
           </div>
 
           <div id="resultsEmpty" style="text-align:center;padding:3rem 1rem;color:var(--muted);font-size:0.88rem">
@@ -724,14 +678,14 @@
               <div class="trans-grid">
                 <div class="trans-card">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                    <span style="color:var(--gold-light);font-weight:700;font-size:0.75rem">ENGLISH</span>
+                    <span style="color:var(--gold-light);font-weight:700;font-size:0.75rem">ENGLISH (AI)</span>
                     <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('resEn').innerText)">نسخ</button>
                   </div>
                   <div id="resEn"></div>
                 </div>
                 <div class="trans-card">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                    <span style="color:var(--gold-light);font-weight:700;font-size:0.75rem">FRANÇAIS</span>
+                    <span style="color:var(--gold-light);font-weight:700;font-size:0.75rem">FRANÇAIS (AI)</span>
                     <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('resFr').innerText)">نسخ</button>
                   </div>
                   <div id="resFr"></div>
@@ -830,7 +784,7 @@
           <div class="rag-answer-card">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-                <span class="pill-tag pill-success" id="ragVerifyBadge">موثّقة</span>
+                <span class="pill-tag pill-success" id="ragVerifyBadge">إجابة AI موثّقة</span>
                 <span class="pill-tag" id="ragTimingBadge">—</span>
               </div>
               <div style="display:flex;gap:6px">
@@ -875,16 +829,21 @@
         <button class="btn btn-secondary btn-sm" onclick="clearMeterFilter()">إزالة التصفية ×</button>
       </div>
 
-      <div class="admin-bulk-bar" id="archiveAdminBar">
+      <div class="admin-bulk-bar" id="archiveAdminBar" role="region" aria-label="أدوات الحذف للمسؤول">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="pill-tag"><i data-lucide="shield-check"></i> إدارة المشرف</span>
+          <span class="pill-tag"><i data-lucide="shield-check"></i> إدارة الحذف للمسؤول</span>
           <span style="font-size:0.84rem;color:var(--muted)">المحدد للحذف: <strong id="selectedPoemsCount" style="color:var(--gold-light)">0</strong></span>
         </div>
         <div class="admin-bulk-actions">
+          <div class="select-n-group" title="تحديد عدد محدد من القصائد أو الأگواف الظاهرة">
+            <span style="font-size:0.76rem;color:var(--muted);padding-right:3px">أول</span>
+            <input type="number" id="selectCountInput" min="1" value="5" aria-label="عدد القصائد المراد تحديدها" />
+            <button class="btn btn-secondary btn-sm" onclick="selectSpecificCountPoems()"><i data-lucide="list-checks"></i> تحديد هذا العدد</button>
+          </div>
           <button class="btn btn-secondary btn-sm" onclick="selectAllVisiblePoems()"><i data-lucide="check-square"></i> تحديد الكل</button>
           <button class="btn btn-secondary btn-sm" onclick="clearPoemSelection()"><i data-lucide="square"></i> إلغاء التحديد</button>
           <button class="btn btn-danger btn-sm" id="bulkDeleteBtn" onclick="deleteSelectedPoems()" disabled><i data-lucide="trash-2"></i> حذف المحدد (<span id="bulkDeleteCount">0</span>)</button>
-          <button class="btn btn-danger btn-sm" onclick="openDangerWipeModal()"><i data-lucide="alert-triangle"></i> حذف جميع الملفات والأشعار</button>
+          <button class="btn btn-danger btn-sm" onclick="openDangerWipeModal()"><i data-lucide="alert-triangle"></i> حذف الجميع دفعة واحدة</button>
         </div>
       </div>
 
@@ -968,84 +927,24 @@
             <tr><th>البَتْ (البحر الحساني)</th><th>الوزن / السمة الإيقاعية</th><th>التعريف والخصائص العروضية</th><th>الغرض والاستعمال الشعري</th></tr>
           </thead>
           <tbody>
-            <tr>
-              <td class="term-cell">التيدوم</td>
-              <td data-label="السمة الإيقاعية">من أقدم «لَبْتُوتَة»</td>
-              <td data-label="الخصائص العروضية">يُعدّ من أقدم البحور المعروفة في الموزون الحساني وجذوره الإيقاعية الأولى.</td>
-              <td data-label="الاستعمال الشعري">الأغراض التراثية الأصيلة والموزون القديم.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">البت الكبير</td>
-              <td data-label="السمة الإيقاعية">9 متحركات فأكثر (جامع)</td>
-              <td data-label="الخصائص العروضية">يجمع أوزاناً من مراحل سابقة ويُعدّ من الأبحر الجامعة ذات النَّفَس الممتد.</td>
-              <td data-label="الاستعمال الشعري">الملاحم، التوثيق التاريخي، والقصائد المطوّلة.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">بوعمران</td>
-              <td data-label="السمة الإيقاعية">7 متحركات</td>
-              <td data-label="الخصائص العروضية">بحر عريق ذو إيقاع قوي ومهيب يتكوّن شطره من سبعة متحركات.</td>
-              <td data-label="الاستعمال الشعري">الفخر والحماسة.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">لبتيت التام</td>
-              <td data-label="السمة الإيقاعية">8 متحركات</td>
-              <td data-label="الخصائص العروضية">من أوسع بحور «لغن» انتشاراً واتزاناً في البناء الإيقاعي.</td>
-              <td data-label="الاستعمال الشعري">الكاف والطلعة في الفخر، الكرم، المديح، والحكمة.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">لبتيت الناقص</td>
-              <td data-label="السمة الإيقاعية">7 متحركات</td>
-              <td data-label="الخصائص العروضية">يقوم على توازن نغمي مرن يناسب الإلقاء الهادئ والتأملي.</td>
-              <td data-label="الاستعمال الشعري">التبراع، الحنين، الشكوى، والوصف العاطفي.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">إملخ واسغير</td>
-              <td data-label="السمة الإيقاعية">إيقاع موجز (اسغير: 6 متحركات)</td>
-              <td data-label="الخصائص العروضية">بحران خفيفان وسريعا الإيقاع، يشتركان مع «لبير» في الرشاقة اللفظية.</td>
-              <td data-label="الاستعمال الشعري">القصائد القصيرة والمواضيع العاطفية.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">المزارگ</td>
-              <td data-label="السمة الإيقاعية">بنية متداولة ومرنة</td>
-              <td data-label="الخصائص العروضية">من البحور القريبة من الحياة اليومية والتعبير المباشر في «لغن».</td>
-              <td data-label="الاستعمال الشعري">الموضوعات الاجتماعية والشعبية.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">المصارع</td>
-              <td data-label="السمة الإيقاعية">إيقاع جزل ورصين</td>
-              <td data-label="الخصائص العروضية">بحر متماسك الإيقاع يبرز قوة المعنى والاعتزاز.</td>
-              <td data-label="الاستعمال الشعري">الفخر والمآثر.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">الواكدي</td>
-              <td data-label="السمة الإيقاعية">نغم رقيق ومنساب</td>
-              <td data-label="الخصائص العروضية">يتسم بعذوبة إيقاعية وانسيابية تلائم البوح الوجداني.</td>
-              <td data-label="الاستعمال الشعري">الغزل والحب.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">أحويويص</td>
-              <td data-label="السمة الإيقاعية">تقطيع ومقاطع مميزة</td>
-              <td data-label="الخصائص العروضية">من البحور الحماسية ذات التقطيع الإيقاعي الخاص والمقاطع اللافتة.</td>
-              <td data-label="الاستعمال الشعري">الحماسة والإلقاء الإيقاعي.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">الدگسري</td>
-              <td data-label="السمة الإيقاعية">إيقاع سريع وحيوي</td>
-              <td data-label="الخصائص العروضية">يتسم بالخفة والسرعة الحركية المتدفقة أثناء الأداء والغناء.</td>
-              <td data-label="الاستعمال الشعري">الاحتفالات والمناسبات.</td>
-            </tr>
-            <tr>
-              <td class="term-cell">المشكل</td>
-              <td data-label="السمة الإيقاعية">بناء لغوي وتوروي دقيق</td>
-              <td data-label="الخصائص العروضية">بحر يقوم على التورية الذكية واختبار البديهة اللغوية والعروضية.</td>
-              <td data-label="الاستعمال الشعري">الألغاز الشعرية.</td>
-            </tr>
+            <tr><td class="term-cell">التيدوم</td><td data-label="السمة الإيقاعية">من أقدم «لَبْتُوتَة»</td><td data-label="الخصائص العروضية">يُعدّ من أقدم البحور المعروفة في الموزون الحساني وجذوره الإيقاعية الأولى.</td><td data-label="الاستعمال الشعري">الأغراض التراثية الأصيلة والموزون القديم.</td></tr>
+            <tr><td class="term-cell">البت الكبير</td><td data-label="السمة الإيقاعية">9 متحركات فأكثر (جامع)</td><td data-label="الخصائص العروضية">يجمع أوزاناً من مراحل سابقة ويُعدّ من الأبحر الجامعة ذات النَّفَس الممتد.</td><td data-label="الاستعمال الشعري">الملاحم، التوثيق التاريخي، والقصائد المطوّلة.</td></tr>
+            <tr><td class="term-cell">بوعمران</td><td data-label="السمة الإيقاعية">7 متحركات</td><td data-label="الخصائص العروضية">بحر عريق ذو إيقاع قوي ومهيب يتكوّن شطره من سبعة متحركات.</td><td data-label="الاستعمال الشعري">الفخر والحماسة.</td></tr>
+            <tr><td class="term-cell">لبتيت التام</td><td data-label="السمة الإيقاعية">8 متحركات</td><td data-label="الخصائص العروضية">من أوسع بحور «لغن» انتشاراً واتزاناً في البناء الإيقاعي.</td><td data-label="الاستعمال الشعري">الكاف والطلعة في الفخر، الكرم، المديح، والحكمة.</td></tr>
+            <tr><td class="term-cell">لبتيت الناقص</td><td data-label="السمة الإيقاعية">7 متحركات</td><td data-label="الخصائص العروضية">يقوم على توازن نغمي مرن يناسب الإلقاء الهادئ والتأملي.</td><td data-label="الاستعمال الشعري">التبراع، الحنين، الشكوى، والوصف العاطفي.</td></tr>
+            <tr><td class="term-cell">إملخ واسغير</td><td data-label="السمة الإيقاعية">إيقاع موجز (اسغير: 6 متحركات)</td><td data-label="الخصائص العروضية">بحران خفيفان وسريعا الإيقاع، يشتركان مع «لبير» في الرشاقة اللفظية.</td><td data-label="الاستعمال الشعري">القصائد القصيرة والمواضيع العاطفية.</td></tr>
+            <tr><td class="term-cell">المزارگ</td><td data-label="السمة الإيقاعية">بنية متداولة ومرنة</td><td data-label="الخصائص العروضية">من البحور القريبة من الحياة اليومية والتعبير المباشر في «لغن».</td><td data-label="الاستعمال الشعري">الموضوعات الاجتماعية والشعبية.</td></tr>
+            <tr><td class="term-cell">المصارع</td><td data-label="السمة الإيقاعية">إيقاع جزل ورصين</td><td data-label="الخصائص العروضية">بحر متماسك الإيقاع يبرز قوة المعنى والاعتزاز.</td><td data-label="الاستعمال الشعري">الفخر والمآثر.</td></tr>
+            <tr><td class="term-cell">الواكدي</td><td data-label="السمة الإيقاعية">نغم رقيق ومنساب</td><td data-label="الخصائص العروضية">يتسم بعذوبة إيقاعية وانسيابية تلائم البوح الوجداني.</td><td data-label="الاستعمال الشعري">الغزل والحب.</td></tr>
+            <tr><td class="term-cell">أحويويص</td><td data-label="السمة الإيقاعية">تقطيع ومقاطع مميزة</td><td data-label="الخصائص العروضية">من البحور الحماسية ذات التقطيع الإيقاعي الخاص والمقاطع اللافتة.</td><td data-label="الاستعمال الشعري">الحماسة والإلقاء الإيقاعي.</td></tr>
+            <tr><td class="term-cell">الدگسري</td><td data-label="السمة الإيقاعية">إيقاع سريع وحيوي</td><td data-label="الخصائص العروضية">يتسم بالخفة والسرعة الحركية المتدفقة أثناء الأداء والغناء.</td><td data-label="الاستعمال الشعري">الاحتفالات والمناسبات.</td></tr>
+            <tr><td class="term-cell">المشكل</td><td data-label="السمة الإيقاعية">بناء لغوي وتوروي دقيق</td><td data-label="الخصائص العروضية">بحر يقوم على التورية الذكية واختبار البديهة اللغوية والعروضية.</td><td data-label="الاستعمال الشعري">الألغاز الشعرية.</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <!-- 7. قسم المؤسس والتواصل (يظهر دائماً أسفل الصفحة) -->
+    <!-- 7. قسم المؤسس والتواصل -->
     <section id="founder-contact-section" class="persistent-about">
       <div class="persistent-about-head">
         <h2><i data-lucide="user-round"></i> المؤسس والتواصل والمساهمات البحثية</h2>
@@ -1078,8 +977,8 @@
           <p style="font-size:0.83rem;color:var(--muted);margin-bottom:0.85rem">تُحفظ المساهمات مباشرة في قاعدة البيانات وتُراجع لتوثيقها في المدونة باسم مرسلها.</p>
           <form onsubmit="submitContactForm(event)" style="display:grid;gap:8px">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <input type="text" id="cName" required placeholder="الاسم الكامل *" />
-              <input type="text" id="cContact" placeholder="واتساب أو بريد إلكتروني" />
+              <input type="text" id="cName" required minlength="2" maxlength="100" placeholder="الاسم الكامل *" />
+              <input type="text" id="cContact" maxlength="150" placeholder="واتساب أو بريد إلكتروني" />
             </div>
             <select id="cCategory">
               <option value="مساهمة بقصيدة تراثية">مساهمة بقصيدة تراثية</option>
@@ -1087,7 +986,7 @@
               <option value="تعاون أكاديمي / بحثي">تعاون أكاديمي / بحثي</option>
               <option value="تواصل عام">تواصل عام</option>
             </select>
-            <textarea id="cMessage" required rows="4" placeholder="اكتب القصيدة أو ملاحظتك العلمية هنا..."></textarea>
+            <textarea id="cMessage" required minlength="5" maxlength="2000" rows="4" placeholder="اكتب القصيدة أو ملاحظتك العلمية هنا..."></textarea>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
               <label for="cCaptcha" style="font-size:0.82rem;font-weight:700" id="captchaLabel">للأمان: 3 + 4 =</label>
               <input type="number" id="cCaptcha" required style="width:90px" placeholder="النتيجة" />
@@ -1103,8 +1002,8 @@
     <div class="container"><strong style="color:var(--gold-light)">مختبر البيظان للذكاء الاصطناعي — ALBIDAN AI LAB</strong> • © 2026 فكرة وتطوير أڭــار الحبيب</div>
   </footer>
 
-  <!-- نافذة القراءة والتأمل التفاعلية (Zen Reader) -->
-  <div class="modal-backdrop" id="readerModal" onclick="if(event.target===this) closeModal('readerModal')">
+  <!-- نافذة القراءة والتأمل التفاعلية -->
+  <div class="modal-backdrop" id="readerModal" role="dialog" aria-modal="true" aria-labelledby="readerTitle" onclick="if(event.target===this) closeModal('readerModal')">
     <div class="modal-box reader-box">
       <div class="reader-toolbar">
         <div>
@@ -1112,8 +1011,8 @@
           <div id="readerMeta" style="font-size:0.8rem;color:var(--muted)"></div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-          <button class="icon-btn" onclick="adjustReaderFont(-0.12)" title="تصغير الخط">A-</button>
-          <button class="icon-btn" onclick="adjustReaderFont(0.12)" title="تكبير الخط">A+</button>
+          <button class="icon-btn" onclick="adjustReaderFont(-0.12)" title="تصغير الخط" aria-label="تصغير الخط">A-</button>
+          <button class="icon-btn" onclick="adjustReaderFont(0.12)" title="تكبير الخط" aria-label="تكبير الخط">A+</button>
           <button class="btn btn-secondary btn-sm" onclick="closeModal('readerModal')">إغلاق</button>
         </div>
       </div>
@@ -1125,7 +1024,7 @@
       <div class="gloss-popup-card" id="readerGlossPopup">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <strong id="glossPopTerm" style="font-family:'Amiri',serif;font-size:1.35rem;color:var(--gold-light)"></strong>
-          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('readerGlossPopup').classList.remove('open')">×</button>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('readerGlossPopup').classList.remove('open')" aria-label="إغلاق شرح المفردة">×</button>
         </div>
         <div id="glossPopAr" style="font-size:0.9rem;margin-top:4px"></div>
         <div id="glossPopEn" style="direction:ltr;text-align:left;font-size:0.82rem;color:var(--muted);margin-top:3px;font-style:italic"></div>
@@ -1145,6 +1044,7 @@
         <a class="btn btn-secondary btn-sm" id="readerWordBtn" href="#"><i data-lucide="file-down"></i> Word</a>
         <button class="btn btn-secondary btn-sm" id="readerPdfBtn"><i data-lucide="printer"></i> PDF</button>
         <button class="btn btn-secondary btn-sm" id="readerPngBtn"><i data-lucide="image"></i> بطاقة مصوّرة</button>
+        <button class="btn btn-danger btn-sm" id="readerDeleteBtn" style="display:none"><i data-lucide="trash-2"></i> حذف هذه القصيدة</button>
       </div>
 
       <div id="readerRelatedWrap" style="margin-top:1.1rem;padding-top:0.9rem;border-top:1px dashed var(--border);display:none">
@@ -1155,7 +1055,7 @@
   </div>
 
   <!-- نافذة الاستيراد الجماعي لملفات Word -->
-  <div class="modal-backdrop" id="batchModal" onclick="if(event.target===this) closeModal('batchModal')">
+  <div class="modal-backdrop" id="batchModal" role="dialog" aria-modal="true" onclick="if(event.target===this) closeModal('batchModal')">
     <div class="modal-box modal-wide">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
         <div>
@@ -1205,7 +1105,7 @@
   </div>
 
   <!-- نوافذ البحث والمشرف والتعديل والرسائل -->
-  <div class="modal-backdrop" id="searchModal" onclick="if(event.target===this) closeModal('searchModal')">
+  <div class="modal-backdrop" id="searchModal" role="dialog" aria-modal="true" onclick="if(event.target===this) closeModal('searchModal')">
     <div class="modal-box">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.7rem">
         <strong>البحث الشامل في المدونة والمعجم</strong>
@@ -1216,7 +1116,7 @@
     </div>
   </div>
 
-  <div class="modal-backdrop" id="adminModal" onclick="if(event.target===this) closeModal('adminModal')">
+  <div class="modal-backdrop" id="adminModal" role="dialog" aria-modal="true" onclick="if(event.target===this) closeModal('adminModal')">
     <div class="modal-box" style="max-width:390px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
         <strong>تفعيل وضع المشرف</strong>
@@ -1227,7 +1127,7 @@
     </div>
   </div>
 
-  <div class="modal-backdrop" id="editModal" onclick="if(event.target===this) closeModal('editModal')">
+  <div class="modal-backdrop" id="editModal" role="dialog" aria-modal="true" onclick="if(event.target===this) closeModal('editModal')">
     <div class="modal-box">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
         <strong>تعديل القصيدة</strong>
@@ -1245,7 +1145,7 @@
     </div>
   </div>
 
-  <div class="modal-backdrop" id="inboxModal" onclick="if(event.target===this) closeModal('inboxModal')">
+  <div class="modal-backdrop" id="inboxModal" role="dialog" aria-modal="true" onclick="if(event.target===this) closeModal('inboxModal')">
     <div class="modal-box">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
         <strong>رسائل ومساهمات الباحثين</strong>
@@ -1255,8 +1155,8 @@
     </div>
   </div>
 
-    <!-- نافذة أدوات صيانة المشرف (تنظيف الأرشيف وتغذية المعجم) -->
-  <div class="modal-backdrop" id="adminToolsModal" onclick="if(event.target===this) closeModal('adminToolsModal')">
+  <!-- نافذة أدوات صيانة المشرف -->
+  <div class="modal-backdrop" id="adminToolsModal" role="dialog" aria-modal="true" onclick="if(event.target===this) closeModal('adminToolsModal')">
     <div class="modal-box" style="max-width:520px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem">
         <strong style="display:flex;align-items:center;gap:7px"><i data-lucide="wrench" style="color:var(--gold-light)"></i> أدوات صيانة الأرشيف والمعجم</strong>
@@ -1281,8 +1181,8 @@
     </div>
   </div>
 
-  <!-- نافذة الحذف الشامل الآمن لجميع الملفات والأشعار -->
-  <div class="modal-backdrop" id="dangerWipeModal" onclick="if(event.target===this) closeModal('dangerWipeModal')">
+  <!-- نافذة الحذف الشامل الآمن -->
+  <div class="modal-backdrop" id="dangerWipeModal" role="dialog" aria-modal="true" onclick="if(event.target===this) closeModal('dangerWipeModal')">
     <div class="modal-box" style="max-width:500px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.85rem">
         <strong style="color:#F87171;display:flex;align-items:center;gap:7px"><i data-lucide="alert-triangle"></i> حذف جميع الملفات والأشعار دفعة واحدة</strong>
@@ -1290,14 +1190,14 @@
       </div>
       <div class="danger-zone-box">
         <p style="font-size:0.84rem;color:var(--text);line-height:1.7">
-          <strong>تنبيه مهم:</strong> هذا الإجراء نهائي ولا يمكن التراجع عنه بعد التنفيذ. يُنصح بتنزيل نسخة احتياطية من المدونة (Word أو JSONL) قبل الحذف.
+          <strong>تنبيه مهم:</strong> هذا الإجراء نهائي ولا يمكن التراجع عنه بعد التنفيذ. يُنصح بتنزيل نسخة احتياطية من المدونة (<a href="/api/export/jsonl" style="color:var(--gold-light)">JSONL</a> أو Word) قبل الحذف.
         </p>
       </div>
 
       <label class="wipe-option">
         <input type="radio" name="wipeScope" value="poems_only" checked />
         <div>
-          <strong style="font-size:0.88rem;display:block">حذف جميع القصائد والملفات فقط</strong>
+          <strong style="font-size:0.88rem;display:block">حذف جميع القصائد والأگواف فقط</strong>
           <span style="font-size:0.78rem;color:var(--muted)">يمسح كل القصائد المؤرشفة ومقاطعها في الباحث الذكي، مع الإبقاء على مفردات المعجم الحساني.</span>
         </div>
       </label>
@@ -1326,7 +1226,7 @@
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
     const SAMPLES = {
@@ -1365,6 +1265,7 @@
     const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
     const normSearch = s => String(s ?? "").replace(/[\u0617-\u061A\u064B-\u0652\u0670\u0640]/g, "").replace(/[أإآ]/g, "ا").replace(/[ݣڭڨ]/g, "گ").toLowerCase();
     const findPoemById = id => allPoems.find(p => p.id === id) || cachedPoems.find(p => p.id === id) || null;
+    const authHeaders = (extra = {}) => ({ ...extra, ...(adminPin ? { "x-admin-pin": adminPin } : {}) });
     function refreshIcons() { if (window.lucide) lucide.createIcons(); }
 
     function showToast(msg) {
@@ -1383,12 +1284,19 @@
       el.classList.add("highlight-pulse");
     }
 
-    function switchView(v) {
+    function switchView(v, pushHash = true) {
       if (v === "about") return scrollToFounder();
+      const validViews = ["discover", "archive", "rag", "glossary", "lab", "methodology"];
+      if (!validViews.includes(v)) v = "discover";
       document.querySelectorAll(".view-section").forEach(s => s.classList.remove("active"));
-      document.querySelectorAll(".nav-tab, .mobile-menu button").forEach(b => b.classList.toggle("active", b.dataset.view === v));
+      document.querySelectorAll(".nav-tab, .mobile-menu button").forEach(b => {
+        const isActive = b.dataset.view === v;
+        b.classList.toggle("active", isActive);
+        if (b.getAttribute("role") === "tab") b.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
       const target = document.getElementById(`view-${v}`);
       if (target) target.classList.add("active");
+      if (pushHash && window.location.hash !== `#${v}`) history.pushState(null, "", `#${v}`);
       if (v === "rag") loadRagHealth();
       window.scrollTo({ top: 0, behavior: "smooth" });
       refreshIcons();
@@ -1402,19 +1310,13 @@
       refreshIcons();
     }
 
-    function scrollSlider(id, delta) {
-      const el = document.getElementById(id);
-      if (el) el.scrollBy({ left: delta, behavior: "smooth" });
-    }
+    function scrollSlider(id, delta) { const el = document.getElementById(id); if (el) el.scrollBy({ left: delta, behavior: "smooth" }); }
 
     function runHeroSearch() {
       const q = (document.getElementById("heroQuickSearch").value || "").trim();
       if (!q) return switchView("archive");
       document.getElementById("archiveSearch").value = q;
-      activeMeterFilter = "";
-      updateMeterFilterUI();
-      loadArchive();
-      switchView("archive");
+      activeMeterFilter = ""; updateMeterFilterUI(); loadArchive(); switchView("archive");
     }
 
     function filterByMeter(meterKey) {
@@ -1422,35 +1324,25 @@
       document.getElementById("archiveSearch").value = "";
       document.getElementById("archiveFilter").value = "الكل";
       cachedPoems = [...allPoems];
-      updateMeterFilterUI();
-      renderArchiveCards();
-      switchView("archive");
+      updateMeterFilterUI(); renderArchiveCards(); switchView("archive");
     }
 
-    function clearMeterFilter() {
-      activeMeterFilter = "";
-      updateMeterFilterUI();
-      renderArchiveCards();
-    }
+    function clearMeterFilter() { activeMeterFilter = ""; updateMeterFilterUI(); renderArchiveCards(); }
 
     function updateMeterFilterUI() {
       const bar = document.getElementById("archiveActiveFilterBar");
       if (activeMeterFilter) {
         document.getElementById("archiveActiveFilterText").textContent = `تصفية حسب البَتْ (البحر): ${activeMeterFilter}`;
         bar.classList.add("show");
-      } else {
-        bar.classList.remove("show");
-      }
+      } else bar.classList.remove("show");
     }
 
-    /* بناء شرائح استكشف الديوان (السلايدرات) */
     function renderDiscoverSection() {
       const slider = document.getElementById("discoverSlider");
       if (!allPoems.length) {
         slider.innerHTML = '<div class="card" style="width:100%;text-align:center;color:var(--muted)">لم تُوثّق قصائد بعد في المدونة.</div>';
       } else {
-        const featured = allPoems.slice(0, 10);
-        slider.innerHTML = featured.map(p => {
+        slider.innerHTML = allPoems.slice(0, 10).map(p => {
           const excerpt = (p.poem_text || "").split("\n").filter(l => l.trim()).slice(0, 4).join("\n");
           const pid = escapeHtml(p.id);
           return `
@@ -1460,10 +1352,7 @@
                 <span class="pill-tag">${escapeHtml(p.poem_type || "شعر حساني")}</span>
               </div>
               <div class="slide-verse">${escapeHtml(excerpt)}</div>
-              <div class="slide-meta">
-                <span>${escapeHtml(p.poet || "تراث شفهي")}</span> •
-                <span>${escapeHtml(p.dominant_meter || "—")}</span>
-              </div>
+              <div class="slide-meta"><span>${escapeHtml(p.poet || "تراث شفهي")}</span> • <span>${escapeHtml(p.dominant_meter || "—")}</span></div>
               <div style="display:flex;gap:7px;margin-top:auto;padding-top:6px">
                 <button class="btn btn-primary btn-sm" onclick="openZenReaderById('${pid}')"><i data-lucide="book-open"></i> قراءة وتأمل</button>
                 <button class="btn btn-secondary btn-sm" onclick="openPoemInLabById('${pid}')"><i data-lucide="flask-conical"></i> التقطيع العروضي</button>
@@ -1472,15 +1361,9 @@
         }).join("");
       }
 
-      const metersEl = document.getElementById("metersSlider");
-      metersEl.innerHTML = CORE_METERS.map(m => {
+      document.getElementById("metersSlider").innerHTML = CORE_METERS.map(m => {
         const count = allPoems.filter(p => matchesMeterKey(p.dominant_meter, m.key)).length;
-        return `
-          <div class="meter-slide" onclick="filterByMeter('${m.key}')">
-            <div class="m-title">${m.label}</div>
-            <div class="m-beats">${m.beats}</div>
-            <div class="m-count"><span>${count} قصيدة</span><i data-lucide="arrow-left"></i></div>
-          </div>`;
+        return `<div class="meter-slide" onclick="filterByMeter('${m.key}')"><div class="m-title">${m.label}</div><div class="m-beats">${m.beats}</div><div class="m-count"><span>${count} قصيدة</span><i data-lucide="arrow-left"></i></div></div>`;
       }).join("");
 
       const poetsSet = [...new Set(allPoems.map(p => p.poet).filter(Boolean))];
@@ -1505,17 +1388,13 @@
     }
 
     function openGlossaryTermByIndex(idx) {
-      const g = cachedGlossary[idx];
-      if (!g) return;
+      const g = cachedGlossary[idx]; if (!g) return;
       document.getElementById("glossarySearch").value = g.term;
-      loadGlossary();
-      switchView("glossary");
+      loadGlossary(); switchView("glossary");
     }
 
-    /* وضع القراءة والتأمل مع التظليل المعجمي الفوري والقصائد ذات الصلة */
     function openZenReaderById(id) {
-      const rec = findPoemById(id);
-      if (!rec) return;
+      const rec = findPoemById(id); if (!rec) return;
       document.getElementById("readerTitle").textContent = rec.title || "قصيدة حسانية";
       const zahrTxt = rec.analysis?.zahr_mode ? ` • الظّهر: ${rec.analysis.zahr_mode}` : "";
       document.getElementById("readerMeta").textContent = `${rec.poet || "تراث شفهي"} • ${rec.region || "الصحراء المغربية"} • ${rec.poem_type || "—"} • ${rec.dominant_meter || "—"}${zahrTxt}`;
@@ -1531,8 +1410,7 @@
       let matchedCount = 0;
       const lines = (rec.poem_text || "").split("\n").filter(l => l.trim());
       const highlightedHtml = lines.map(line => {
-        const tokens = line.split(/(\s+)/);
-        const processed = tokens.map(tok => {
+        const processed = line.split(/(\s+)/).map(tok => {
           const clean = normSearch(tok.replace(/[.,،؛:!?()«»"']/g, ""));
           if (clean && allTermsMap.has(clean)) {
             matchedCount++;
@@ -1555,17 +1433,24 @@
 
       document.getElementById("readerOpenLabBtn").onclick = () => { closeModal("readerModal"); openPoemInLabById(rec.id); };
       document.getElementById("readerCopyBtn").onclick = () => copyText(`${rec.title}\n${rec.poem_text}\n— ${rec.poet}`);
-      document.getElementById("readerCiteBtn").onclick = () => copyText(`${rec.poet || "تراث شفهي"}. (${new Date().getFullYear()}). "${rec.title}". ALBIDAN AI Lab — Hassaniya Digital Corpus. ${window.location.origin}`);
+      document.getElementById("readerCiteBtn").onclick = () => copyText(`${rec.poet || "تراث شفهي"}. (${new Date().getFullYear()}). "${rec.title}". ALBIDAN AI Lab — Hassaniya Digital Corpus. ${window.location.origin}/poem/${encodeURIComponent(rec.id)}`);
       document.getElementById("readerWordBtn").href = `/api/export/poem/${encodeURIComponent(rec.id)}.docx`;
       document.getElementById("readerPdfBtn").onclick = () => exportSinglePoemPDFById(rec.id);
       document.getElementById("readerPngBtn").onclick = () => generatePoemCardPNGById(rec.id);
 
-      const related = allPoems
-        .filter(p => p.id !== rec.id && (
-          (rec.dominant_meter && p.dominant_meter === rec.dominant_meter) ||
-          (rec.poet && rec.poet !== "تراث شفهي / غير معروف" && p.poet === rec.poet)
-        ))
-        .slice(0, 3);
+      const delBtn = document.getElementById("readerDeleteBtn");
+      if (adminPin) {
+        delBtn.style.display = "inline-flex";
+        delBtn.onclick = async () => {
+          await deleteArchivePoemById(rec.id);
+          if (!findPoemById(rec.id)) closeModal("readerModal");
+        };
+      } else delBtn.style.display = "none";
+
+      const related = allPoems.filter(p => p.id !== rec.id && (
+        (rec.dominant_meter && p.dominant_meter === rec.dominant_meter) ||
+        (rec.poet && rec.poet !== "تراث شفهي / غير معروف" && p.poet === rec.poet)
+      )).slice(0, 3);
 
       const relWrap = document.getElementById("readerRelatedWrap");
       if (related.length) {
@@ -1575,9 +1460,7 @@
             <strong style="font-size:0.86rem;color:var(--gold-light);display:block">${escapeHtml(p.title)}</strong>
             <span style="font-size:0.75rem;color:var(--muted)">${escapeHtml(p.poet)} • ${escapeHtml(p.dominant_meter)}</span>
           </div>`).join("");
-      } else {
-        relWrap.style.display = "none";
-      }
+      } else relWrap.style.display = "none";
 
       document.getElementById("readerModal").classList.add("open");
       refreshIcons();
@@ -1597,16 +1480,16 @@
 
     function fillSample(k) { document.getElementById("poemInput").value = SAMPLES[k]; updateLiveCounter(); }
     function updateLiveCounter() {
-      const lines = document.getElementById("poemInput").value.split("\n").filter(l => l.trim());
-      const n = lines.length;
+      const n = document.getElementById("poemInput").value.split("\n").filter(l => l.trim()).length;
       const unitLabel = n === 1 ? "تافلويت واحدة" : `${n} تيفلواتن`;
       const kind = n === 2 ? " • تبراع" : n === 3 ? " • طلعة" : (n === 4 || n === 6 || n === 8) ? " • گاف (كاف)" : n >= 5 ? " • لغن" : "";
       document.getElementById("liveCounter").textContent = `${unitLabel}${kind}`;
     }
     function switchLabTab(name, btn) {
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(b => { b.classList.remove("active"); b.setAttribute("aria-selected", "false"); });
       document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-      btn.classList.add("active"); document.getElementById(`lab-tab-${name}`).classList.add("active");
+      btn.classList.add("active"); btn.setAttribute("aria-selected", "true");
+      document.getElementById(`lab-tab-${name}`).classList.add("active");
     }
 
     function setProgress(prefix, pct, text, pulsing = false) {
@@ -1622,6 +1505,7 @@
     }
     function friendlyHttpError(status, rawText) {
       try { const j = JSON.parse(rawText); if (j?.detail) return typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail); } catch (e) {}
+      if (status === 403) return "هذه العملية تتطلب تفعيل وضع المشرف أولاً (أدخل رمز ADMIN_PIN من الشريط العلوي).";
       if (status === 413) return "حجم الملف أكبر من المسموح به على الخادم.";
       if ([502, 503, 504].includes(status)) return "استغرق الخادم وقتاً طويلاً أو كان في وضع السكون؛ أعد المحاولة بعد ثوانٍ أو استخدم ملفاً أصغر.";
       return `حدث خطأ من الخادم (رمز ${status}).`;
@@ -1635,6 +1519,7 @@
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", url, true); xhr.timeout = 180000;
+        if (adminPin) xhr.setRequestHeader("x-admin-pin", adminPin);
         xhr.upload.onprogress = e => { if (e.lengthComputable) setProgress(prefix, Math.min(99, Math.round((e.loaded / e.total) * 100)), "جاري رفع الملف إلى الخادم...", false); };
         xhr.upload.onload = () => setProgress(prefix, 100, processingLabel || "اكتمل الرفع — جاري المعالجة بالذكاء الاصطناعي...", true);
         xhr.onload = () => {
@@ -1670,23 +1555,18 @@
     }
 
     /* الباحث الذكي (RAG) */
-    function setRagSample(txt) {
-      document.getElementById("ragQueryInput").value = txt;
-      document.getElementById("ragQueryInput").focus();
-    }
+    function setRagSample(txt) { document.getElementById("ragQueryInput").value = txt; document.getElementById("ragQueryInput").focus(); }
     async function loadRagHealth() {
-      const badge = document.getElementById("ragHealthBadge");
-      if (!badge) return;
+      const badge = document.getElementById("ragHealthBadge"); if (!badge) return;
       try {
         const h = await safeFetchJson("/api/rag/health");
         badge.textContent = `الذاكرة المعرفية: ${h.indexed_documents} وثيقة • ${h.total_chunks} مقطع`;
       } catch (e) { badge.textContent = "تعذر فحص حالة المحرك"; }
     }
     async function syncRagArchive() {
-      const btn = document.getElementById("ragSyncBtn");
-      btn.disabled = true; btn.textContent = "جاري المزامنة...";
+      const btn = document.getElementById("ragSyncBtn"); btn.disabled = true; btn.textContent = "جاري المزامنة...";
       try {
-        const res = await safeFetchJson("/api/rag/sync-albidan", { method: "POST" });
+        const res = await safeFetchJson("/api/rag/sync-albidan", { method: "POST", headers: authHeaders() });
         showToast(`تمت المزامنة (${res.elapsed_seconds}ث): ${res.poems_scanned} قصيدة و ${res.glossary_scanned} مفردة.`);
         await loadRagHealth();
       } catch (e) { showToast(e.message); }
@@ -1695,8 +1575,7 @@
     async function runRagSearch() {
       const query = (document.getElementById("ragQueryInput").value || "").trim();
       if (query.length < 2) return showToast("اكتب سؤالاً واضحاً أولاً.");
-      const btn = document.getElementById("ragAskBtn");
-      btn.disabled = true; btn.textContent = "جاري البحث وتدقيق الشواهد...";
+      const btn = document.getElementById("ragAskBtn"); btn.disabled = true; btn.textContent = "جاري البحث وتدقيق الشواهد...";
       const payload = {
         query,
         poet: (document.getElementById("ragPoetFilter").value || "").trim() || null,
@@ -1706,7 +1585,7 @@
         enable_reflection: document.getElementById("ragReflectionToggle").checked
       };
       try {
-        const data = await safeFetchJson("/api/rag/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        const data = await safeFetchJson("/api/rag/ask", { method: "POST", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(payload) });
         lastRagResult = data; renderRagResult(data); showToast("اكتمل البحث الأكاديمي الموثّق بنجاح!");
       } catch (e) { showToast(e.message); }
       finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="search"></i> اسأل الباحث الحساني'; refreshIcons(); }
@@ -1715,7 +1594,7 @@
       document.getElementById("ragEmptyHint").style.display = "none";
       document.getElementById("ragResultWrap").style.display = "block";
       const v = data.verification || {}, t = data.timing || {};
-      document.getElementById("ragVerifyBadge").textContent = v.status || "موثّقة";
+      document.getElementById("ragVerifyBadge").textContent = `إجابة AI • ${v.status || "موثّقة"}`;
       document.getElementById("ragTimingBadge").textContent = `البحث: ${t.search_seconds ?? "—"}ث | التوليد: ${t.generation_seconds ?? "—"}ث`;
       document.getElementById("ragVerifyNotes").textContent = v.notes ? `ملاحظة المدقق الأكاديمي: ${v.notes}` : "";
       document.getElementById("ragAnswerText").textContent = data.answer || "";
@@ -1724,32 +1603,21 @@
         grid.innerHTML = '<div class="line-row" style="grid-column:1/-1;color:var(--muted)">لم يُعثر على شواهد مطابقة في الأرشيف المفهرس؛ جرّب الضغط على «مزامنة الأرشيف» أو تخفيف الفلاتر.</div>';
         return;
       }
-      grid.innerHTML = sources.map((s, idx) => {
-        const pct = Math.round((Number(s.confidence) || 0) * 100);
-        return `
-          <div class="rag-source-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap">
-              <strong style="font-size:0.9rem;color:var(--gold-light)">${idx + 1}. ${escapeHtml(s.title || "شاهد موثق")}</strong>
-              <span class="pill-tag">صلة: ${pct}%</span>
-            </div>
-            <div style="font-size:0.76rem;color:var(--muted);margin-top:3px">${escapeHtml(s.poet || "غير محدد")} • ${escapeHtml(s.meter || "—")} • ${escapeHtml(s.genre || "—")}</div>
-            <div style="font-size:0.74rem;color:var(--gold-light);margin-top:2px">${escapeHtml(s.source || "أرشيف ALBIDAN")}</div>
-            <div class="rag-source-excerpt">${escapeHtml(s.excerpt || "")}</div>
-          </div>`;
-      }).join("");
+      grid.innerHTML = sources.map((s, idx) => `
+        <div class="rag-source-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap">
+            <strong style="font-size:0.9rem;color:var(--gold-light)">${idx + 1}. ${escapeHtml(s.title || "شاهد موثق")}</strong>
+            <span class="pill-tag">صلة: ${Math.round((Number(s.confidence) || 0) * 100)}%</span>
+          </div>
+          <div style="font-size:0.76rem;color:var(--muted);margin-top:3px">${escapeHtml(s.poet || "غير محدد")} • ${escapeHtml(s.meter || "—")} • ${escapeHtml(s.genre || "—")}</div>
+          <div style="font-size:0.74rem;color:var(--gold-light);margin-top:2px">${escapeHtml(s.source || "أرشيف ALBIDAN")}</div>
+          <div class="rag-source-excerpt">${escapeHtml(s.excerpt || "")}</div>
+        </div>`).join("");
     }
     function exportRagAnswerPDF() {
       if (!lastRagResult) return showToast("قم بطرح سؤال أولاً.");
-      const sourcesHtml = (lastRagResult.sources || []).map((s, idx) =>
-        `<div class="poem-block"><strong>${idx + 1}. ${escapeHtml(s.title)}</strong> (${escapeHtml(s.poet)} • ${escapeHtml(s.meter)} • ${escapeHtml(s.source)})<br>${escapeHtml(s.excerpt)}</div>`
-      ).join("");
-      printAcademicPDF("إجابة موثّقة من الباحث الذكي الحساني", `
-        <h2>السؤال البحثي</h2><p>${escapeHtml(lastRagResult.query)}</p>
-        <h2>الإجابة الأكاديمية الموثّقة (${escapeHtml(lastRagResult.verification?.status || "موثّقة")})</h2>
-        <div style="white-space:pre-line;margin-bottom:14px">${escapeHtml(lastRagResult.answer)}</div>
-        ${lastRagResult.verification?.notes ? `<p class="meta"><strong>ملاحظة التدقيق:</strong> ${escapeHtml(lastRagResult.verification.notes)}</p>` : ""}
-        <h2>الشواهد والمصادر المعتمدة</h2>${sourcesHtml || "<p>لا توجد شواهد مرفقة.</p>"}
-      `);
+      const sourcesHtml = (lastRagResult.sources || []).map((s, idx) => `<div class="poem-block"><strong>${idx + 1}. ${escapeHtml(s.title)}</strong> (${escapeHtml(s.poet)} • ${escapeHtml(s.meter)} • ${escapeHtml(s.source)})<br>${escapeHtml(s.excerpt)}</div>`).join("");
+      printAcademicPDF("إجابة موثّقة من الباحث الذكي الحساني", `<h2>السؤال البحثي</h2><p>${escapeHtml(lastRagResult.query)}</p><h2>الإجابة الأكاديمية الموثّقة (${escapeHtml(lastRagResult.verification?.status || "موثّقة")})</h2><div style="white-space:pre-line;margin-bottom:14px">${escapeHtml(lastRagResult.answer)}</div>${lastRagResult.verification?.notes ? `<p class="meta"><strong>ملاحظة التدقيق:</strong> ${escapeHtml(lastRagResult.verification.notes)}</p>` : ""}<h2>الشواهد والمصادر المعتمدة</h2>${sourcesHtml || "<p>لا توجد شواهد مرفقة.</p>"}`);
     }
 
     /* الرقمنة والاستيراد */
@@ -1856,7 +1724,7 @@
         if (mode === "fast") {
           setProgress("batch", 45, `جاري حفظ ${selected.length} قصيدة دفعة واحدة...`, true);
           const data = await safeFetchJson("/api/poems/batch", {
-            method: "POST", headers: { "Content-Type": "application/json" },
+            method: "POST", headers: authHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ items: selected.map(s => ({ title: s.title, poet: s.poet, region: s.region, poem_text: s.poem_text, source_engine: "Local (Batch Word)" })) })
           });
           setProgress("batch", 100, `تم حفظ ${data.saved_count} قصيدة بنجاح!`, false); showToast(data.message);
@@ -1866,12 +1734,12 @@
             const p = selected[i];
             setProgress("batch", Math.round((i / selected.length) * 100), `جاري تحليل وحفظ (${i + 1} / ${selected.length}): ${p.title}...`, true);
             try {
-              const aData = await safeFetchJson("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ poem_text: p.poem_text, model_name: model, use_ai: true }) });
-              await safeFetchJson("/api/poems", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: p.title, poet: p.poet, region: p.region, poem_text: p.poem_text, analysis: aData.analysis, source_engine: aData.source_engine }) });
+              const aData = await safeFetchJson("/api/analyze", { method: "POST", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ poem_text: p.poem_text, model_name: model, use_ai: true }) });
+              await safeFetchJson("/api/poems", { method: "POST", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ title: p.title, poet: p.poet, region: p.region, poem_text: p.poem_text, analysis: aData.analysis, source_engine: aData.source_engine }) });
               saved++;
             } catch (err) {
               try {
-                await safeFetchJson("/api/poems/batch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: [{ title: p.title, poet: p.poet, region: p.region, poem_text: p.poem_text, source_engine: "Local (Fallback)" }] }) });
+                await safeFetchJson("/api/poems/batch", { method: "POST", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ items: [{ title: p.title, poet: p.poet, region: p.region, poem_text: p.poem_text, source_engine: "Local (Fallback)" }] }) });
                 saved++;
               } catch (_) {}
             }
@@ -1890,7 +1758,7 @@
       if (!poem_text) return showToast("يرجى إدخال بيت شعري واحد على الأقل.");
       const btn = document.getElementById("analyzeBtn"); btn.disabled = true; btn.textContent = "جاري التحليل العروضي واللساني...";
       try {
-        const data = await safeFetchJson("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json", ...(adminPin ? { "x-admin-pin": adminPin } : {}) }, body: JSON.stringify({ poem_text, model_name: document.getElementById("modelSelect").value, use_ai: true }) });
+        const data = await safeFetchJson("/api/analyze", { method: "POST", headers: authHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ poem_text, model_name: document.getElementById("modelSelect").value, use_ai: true }) });
         lastPayload = { ...data, poem_text }; renderResults(data); showToast(data.warning || "اكتمل التحليل العروضي بنجاح!");
       } catch (e) { showToast(e.message); } finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="sparkles"></i> بدء التحليل العروضي واللساني'; refreshIcons(); }
     }
@@ -1932,7 +1800,7 @@
       if (!lastPayload) return showToast("حلّل قصيدة أولاً قبل الحفظ.");
       try {
         const data = await safeFetchJson("/api/poems", {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: authHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ title: document.getElementById("saveTitle").value || "قصيدة بدون عنوان", poet: document.getElementById("savePoet").value || "تراث شفهي / غير معروف", region: document.getElementById("saveRegion").value || "الصحراء المغربية", poem_text: lastPayload.poem_text, analysis: lastPayload.analysis, source_engine: lastPayload.source_engine })
         });
         showToast(`تم التوثيق بنجاح (المعرّف: ${data.id}) وتحديث المعجم!`);
@@ -1946,11 +1814,13 @@
       if (!lastPayload) return showToast("حلّل قصيدة أولاً.");
       try {
         const res = await fetch("/api/export/analysis.docx", {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: authHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ title: document.getElementById("saveTitle").value || "تقرير تحليل عروضي حساني", poet: document.getElementById("savePoet").value || "تراث شفهي / غير معروف", region: document.getElementById("saveRegion").value || "الصحراء المغربية", poem_text: lastPayload.poem_text, analysis: lastPayload.analysis })
         });
         if (!res.ok) throw new Error("تعذر إنشاء ملف Word.");
-        const a = document.createElement("a"); a.href = URL.createObjectURL(await res.blob()); a.download = "albidan_poem_analysis.docx"; a.click();
+        const blobUrl = URL.createObjectURL(await res.blob());
+        const a = document.createElement("a"); a.href = blobUrl; a.download = "albidan_poem_analysis.docx"; a.click();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
         showToast("تم تنزيل ملف Word بنجاح!");
       } catch (e) { showToast(e.message); }
     }
@@ -2003,7 +1873,7 @@
       showToast("تم تحميل بطاقة القصيدة المصوّرة!");
     }
 
-    /* إدارة المشرف */
+    /* إدارة المشرف والحذف الفردي والمحدد والشامل */
     function updateAdminUI() {
       const btn = document.getElementById("adminBtn"), inboxBtn = document.getElementById("inboxBtn"), toolsBtn = document.getElementById("adminToolsBtn");
       const bulkBar = document.getElementById("archiveAdminBar");
@@ -2022,66 +1892,55 @@
       renderArchiveCards(); renderGlossaryTable(); refreshIcons();
     }
 
-    function getVisibleArchivePoems() {
-      return cachedPoems.filter(p => matchesMeterKey(p.dominant_meter, activeMeterFilter));
-    }
+    function getVisibleArchivePoems() { return cachedPoems.filter(p => matchesMeterKey(p.dominant_meter, activeMeterFilter)); }
 
     function updateSelectionCounters() {
       const validIds = new Set(allPoems.map(p => p.id));
-      for (const id of [...selectedPoemIds]) {
-        if (validIds.size && !validIds.has(id)) selectedPoemIds.delete(id);
-      }
+      for (const id of [...selectedPoemIds]) { if (validIds.size && !validIds.has(id)) selectedPoemIds.delete(id); }
       const n = selectedPoemIds.size;
-      const c1 = document.getElementById("selectedPoemsCount");
-      const c2 = document.getElementById("bulkDeleteCount");
-      const delBtn = document.getElementById("bulkDeleteBtn");
+      const c1 = document.getElementById("selectedPoemsCount"), c2 = document.getElementById("bulkDeleteCount"), delBtn = document.getElementById("bulkDeleteBtn");
       if (c1) c1.textContent = n;
       if (c2) c2.textContent = n;
       if (delBtn) delBtn.disabled = n === 0;
     }
 
     function togglePoemSelect(id, checked) {
-      if (checked) selectedPoemIds.add(id);
-      else selectedPoemIds.delete(id);
+      if (checked) selectedPoemIds.add(id); else selectedPoemIds.delete(id);
       const card = document.querySelector(`.archive-card[data-poem-id="${CSS.escape(id)}"]`);
       if (card) card.classList.toggle("selected-card", checked);
       updateSelectionCounters();
     }
 
-    function selectAllVisiblePoems() {
-      getVisibleArchivePoems().forEach(p => selectedPoemIds.add(p.id));
-      updateSelectionCounters();
-      renderArchiveCards();
+    function selectSpecificCountPoems() {
+      const count = parseInt(document.getElementById("selectCountInput")?.value || "0", 10);
+      if (!count || count < 1) return showToast("أدخل عدداً صحيحاً أكبر من 0.");
+      const visible = getVisibleArchivePoems();
+      if (!visible.length) return showToast("لا توجد قصائد أو أگواف ظاهرة للتحديد.");
+      selectedPoemIds.clear();
+      const target = visible.slice(0, count);
+      target.forEach(p => selectedPoemIds.add(p.id));
+      updateSelectionCounters(); renderArchiveCards();
+      showToast(`تم تحديد أول ${target.length} قصيدة/گاف للحذف.`);
     }
 
-    function clearPoemSelection() {
-      selectedPoemIds.clear();
-      updateSelectionCounters();
-      renderArchiveCards();
-    }
+    function selectAllVisiblePoems() { getVisibleArchivePoems().forEach(p => selectedPoemIds.add(p.id)); updateSelectionCounters(); renderArchiveCards(); }
+    function clearPoemSelection() { selectedPoemIds.clear(); updateSelectionCounters(); renderArchiveCards(); }
 
     async function deleteSelectedPoems() {
       if (!adminPin) return showToast("يرجى الدخول بوضع المشرف أولاً.");
       const ids = [...selectedPoemIds];
       if (!ids.length) return showToast("حدد قصيدة واحدة على الأقل.");
-      if (!confirm(`هل أنت متأكد من حذف ${ids.length} قصيدة محددة نهائياً من الموقع؟`)) return;
-      const btn = document.getElementById("bulkDeleteBtn");
-      btn.disabled = true;
+      if (!confirm(`هل أنت متأكد من حذف ${ids.length} قصيدة/گاف محددة نهائياً من الموقع؟`)) return;
+      document.getElementById("bulkDeleteBtn").disabled = true;
       try {
         const res = await safeFetchJson("/api/poems/bulk-delete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
+          method: "POST", headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
           body: JSON.stringify({ ids })
         });
         selectedPoemIds.clear();
         showToast(res.message || `تم حذف ${ids.length} قصيدة بنجاح.`);
         await Promise.all([loadStats(), loadAllPoems(), loadArchive(), loadRagHealth()]);
-        updateSelectionCounters();
-      } catch (e) {
-        showToast(e.message);
-      } finally {
-        updateSelectionCounters();
-      }
+      } catch (e) { showToast(e.message); } finally { updateSelectionCounters(); }
     }
 
     function openDangerWipeModal() {
@@ -2095,38 +1954,26 @@
     }
 
     function updateWipeConfirmState() {
-      const val = (document.getElementById("wipeConfirmInput").value || "").trim();
-      document.getElementById("executeWipeBtn").disabled = (val !== "تأكيد");
+      document.getElementById("executeWipeBtn").disabled = ((document.getElementById("wipeConfirmInput").value || "").trim() !== "تأكيد");
     }
 
     async function executeDangerWipe() {
       if (!adminPin) return;
-      const val = (document.getElementById("wipeConfirmInput").value || "").trim();
-      if (val !== "تأكيد") return showToast("اكتب كلمة «تأكيد» أولاً.");
-      const scope = document.querySelector('input[name="wipeScope"]:checked')?.value || "poems_only";
-      const includeGlossary = scope === "full_reset";
-      const btn = document.getElementById("executeWipeBtn");
-      btn.disabled = true;
-      btn.textContent = "جاري الحذف الشامل...";
+      if ((document.getElementById("wipeConfirmInput").value || "").trim() !== "تأكيد") return showToast("اكتب كلمة «تأكيد» أولاً.");
+      const includeGlossary = (document.querySelector('input[name="wipeScope"]:checked')?.value || "poems_only") === "full_reset";
+      const btn = document.getElementById("executeWipeBtn"); btn.disabled = true; btn.textContent = "جاري الحذف الشامل...";
       try {
         const res = await safeFetchJson("/api/poems/delete-all", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
+          method: "POST", headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
           body: JSON.stringify({ include_glossary: includeGlossary, include_rag: true })
         });
-        selectedPoemIds.clear();
-        closeModal("dangerWipeModal");
+        selectedPoemIds.clear(); closeModal("dangerWipeModal");
         showToast(res.message || "تم الحذف الشامل بنجاح.");
         await Promise.all([loadStats(), loadAllPoems(), loadArchive(), loadGlossary(), loadRagHealth()]);
-        updateSelectionCounters();
-      } catch (e) {
-        showToast(e.message);
-      } finally {
-        btn.innerHTML = '<i data-lucide="trash-2"></i> تنفيذ الحذف النهائي';
-        updateWipeConfirmState();
-        refreshIcons();
-      }
+      } catch (e) { showToast(e.message); }
+      finally { btn.innerHTML = '<i data-lucide="trash-2"></i> تنفيذ الحذف النهائي'; updateWipeConfirmState(); updateSelectionCounters(); refreshIcons(); }
     }
+
     function openAdminToolsModal() {
       if (!adminPin) return;
       document.getElementById("adminToolsStatus").style.display = "none";
@@ -2150,8 +1997,7 @@
       btn.disabled = true; btn.textContent = "جاري تحليل 10 قصائد واستخراج المفردات...";
       try {
         const res = await safeFetchJson("/api/admin/enrich-glossary", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
+          method: "POST", headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
           body: JSON.stringify({ limit: 10, model_name: document.getElementById("modelSelect").value })
         });
         st.textContent = res.message; st.style.display = "block"; showToast(res.message);
@@ -2181,17 +2027,27 @@
     async function savePoemEdit() {
       if (!editingPoemId || !adminPin) return;
       try {
-        await safeFetchJson(`/api/poems/${encodeURIComponent(editingPoemId)}`, { method: "PUT", headers: { "Content-Type": "application/json", "x-admin-pin": adminPin }, body: JSON.stringify({ title: document.getElementById("editTitle").value, poet: document.getElementById("editPoet").value, region: document.getElementById("editRegion").value, poem_text: document.getElementById("editText").value }) });
+        await safeFetchJson(`/api/poems/${encodeURIComponent(editingPoemId)}`, {
+          method: "PUT", headers: { "Content-Type": "application/json", "x-admin-pin": adminPin },
+          body: JSON.stringify({ title: document.getElementById("editTitle").value, poet: document.getElementById("editPoet").value, region: document.getElementById("editRegion").value, poem_text: document.getElementById("editText").value })
+        });
         closeModal("editModal"); showToast("تم حفظ التعديلات!"); await Promise.all([loadAllPoems(), loadArchive()]);
       } catch (e) { showToast(e.message); }
     }
     async function deleteArchivePoemById(id) {
-      const rec = findPoemById(id); if (!rec || !adminPin || !confirm(`حذف القصيدة «${rec.title}» نهائياً؟`)) return;
-      try { await safeFetchJson(`/api/poems/${encodeURIComponent(rec.id)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } }); selectedPoemIds.delete(rec.id); showToast("تم الحذف."); await Promise.all([loadStats(), loadAllPoems(), loadArchive()]); } catch (e) { showToast(e.message); }
+      const rec = findPoemById(id); if (!rec || !adminPin || !confirm(`حذف القصيدة/الگاف «${rec.title}» نهائياً؟`)) return;
+      try {
+        await safeFetchJson(`/api/poems/${encodeURIComponent(rec.id)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } });
+        selectedPoemIds.delete(rec.id); showToast("تم الحذف بنجاح.");
+        await Promise.all([loadStats(), loadAllPoems(), loadArchive()]);
+      } catch (e) { showToast(e.message); }
     }
     async function deleteGlossaryTerm(idx) {
       const g = cachedGlossary[idx]; if (!g || !adminPin || !confirm(`حذف المفردة «${g.term}»؟`)) return;
-      try { await safeFetchJson(`/api/glossary/${encodeURIComponent(g.term)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } }); showToast("تم حذف المفردة."); await Promise.all([loadStats(), loadGlossary()]); } catch (e) { showToast(e.message); }
+      try {
+        await safeFetchJson(`/api/glossary/${encodeURIComponent(g.term)}`, { method: "DELETE", headers: { "x-admin-pin": adminPin } });
+        showToast("تم حذف المفردة."); await Promise.all([loadStats(), loadGlossary()]);
+      } catch (e) { showToast(e.message); }
     }
     async function openInboxModal() {
       if (!adminPin) return; document.getElementById("inboxModal").classList.add("open");
@@ -2217,39 +2073,30 @@
       } catch (e) { document.getElementById("serverBadge").textContent = "غير متصل"; }
     }
     async function loadAllPoems() {
-      try {
-        allPoems = (await safeFetchJson("/api/poems?q=&poem_type=%D8%A7%D9%84%D9%83%D9%84")).items || [];
-        renderDiscoverSection();
-      } catch (e) {}
+      try { allPoems = (await safeFetchJson("/api/poems?q=&poem_type=%D8%A7%D9%84%D9%83%D9%84")).items || []; renderDiscoverSection(); } catch (e) {}
     }
     async function loadArchive() {
       try {
         const q = encodeURIComponent(document.getElementById("archiveSearch").value || ""), t = encodeURIComponent(document.getElementById("archiveFilter").value || "الكل");
         cachedPoems = (await safeFetchJson(`/api/poems?q=${q}&poem_type=${t}`)).items || [];
-        if (!q && t === encodeURIComponent("الكل")) {
-          allPoems = [...cachedPoems];
-          renderDiscoverSection();
-        }
+        if (!q && t === encodeURIComponent("الكل")) { allPoems = [...cachedPoems]; renderDiscoverSection(); }
         renderArchiveCards();
       } catch (e) {}
     }
     function renderArchiveCards() {
-      const grid = document.getElementById("archiveGrid");
-      const list = getVisibleArchivePoems();
+      const grid = document.getElementById("archiveGrid"), list = getVisibleArchivePoems();
       updateSelectionCounters();
-
       if (!list.length) {
         grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;color:var(--muted);padding:2rem">لم يُعثر على هذا الأثر في الديوان بعد؛ جرّب البحث بكلمة أخرى أو أزل التصفية.</div>';
         return;
       }
       grid.innerHTML = list.map(p => {
-        const pid = escapeHtml(p.id);
-        const isSel = adminPin && selectedPoemIds.has(p.id);
+        const pid = escapeHtml(p.id), isSel = adminPin && selectedPoemIds.has(p.id);
         return `
         <div class="archive-card ${isSel ? "selected-card" : ""}" data-poem-id="${pid}">
           <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
             <div style="display:flex;align-items:center;gap:8px;min-width:0">
-              ${adminPin ? `<label class="poem-select-label" title="تحديد للحذف الجماعي" onclick="event.stopPropagation()"><input type="checkbox" class="poem-select-cb" ${isSel ? "checked" : ""} onchange="togglePoemSelect('${pid}', this.checked)" /></label>` : ""}
+              ${adminPin ? `<label class="poem-select-label" title="تحديد للحذف الجماعي" onclick="event.stopPropagation()"><input type="checkbox" class="poem-select-cb" ${isSel ? "checked" : ""} onchange="togglePoemSelect('${pid}', this.checked)" aria-label="تحديد القصيدة للحذف" /></label>` : ""}
               <strong style="font-size:0.96rem;cursor:pointer" onclick="openZenReaderById('${pid}')">${escapeHtml(p.title)}</strong>
             </div>
             <span class="pill-tag">${escapeHtml(p.poem_type)}</span>
@@ -2262,7 +2109,7 @@
             <a class="btn btn-secondary btn-sm" href="/api/export/poem/${encodeURIComponent(p.id)}.docx">Word</a>
             <button class="btn btn-secondary btn-sm" onclick="exportSinglePoemPDFById('${pid}')">PDF</button>
             <button class="btn btn-secondary btn-sm" onclick="generatePoemCardPNGById('${pid}')">صورة</button>
-            ${adminPin ? `<button class="btn btn-secondary btn-sm" onclick="openEditPoemById('${pid}')"><i data-lucide="pencil"></i></button><button class="btn btn-danger btn-sm" onclick="deleteArchivePoemById('${pid}')"><i data-lucide="trash-2"></i></button>` : ""}
+            ${adminPin ? `<button class="btn btn-secondary btn-sm" onclick="openEditPoemById('${pid}')" aria-label="تعديل القصيدة"><i data-lucide="pencil"></i> تعديل</button><button class="btn btn-danger btn-sm" onclick="deleteArchivePoemById('${pid}')" aria-label="حذف القصيدة"><i data-lucide="trash-2"></i> حذف</button>` : ""}
           </div>
         </div>`;
       }).join("");
@@ -2278,8 +2125,7 @@
     async function loadGlossary() {
       try {
         cachedGlossary = (await safeFetchJson(`/api/glossary?q=${encodeURIComponent(document.getElementById("glossarySearch").value || "")}`)).items || [];
-        renderGlossaryTable();
-        renderGlossarySlider();
+        renderGlossaryTable(); renderGlossarySlider();
       } catch (e) {}
     }
     function renderGlossaryTable() {
@@ -2326,6 +2172,11 @@
       document.getElementById("scrollProgress").style.width = h > 0 ? `${(window.scrollY / h) * 100}%` : "0%";
     }, { passive: true });
 
+    window.addEventListener("hashchange", () => {
+      const h = window.location.hash.replace(/^#/, "");
+      if (h) switchView(h, false);
+    });
+
     document.addEventListener("keydown", e => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openSearchModal(); }
       else if (e.key === "Escape") ["searchModal", "adminModal", "editModal", "inboxModal", "batchModal", "readerModal", "adminToolsModal", "dangerWipeModal"].forEach(closeModal);
@@ -2333,6 +2184,8 @@
 
     window.addEventListener("DOMContentLoaded", () => {
       if (localStorage.getItem("albidan_theme") === "light") toggleTheme();
+      const initialHash = window.location.hash.replace(/^#/, "");
+      if (initialHash) switchView(initialHash, false);
       resetCaptcha(); updateAdminUI(); loadStats(); loadArchive(); loadGlossary(); loadRagHealth();
       refreshIcons();
     });
