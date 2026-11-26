@@ -1,6 +1,7 @@
 import os
 import re
 import io
+import math
 import hmac
 import time
 import json
@@ -13,7 +14,7 @@ from collections import defaultdict, Counter
 from pathlib import Path
 from datetime import datetime
 from urllib.parse import quote
-from typing import List, Dict, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Literal, Optional, Tuple
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException, Header, Query
@@ -48,8 +49,10 @@ STATIC_DIR = BASE_DIR / "static"
 STATIC_DIR.mkdir(exist_ok=True)
 
 # =============================================================================
-# 0. إعدادات البيئة والأمان
+# 0. إعدادات البيئة والأمان والثوابت العلمية
 # =============================================================================
+APP_VERSION = "5.0.0"
+
 MONGODB_URI = os.getenv("MONGODB_URI", "").strip()
 MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "albidan_corpus").strip()
 RAG_COLLECTION_NAME = os.getenv("RAG_COLLECTION_NAME", "hassaniya_rag_chunks").strip()
@@ -57,13 +60,9 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip() or "gemini-3.5-flash-lite"
 ADMIN_PIN = os.getenv("ADMIN_PIN", "").strip()
 
-# إغلاق الكتابة العامة افتراضياً (الأمان أولاً)
 PROTECT_PUBLIC_WRITES = os.getenv("PROTECT_PUBLIC_WRITES", "true").strip().lower() == "true"
-
-# النطاق الرسمي الثابت لمنع حقن ترويسة Host
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://albidan.pro").strip().rstrip("/")
 
-# قائمة النطاقات المسموح لها بالاتصال بالخادم (CORS)
 ALLOWED_ORIGINS = [
     origin.strip().rstrip("/")
     for origin in os.getenv(
@@ -73,7 +72,6 @@ ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
-# عدد الوسطاء الموثوقين أمام الخادم (على Render = 1، وفي التشغيل المحلي بدون وسيط = 0)
 try:
     TRUSTED_PROXY_HOPS = max(0, int(os.getenv("TRUSTED_PROXY_HOPS", "1").strip()))
 except ValueError:
@@ -84,7 +82,11 @@ ALLOWED_MODELS = {
     "gemini-3.8-flash",
     "gemini-3.1-pro-preview",
 }
-FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]
+FALLBACK_MODELS = [
+    m.strip()
+    for m in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-3.5-flash-lite,gemini-3.8-flash").split(",")
+    if m.strip()
+]
 
 AUDIO_MIME_MAP = {
     ".mp3": "audio/mp3", ".wav": "audio/wav", ".m4a": "audio/mp4", ".mp4": "audio/mp4",
@@ -93,10 +95,17 @@ AUDIO_MIME_MAP = {
 }
 IMAGE_MIME_MAP = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
 FILES_API_THRESHOLD = 2 * 1024 * 1024
-MAX_ANALYSIS_JSON_BYTES = 250_000  # حد أقصى 250 كيلوبايت لبيانات التحليل المرسلة للتصدير
+MAX_ANALYSIS_JSON_BYTES = 250_000
 
 DEFAULT_POET_LABEL = "تراث شفهي / غير معروف"
 DEFAULT_REGION_LABEL = "الصحراء المغربية"
+
+VerificationState = Literal["machine_generated", "reviewed", "verified"]
+VERIFICATION_LABELS: Dict[str, str] = {
+    "machine_generated": "مولّد آلياً (غير مراجَع)",
+    "reviewed": "قيد المراجعة البشرية",
+    "verified": "موثّق ومحكّم",
+}
 
 
 # =============================================================================
@@ -112,27 +121,25 @@ REDUNDANT_POET_PREFIX_RE = re.compile(r"^(?:الشاعر\s*/\s*الراوي|ال
 
 
 def normalize_hassaniya(text: str, unify_gaf_to_kaf: bool = False) -> str:
-    """تطبيع النص الحساني لأغراض البحث والفهرسة مع الحفاظ على النص الأصلي للعرض."""
+    """تطبيع النص الحساني مع إبقاء دمج ق/گ/ك خياراً مرناً منفصلاً لا يخلط الفهرسة الافتراضية."""
     if not text:
         return ""
     t = ARABIC_DIACRITICS_RE.sub("", str(text))
     replacements = {
         "أ": "ا", "إ": "ا", "آ": "ا", "ٱ": "ا",
         "ى": "ي", "ة": "ه",
-        "ݣ": "گ", "ڭ": "گ", "ڨ": "گ", "ڤ": "گ",
+        "ݣ": "گ", "ڭ": "گ", "ڨ": "گ",
     }
     for src, dst in replacements.items():
         t = t.replace(src, dst)
     if unify_gaf_to_kaf:
-        t = t.replace("گ", "ك").replace("ق", "ك")
+        t = t.replace("ڤ", "گ").replace("گ", "ك").replace("ق", "ك")
     return re.sub(r"\s+", " ", t).strip().lower()
 
 
 def is_default_poet(poet: str) -> bool:
     p = (poet or "").strip()
-    return not p or p in {
-        DEFAULT_POET_LABEL, "غير معروف", "تراث شفهي", "مجهول", "—", "-"
-    }
+    return not p or p in {DEFAULT_POET_LABEL, "غير معروف", "تراث شفهي", "مجهول", "—", "-"}
 
 
 def clean_poet_name(poet: str) -> str:
@@ -149,37 +156,30 @@ def clean_poet_name(poet: str) -> str:
 
 
 def clean_title_and_poet(title: str, poet: str) -> Tuple[str, str]:
-    """يفصل اسم الشاعر المدمج خطأً داخل العنوان وينظف الحقلين معاً."""
     raw_title = re.sub(r"\s+", " ", (title or "").strip())
     extracted_poet = ""
-
     for pat in POET_EMBED_PATTERNS:
         m = pat.search(raw_title)
         if m:
             extracted_poet = clean_poet_name(m.group(1))
             raw_title = pat.sub("", raw_title).strip(" -—–|:")
             break
-
     final_poet = clean_poet_name(poet)
     if is_default_poet(final_poet) and extracted_poet and not is_default_poet(extracted_poet):
         final_poet = extracted_poet
-
-    final_title = raw_title or "قصيدة بدون عنوان"
-    return final_title, final_poet
+    return (raw_title or "قصيدة بدون عنوان"), final_poet
 
 
-def build_poem_search_text(title: str, poet: str, region: str, poem_text: str, dominant_meter: str) -> str:
+def build_search_fields(title: str, poet: str, region: str, poem_text: str, dominant_meter: str) -> Tuple[str, str]:
     joined = f"{title} {poet} {region} {dominant_meter} {poem_text}"
-    return f"{normalize_hassaniya(joined)} {normalize_hassaniya(joined, unify_gaf_to_kaf=True)}"
+    return normalize_hassaniya(joined, unify_gaf_to_kaf=False), normalize_hassaniya(joined, unify_gaf_to_kaf=True)
 
 
 def get_base_url() -> str:
-    """إرجاع النطاق الرسمي الثابت بدلاً من الاعتماد على ترويسة Host القادمة من العميل."""
     return PUBLIC_BASE_URL
 
 
 def safe_json_ld(data: dict) -> str:
-    """تهريب مخرجات JSON-LD لمنع كسر وسم <script> وتنفيذ هجمات XSS المخزّنة."""
     return (
         json.dumps(data, ensure_ascii=False)
         .replace("<", "\\u003c")
@@ -190,8 +190,12 @@ def safe_json_ld(data: dict) -> str:
     )
 
 
+def new_record_id(length: int = 12) -> str:
+    return uuid.uuid4().hex[:length]
+
+
 # =============================================================================
-# 2. حماية الطلبات (Rate Limiting) ومكافحة تخمين رمز المشرف وتزوير IP
+# 2. حماية الطلبات (Rate Limiting) وقفل المشرف
 # =============================================================================
 class SimpleRateLimiter:
     def __init__(self, max_tracked_keys: int = 5000):
@@ -204,7 +208,6 @@ class SimpleRateLimiter:
         if fwd and TRUSTED_PROXY_HOPS > 0:
             parts = [p.strip() for p in fwd.split(",") if p.strip()]
             if parts:
-                # نأخذ العنوان الذي أضافه الوسيط الموثوق (Render) من اليمين وليس أول قيمة قابلة للتزوير
                 idx = max(0, len(parts) - TRUSTED_PROXY_HOPS)
                 return parts[idx]
         return request.client.host if request.client else "unknown"
@@ -265,7 +268,7 @@ def require_admin(x_admin_pin: Optional[str], request: Optional[Request] = None)
     if not ADMIN_PIN:
         raise HTTPException(
             status_code=503,
-            detail="لم يتم ضبط متغير البيئة ADMIN_PIN على الخادم؛ يرجى إضافته في إعدادات Render لتفعيل صلاحيات المشرف.",
+            detail="لم يتم ضبط متغير البيئة ADMIN_PIN على الخادم؛ يرجى إضافته في إعدادات Render.",
         )
     if request is not None:
         rate_limiter.check_admin_lockout(request)
@@ -278,7 +281,7 @@ def require_admin(x_admin_pin: Optional[str], request: Optional[Request] = None)
 
 
 # =============================================================================
-# 3. نماذج البيانات (Pydantic Models) مع حدود صارمة للمدخلات
+# 3. نماذج البيانات (Pydantic Models)
 # =============================================================================
 class AILineAnalysis(BaseModel):
     original_line: str = Field(description="التافلويت (الشطر) الأصلية كما أدخلها الباحث")
@@ -295,10 +298,10 @@ class GlossaryTerm(BaseModel):
 
 
 class AIPoemAnalysis(BaseModel):
-    poem_type: str = Field(description="وحدة/جنس «لغن»: طلعة (3 تيفلواتن برويّ واحد)، گاف/كاف (4 أو 6 أو 8 تيفلواتن)، تبراع (تافلويتين)، طلعة وگاف، أو نص موزون")
-    dominant_meter: str = Field(description="البَتْ (البحر الحساني من لَبْتُوتَة) السائد في القصيدة مثل: التيدوم، البت الكبير، بوعمران، المزارگ، المصارع، إملخ، اسغير، الواكدي، أحويويص، الدگسري، المشكل، إمريميدة، لبتيت التام، لبتيت الناقص، السروزي، الرسم، لبير، بغزز، بت اثنين، بت اثلاثة، حثو اجراد")
+    poem_type: str = Field(description="وحدة/جنس «لغن»: طلعة، گاف/كاف، تبراع، طلعة وگاف، أو نص موزون")
+    dominant_meter: str = Field(description="البَتْ (البحر الحساني من لَبْتُوتَة) السائد في القصيدة")
     dominant_rhyme: str = Field(description="بنية القافية والروي العام في القطعة")
-    zahr_mode: str = Field(default="", description="الظّهر (المقام أو النغم الموسيقي المرافق لأداء البحر في «لغن» إن أمكن تحديده)")
+    zahr_mode: str = Field(default="", description="الظّهر (المقام أو النغم الموسيقي إن أمكن تحديده)")
     cultural_context: str = Field(description="تحليل موجز للغرض الشعري والسياق الثقافي الحساني")
     linguistic_notes: str = Field(description="ملاحظات لغوية وعروضية منهجية حول التقطيع الإيقاعي وضم السواكن")
     lines: List[AILineAnalysis]
@@ -359,6 +362,37 @@ class UpdatePoemRequest(BaseModel):
     poet: str = Field(..., max_length=150)
     region: str = Field(..., max_length=120)
     poem_text: str = Field(..., min_length=2, max_length=20000)
+
+
+class VerifyPoemRequest(BaseModel):
+    verification_state: VerificationState = Field(..., description="حالة التوثيق: machine_generated | reviewed | verified")
+    reviewer_name: str = Field(..., min_length=2, max_length=120, description="اسم الباحث أو المحكّم")
+    review_notes: str = Field(default="", max_length=1000)
+    dominant_meter: Optional[str] = Field(default=None, max_length=120)
+    poem_type: Optional[str] = Field(default=None, max_length=100)
+    translation_status: Optional[Literal["machine", "human_reviewed"]] = None
+
+
+class GlossarySenseCreateRequest(BaseModel):
+    term: str = Field(..., min_length=1, max_length=120)
+    arabic_meaning: str = Field(..., min_length=2, max_length=1000)
+    english_meaning: str = Field(default="", max_length=500)
+    source_poem_id: str = Field(default="", max_length=60)
+    source_poem_title: str = Field(default="إضافة معجمية مباشرة", max_length=250)
+    attestation: str = Field(default="", max_length=600)
+    variants: List[str] = Field(default_factory=list, max_length=15)
+    status: VerificationState = Field(default="verified")
+    editor: str = Field(default="هيئة تحرير ALBIDAN", max_length=120)
+
+
+class GlossarySenseUpdateRequest(BaseModel):
+    term: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    arabic_meaning: Optional[str] = Field(default=None, min_length=2, max_length=1000)
+    english_meaning: Optional[str] = Field(default=None, max_length=500)
+    attestation: Optional[str] = Field(default=None, max_length=600)
+    variants: Optional[List[str]] = Field(default=None, max_length=15)
+    status: Optional[VerificationState] = None
+    editor: Optional[str] = Field(default=None, max_length=120)
 
 
 class ExportAnalysisDocxRequest(BaseModel):
@@ -538,7 +572,13 @@ def append_poem_section_to_doc(doc: Document, title: str, poet: str, region: str
             set_run_arabic(p.add_run(h), size_pt=10, bold=True, color_hex="FFFFFF")
         for row_item in lines_data:
             cells = tbl.add_row().cells
-            for i, v in enumerate([row_item.get("original_line", ""), row_item.get("phonetic_diacritized", ""), str(row_item.get("mutaharrikat_count", "")), row_item.get("estimated_meter", ""), row_item.get("rhyme_ending", "")]):
+            for i, v in enumerate([
+                row_item.get("original_line", ""),
+                row_item.get("phonetic_diacritized", ""),
+                str(row_item.get("mutaharrikat_count", "")),
+                row_item.get("estimated_meter", ""),
+                row_item.get("rhyme_ending", ""),
+            ]):
                 p = cells[i].paragraphs[0]
                 set_paragraph_rtl(p)
                 set_run_arabic(p.add_run(v), size_pt=10)
@@ -563,10 +603,10 @@ def append_poem_section_to_doc(doc: Document, title: str, poet: str, region: str
                 set_run_arabic(p.add_run(v), size_pt=10)
         doc.add_paragraph()
     if analysis.get("english_translation"):
-        add_ltr_para(doc, "English Literary Translation:", size=10.5, bold=True, color="1B365D")
+        add_ltr_para(doc, "English Literary Translation (AI-assisted unless verified):", size=10.5, bold=True, color="1B365D")
         add_ltr_para(doc, analysis["english_translation"], size=10.5)
     if analysis.get("french_translation"):
-        add_ltr_para(doc, "Traduction Littéraire (Français):", size=10.5, bold=True, color="1B365D")
+        add_ltr_para(doc, "Traduction Littéraire (Français — assistée par IA sauf mention):", size=10.5, bold=True, color="1B365D")
         add_ltr_para(doc, analysis["french_translation"], size=10.5)
 
 
@@ -586,33 +626,66 @@ def doc_to_stream(doc: Document, filename: str) -> StreamingResponse:
 
 
 # =============================================================================
-# 5. المحرك العروضي المحلي المحسّن
+# 5. المحرك العروضي المحلي + العدّ البرمجي الحتمي للمتحركات (للتحقق من AI)
 # =============================================================================
 class LocalHassaniyaEngine:
     short_vowels = set("َُِ")
     tanween = set("ًٌٍ")
+    sukun = "ْ"
+    shadda = "ّ"
     long_vowels = set("اويى")
     arabic_letters_re = re.compile(r"[\u0621-\u064Aگݣڭڨڤ]")
     meters_map = {
-        5: "اسغير / إملخ (5-6 متحركات)",
-        6: "اسغير / لبير (6 متحركات)",
-        7: "لبتيت الناقص / بوعمران (7 متحركات)",
-        8: "لبتيت التام (8 متحركات)",
-        9: "البت الكبير (9 متحركات)",
-        10: "البت الكبير (10 متحركات)",
-        11: "البت الكبير (11 متحرك)",
-        12: "البت الكبير (12 متحرك)",
+        5: "اسغير / إملخ (تقدير: 5-6 متحركات)",
+        6: "اسغير / لبير (تقدير: 6 متحركات)",
+        7: "لبتيت الناقص / بوعمران (تقدير: 7 متحركات)",
+        8: "لبتيت التام (تقدير: 8 متحركات)",
+        9: "البت الكبير (تقدير: 9 متحركات)",
+        10: "البت الكبير (تقدير: 10 متحركات)",
+        11: "البت الكبير (تقدير: 11 متحرك)",
+        12: "البت الكبير (تقدير: 12 متحرك)",
     }
+
+    def count_diacritized_mutaharrikat(self, diacritized_line: str) -> Optional[int]:
+        """عدّ برمجي حتمي للمتحركات انطلاقاً من النص المضبوط بالشكل الصوتي."""
+        if not diacritized_line:
+            return None
+        letters = self.arabic_letters_re.findall(diacritized_line)
+        consonants = [ch for ch in letters if ch not in self.long_vowels]
+        if not consonants:
+            return None
+        count = 0
+        for ch in diacritized_line:
+            if ch in self.short_vowels or ch in self.tanween:
+                count += 1
+        # لا نعتبر النص مضبوطاً فعلياً إلا إذا حمل حركات كافية مقارنة بعدد الحروف
+        if count >= 4 and (count / max(1, len(consonants))) >= 0.35:
+            return count
+        return None
+
+    def cross_check_ai_analysis(self, analysis: Dict) -> Dict:
+        """يقارن عدّ النموذج اللغوي بالعدّ البرمجي الحتمي ويوسم أي تعارض للمراجعة البشرية."""
+        lines = analysis.get("lines") or []
+        mismatches = 0
+        for item in lines:
+            diac = str(item.get("phonetic_diacritized") or "")
+            det_count = self.count_diacritized_mutaharrikat(diac)
+            ai_count = item.get("mutaharrikat_count")
+            item["deterministic_count"] = det_count
+            if det_count is not None and isinstance(ai_count, int) and abs(det_count - ai_count) >= 1:
+                item["meter_mismatch"] = True
+                mismatches += 1
+            else:
+                item["meter_mismatch"] = False
+        analysis["deterministic_mismatches"] = mismatches
+        analysis["translation_status"] = analysis.get("translation_status") or "machine"
+        return analysis
 
     def _estimate_line_mutaharrikat(self, line: str) -> int:
         norm = re.sub(r"[ݣڭڨڤ]", "گ", line)
-        letters = self.arabic_letters_re.findall(norm)
-        consonants = [ch for ch in letters if ch not in self.long_vowels]
-        total_consonants = max(1, len(consonants))
-
-        vowel_marks = sum(1 for ch in norm if ch in self.short_vowels or ch in self.tanween)
-        if vowel_marks >= 5 and (vowel_marks / total_consonants) >= 0.38:
-            return vowel_marks
+        det = self.count_diacritized_mutaharrikat(norm)
+        if det is not None:
+            return det
 
         est = 0.0
         for raw_w in norm.split():
@@ -629,14 +702,23 @@ class LocalHassaniyaEngine:
                 est += 1.35
             else:
                 est += max(1.5, c_count * 0.62)
-
         return max(4, min(14, int(round(est))))
+
+    def _extract_rhyme_rawi(self, line: str) -> str:
+        """يستخرج الروي مع مراعاة حرف المد السابق له إن وُجد."""
+        norm = re.sub(r"[ݣڭڨڤ]", "گ", line)
+        clean = re.sub(r"[\u0610-\u061A\u064B-\u065F\u0670\u0640\s\W]", "", norm)
+        if not clean:
+            return "—"
+        if len(clean) >= 3 and clean[-2] in self.long_vowels:
+            return clean[-3:]
+        return clean[-2:] if len(clean) >= 2 else clean
 
     def _meter_label(self, count: int) -> str:
         if count in self.meters_map:
             return self.meters_map[count]
         if count > 12:
-            return "البت الكبير (ممتد)"
+            return "البت الكبير (تقدير ممتد)"
         return "قيد التدقيق العروضي"
 
     def analyze(self, poem_text: str) -> Dict:
@@ -648,23 +730,18 @@ class LocalHassaniyaEngine:
             norm = re.sub(r"[ݣڭڨڤ]", "گ", line)
             count = self._estimate_line_mutaharrikat(norm)
             counts.append(count)
-            clean = re.sub(r"[\u0610-\u061A\u064B-\u065F\u0670\u0640\s\W]", "", norm)
-            rhyme = clean[-2:] if len(clean) >= 2 else (clean or "—")
+            rhyme = self._extract_rhyme_rawi(norm)
             details.append({
                 "original_line": line,
-                "phonetic_diacritized": "تحليل أولي — افتح القصيدة في المختبر للتشكيل الصوتي الكامل",
+                "phonetic_diacritized": "تحليل أولي — يتطلب تشكيلاً صوتياً ومراجعة بشرية",
                 "mutaharrikat_count": count,
+                "deterministic_count": self.count_diacritized_mutaharrikat(norm),
+                "meter_mismatch": False,
                 "estimated_meter": self._meter_label(count),
                 "rhyme_ending": rhyme,
             })
 
-        if counts:
-            sorted_counts = sorted(counts)
-            median_count = sorted_counts[len(sorted_counts) // 2]
-            dominant_meter = self._meter_label(median_count)
-        else:
-            dominant_meter = "قيد التدقيق العروضي"
-
+        dominant_meter = self._meter_label(sorted(counts)[len(counts) // 2]) if counts else "قيد التدقيق العروضي"
         rhyme_counts = Counter(d["rhyme_ending"] for d in details if d["rhyme_ending"] and d["rhyme_ending"] != "—")
         dominant_rhyme = rhyme_counts.most_common(1)[0][0] if rhyme_counts else "—"
 
@@ -689,18 +766,20 @@ class LocalHassaniyaEngine:
             "poem_type": poem_type,
             "dominant_meter": dominant_meter,
             "dominant_rhyme": dominant_rhyme,
-            "zahr_mode": "يُحدَّد بالتحليل الأكاديمي (الظّهر)",
-            "cultural_context": "قصيدة محفوظة بالتقطيع العروضي الأولي؛ افتحها في المختبر للتحليل الأكاديمي الكامل وتحديد البَتْ والظّهر والمفردات.",
-            "linguistic_notes": "تقدير محلي لعدّ المتحركات في كل «تافلويت» مع إهمال السواكن وفق قواعد «لغن»؛ يُنصح بالتدقيق عبر محرك Gemini.",
+            "zahr_mode": "يُحدَّد بعد المراجعة العروضية (الظّهر)",
+            "cultural_context": "تحليل آلي أولي؛ يتطلب مراجعة باحث متخصص لتأكيد البَتْ والظّهر والسياق.",
+            "linguistic_notes": "تقدير محلي لعدّ المتحركات مع مراعاة حرف المد في الروي؛ يحتاج إلى تأكيد بشري.",
             "lines": details,
             "glossary": [],
             "english_translation": "",
             "french_translation": "",
+            "translation_status": "machine",
+            "deterministic_mismatches": 0,
         }
 
 
 # =============================================================================
-# 6. مدير قواعد البيانات والأرشيف (MongoDB Atlas + SQLite + Indexes + BulkWrite)
+# 6. مدير قواعد البيانات والأرشيف (Pagination + Indexed Search + Multi-Sense Glossary)
 # =============================================================================
 class ArchiveManager:
     def __init__(self, mongo_uri: str, db_name: str, sqlite_path: str = "albidan_archive.db"):
@@ -711,6 +790,7 @@ class ArchiveManager:
         self.mongo_db = None
         self._stats_cache: Optional[Dict] = None
         self._stats_cached_at: float = 0.0
+        self._sqlite_fts_enabled = False
 
         if mongo_uri and PYMONGO_AVAILABLE:
             try:
@@ -735,11 +815,19 @@ class ArchiveManager:
         if self.mongo_db is None:
             return
         try:
-            self.mongo_db["poems"].create_index([("created_at", DESCENDING)])
-            self.mongo_db["poems"].create_index([("poet", ASCENDING), ("dominant_meter", ASCENDING)])
-            self.mongo_db["poems"].create_index([("poem_type", ASCENDING)])
-            self.mongo_db["glossary"].create_index([("term", ASCENDING)])
-            self.mongo_db["glossary"].create_index([("normalized_term", ASCENDING)])
+            poems = self.mongo_db["poems"]
+            poems.create_index([("created_at", DESCENDING)])
+            poems.create_index([("poet", ASCENDING), ("dominant_meter", ASCENDING)])
+            poems.create_index([("poem_type", ASCENDING)])
+            poems.create_index([("verification_state", ASCENDING)])
+            poems.create_index([("search_text", ASCENDING)])
+            poems.create_index([("search_text_flex", ASCENDING)])
+
+            gloss = self.mongo_db["glossary"]
+            gloss.create_index([("sense_id", ASCENDING)])
+            gloss.create_index([("normalized_term", ASCENDING), ("source_poem_id", ASCENDING)])
+            gloss.create_index([("status", ASCENDING), ("updated_at", DESCENDING)])
+
             self.mongo_db["messages"].create_index([("created_at", DESCENDING)])
         except Exception as exc:
             logger.warning("Failed ensuring MongoDB indexes: %s", exc)
@@ -753,11 +841,62 @@ class ArchiveManager:
                 "azawan_mode TEXT, source_engine TEXT, analysis_json TEXT NOT NULL, "
                 "music_json TEXT NOT NULL, created_at TEXT NOT NULL)"
             )
+            # ترقية آمنة للأعمدة الجديدة في SQLite دون فقدان البيانات القديمة
+            existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(poems)").fetchall()}
+            migrations = {
+                "verification_state": "TEXT DEFAULT 'machine_generated'",
+                "verification_status": "TEXT DEFAULT 'مولّد آلياً (غير مراجَع)'",
+                "reviewed_by": "TEXT DEFAULT ''",
+                "reviewed_at": "TEXT DEFAULT ''",
+                "review_notes": "TEXT DEFAULT ''",
+                "search_text": "TEXT DEFAULT ''",
+                "search_text_flex": "TEXT DEFAULT ''",
+            }
+            for col_name, col_def in migrations.items():
+                if col_name not in existing_cols:
+                    conn.execute(f"ALTER TABLE poems ADD COLUMN {col_name} {col_def}")
+
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_poems_created ON poems(created_at DESC)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_poems_poet ON poems(poet)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_poems_meter ON poems(dominant_meter)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_poems_state ON poems(verification_state)")
+
+            # تفعيل البحث المفهرس SQLite FTS5 إن كان متوفراً
+            try:
+                conn.execute(
+                    "CREATE VIRTUAL TABLE IF NOT EXISTS poems_fts USING fts5("
+                    "poem_id UNINDEXED, search_text, search_text_flex)"
+                )
+                self._sqlite_fts_enabled = True
+            except sqlite3.OperationalError:
+                self._sqlite_fts_enabled = False
+
+            # جدول المعجم متعدد المعاني (لا يمحو المتجانسات ولا الموثّق بشرياً)
             conn.execute(
-                "CREATE TABLE IF NOT EXISTS glossary ("
-                "term TEXT PRIMARY KEY, arabic_meaning TEXT, english_meaning TEXT, "
-                "source_poem_title TEXT, updated_at TEXT NOT NULL)"
+                "CREATE TABLE IF NOT EXISTS glossary_senses ("
+                "sense_id TEXT PRIMARY KEY, term TEXT NOT NULL, normalized_term TEXT NOT NULL, "
+                "arabic_meaning TEXT, english_meaning TEXT, source_poem_id TEXT DEFAULT '', "
+                "source_poem_title TEXT DEFAULT '', attestation TEXT DEFAULT '', "
+                "variants_json TEXT DEFAULT '[]', status TEXT DEFAULT 'machine_generated', "
+                "editor TEXT DEFAULT 'AI', updated_at TEXT NOT NULL)"
             )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_gloss_norm ON glossary_senses(normalized_term)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_gloss_poem ON glossary_senses(source_poem_id)")
+
+            # ترحيل تلقائي لمرة واحدة من جدول glossary القديم إن وجد
+            old_table = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='glossary'").fetchone()
+            if old_table:
+                new_count = conn.execute("SELECT COUNT(*) FROM glossary_senses").fetchone()[0]
+                if new_count == 0:
+                    old_rows = conn.execute("SELECT term, arabic_meaning, english_meaning, source_poem_title, updated_at FROM glossary").fetchall()
+                    for r in old_rows:
+                        conn.execute(
+                            "INSERT OR IGNORE INTO glossary_senses "
+                            "(sense_id, term, normalized_term, arabic_meaning, english_meaning, source_poem_id, source_poem_title, status, editor, updated_at) "
+                            "VALUES (?, ?, ?, ?, ?, '', ?, 'machine_generated', 'Legacy Import', ?)",
+                            (new_record_id(10), r[0], normalize_hassaniya(r[0]), r[1], r[2], r[3], r[4]),
+                        )
+
             conn.execute(
                 "CREATE TABLE IF NOT EXISTS messages ("
                 "id TEXT PRIMARY KEY, name TEXT NOT NULL, contact TEXT, category TEXT, "
@@ -765,8 +904,38 @@ class ArchiveManager:
             )
             conn.commit()
 
+    def _sync_sqlite_fts(self, conn: sqlite3.Connection, poem_id: str, s_strict: str, s_flex: str):
+        if not self._sqlite_fts_enabled:
+            return
+        conn.execute("DELETE FROM poems_fts WHERE poem_id = ?", (poem_id,))
+        conn.execute("INSERT INTO poems_fts (poem_id, search_text, search_text_flex) VALUES (?, ?, ?)", (poem_id, s_strict, s_flex))
+
+    def _normalize_poem_doc(self, doc: Dict, include_analysis: bool = True) -> Dict:
+        state = doc.get("verification_state") or "machine_generated"
+        if state not in VERIFICATION_LABELS:
+            state = "machine_generated"
+        res = {
+            "id": doc.get("id") or str(doc.get("_id", "")),
+            "title": doc.get("title", "قصيدة بدون عنوان"),
+            "poet": doc.get("poet", DEFAULT_POET_LABEL),
+            "region": doc.get("region", DEFAULT_REGION_LABEL),
+            "poem_text": doc.get("poem_text", ""),
+            "poem_type": doc.get("poem_type", "نص شعري"),
+            "dominant_meter": doc.get("dominant_meter", "قيد التدقيق العروضي"),
+            "source_engine": doc.get("source_engine", "Local"),
+            "verification_state": state,
+            "verification_status": doc.get("verification_status") or VERIFICATION_LABELS[state],
+            "reviewed_by": doc.get("reviewed_by", ""),
+            "reviewed_at": doc.get("reviewed_at", ""),
+            "review_notes": doc.get("review_notes", ""),
+            "created_at": doc.get("created_at", ""),
+        }
+        if include_analysis:
+            res["analysis"] = doc.get("analysis") or {}
+        return res
+
     def _prepare_poem_record(self, payload: SavePoemRequest, fallback_title: str = "قصيدة بدون عنوان") -> Dict:
-        record_id = str(uuid.uuid4())[:8]
+        record_id = new_record_id(10)
         now_iso = datetime.now().strftime("%Y-%m-%d %H:%M")
         clean_title, clean_poet = clean_title_and_poet(payload.title or fallback_title, payload.poet)
         region = (payload.region or "").strip() or DEFAULT_REGION_LABEL
@@ -774,7 +943,7 @@ class ArchiveManager:
         analysis = payload.analysis or {}
         dominant_meter = analysis.get("dominant_meter", "قيد التدقيق العروضي")
         poem_type = analysis.get("poem_type", "غير محدد")
-        verification_status = "تحليل آلي (غير مراجَع)" if str(payload.source_engine).startswith("AI") else "قيد التدقيق العروضي"
+        s_strict, s_flex = build_search_fields(clean_title, clean_poet, region, poem_text, dominant_meter)
 
         return {
             "id": record_id,
@@ -785,82 +954,183 @@ class ArchiveManager:
             "poem_type": poem_type,
             "dominant_meter": dominant_meter,
             "source_engine": payload.source_engine,
-            "verification_status": verification_status,
-            "search_text": build_poem_search_text(clean_title, clean_poet, region, poem_text, dominant_meter),
+            "verification_state": "machine_generated",
+            "verification_status": VERIFICATION_LABELS["machine_generated"],
+            "reviewed_by": "",
+            "reviewed_at": "",
+            "review_notes": "",
+            "search_text": s_strict,
+            "search_text_flex": s_flex,
             "analysis": analysis,
             "created_at": now_iso,
         }
 
-    def _upsert_glossary_items_mongo(self, glossary_entries: List[Dict]):
-        if not glossary_entries or self.mongo_db is None:
+    def _upsert_glossary_senses(self, entries: List[Dict], allow_overwrite_verified: bool = False):
+        """
+        حفظ معاني المعجم كمداخل مستقلة مرتبطة بالقصيدة المصدر.
+        يحظر على المخرجات الآلية الكتابة فوق أي معنى موثّق بشرياً (verified).
+        """
+        if not entries:
             return
-        ops = []
-        for g in glossary_entries:
+        now_iso = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+        if self.active_mode == "mongodb":
+            col = self.mongo_db["glossary"]
+            for g in entries:
+                term = str(g.get("term", "")).strip()
+                if not term:
+                    continue
+                norm_term = normalize_hassaniya(term)
+                poem_id = str(g.get("source_poem_id", "")).strip()
+                status = g.get("status", "machine_generated")
+                editor = g.get("editor", "AI")
+
+                # البحث عن معنى مطابق لنفس الكلمة ونفس القصيدة المصدر (حتى لا تتداخل المعاني المتجانسة)
+                existing = col.find_one({"normalized_term": norm_term, "source_poem_id": poem_id})
+                if existing:
+                    if existing.get("status") == "verified" and not allow_overwrite_verified:
+                        continue
+                    col.update_one(
+                        {"_id": existing["_id"]},
+                        {
+                            "$set": {
+                                "term": term,
+                                "arabic_meaning": g.get("arabic_meaning", existing.get("arabic_meaning", "")),
+                                "english_meaning": g.get("english_meaning", existing.get("english_meaning", "")),
+                                "source_poem_title": g.get("source_poem_title", existing.get("source_poem_title", "")),
+                                "attestation": g.get("attestation", existing.get("attestation", "")),
+                                "variants": g.get("variants", existing.get("variants", [])),
+                                "status": status,
+                                "editor": editor,
+                                "updated_at": g.get("updated_at", now_iso),
+                            }
+                        },
+                    )
+                else:
+                    sense_id = g.get("sense_id") or new_record_id(10)
+                    doc = {
+                        "_id": sense_id,
+                        "sense_id": sense_id,
+                        "term": term,
+                        "normalized_term": norm_term,
+                        "arabic_meaning": g.get("arabic_meaning", ""),
+                        "english_meaning": g.get("english_meaning", ""),
+                        "source_poem_id": poem_id,
+                        "source_poem_title": g.get("source_poem_title", "قصيدة موثّقة"),
+                        "attestation": g.get("attestation", ""),
+                        "variants": g.get("variants", []),
+                        "status": status,
+                        "editor": editor,
+                        "updated_at": g.get("updated_at", now_iso),
+                    }
+                    col.insert_one(doc)
+        else:
+            with sqlite3.connect(self.sqlite_path) as conn:
+                for g in entries:
+                    term = str(g.get("term", "")).strip()
+                    if not term:
+                        continue
+                    norm_term = normalize_hassaniya(term)
+                    poem_id = str(g.get("source_poem_id", "")).strip()
+                    status = g.get("status", "machine_generated")
+                    editor = g.get("editor", "AI")
+                    row = conn.execute(
+                        "SELECT sense_id, status FROM glossary_senses WHERE normalized_term = ? AND source_poem_id = ?",
+                        (norm_term, poem_id),
+                    ).fetchone()
+                    if row:
+                        if row[1] == "verified" and not allow_overwrite_verified:
+                            continue
+                        conn.execute(
+                            "UPDATE glossary_senses SET term=?, arabic_meaning=?, english_meaning=?, source_poem_title=?, "
+                            "attestation=?, variants_json=?, status=?, editor=?, updated_at=? WHERE sense_id=?",
+                            (
+                                term,
+                                g.get("arabic_meaning", ""),
+                                g.get("english_meaning", ""),
+                                g.get("source_poem_title", ""),
+                                g.get("attestation", ""),
+                                json.dumps(g.get("variants", []), ensure_ascii=False),
+                                status,
+                                editor,
+                                g.get("updated_at", now_iso),
+                                row[0],
+                            ),
+                        )
+                    else:
+                        sense_id = g.get("sense_id") or new_record_id(10)
+                        conn.execute(
+                            "INSERT INTO glossary_senses "
+                            "(sense_id, term, normalized_term, arabic_meaning, english_meaning, source_poem_id, "
+                            "source_poem_title, attestation, variants_json, status, editor, updated_at) "
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            (
+                                sense_id,
+                                term,
+                                norm_term,
+                                g.get("arabic_meaning", ""),
+                                g.get("english_meaning", ""),
+                                poem_id,
+                                g.get("source_poem_title", "قصيدة موثّقة"),
+                                g.get("attestation", ""),
+                                json.dumps(g.get("variants", []), ensure_ascii=False),
+                                status,
+                                editor,
+                                g.get("updated_at", now_iso),
+                            ),
+                        )
+                conn.commit()
+
+    def _extract_glossary_entries_from_record(self, record: Dict) -> List[Dict]:
+        poem_lines = [l.strip() for l in record.get("poem_text", "").split("\n") if l.strip()]
+        out = []
+        for g in (record.get("analysis", {}).get("glossary") or []):
             term = str(g.get("term", "")).strip()
             if not term:
                 continue
-            norm_term = normalize_hassaniya(term)
-            update_doc: Dict = {
-                "$set": {
-                    "term": term,
-                    "normalized_term": norm_term,
-                    "arabic_meaning": g.get("arabic_meaning", ""),
-                    "english_meaning": g.get("english_meaning", ""),
-                    "source_poem_title": g.get("source_poem_title", "قصيدة موثّقة"),
-                    "source_poem_id": g.get("source_poem_id", ""),
-                    "updated_at": g.get("updated_at", datetime.now().strftime("%Y-%m-%d %H:%M")),
-                }
-            }
-            if g.get("source_poem_id"):
-                update_doc["$addToSet"] = {
-                    "sources": {
-                        "poem_id": g["source_poem_id"],
-                        "poem_title": g.get("source_poem_title", ""),
-                    }
-                }
-            ops.append(UpdateOne({"term": term}, update_doc, upsert=True))
-        if ops:
-            self.mongo_db["glossary"].bulk_write(ops, ordered=False)
+            norm_t = normalize_hassaniya(term)
+            att = next((ln for ln in poem_lines if norm_t in normalize_hassaniya(ln)), "")
+            out.append({
+                "term": term,
+                "arabic_meaning": g.get("arabic_meaning", ""),
+                "english_meaning": g.get("english_meaning", ""),
+                "source_poem_id": record["id"],
+                "source_poem_title": record["title"],
+                "attestation": att,
+                "variants": [],
+                "status": "machine_generated",
+                "editor": record.get("source_engine", "AI"),
+                "updated_at": record["created_at"],
+            })
+        return out
 
     def save_poem(self, payload: SavePoemRequest) -> str:
         record = self._prepare_poem_record(payload)
-        record_id = record["id"]
-        now_iso = record["created_at"]
-        glossary_items = [
-            {
-                "term": str(g.get("term", "")).strip(),
-                "arabic_meaning": g.get("arabic_meaning", ""),
-                "english_meaning": g.get("english_meaning", ""),
-                "source_poem_title": record["title"],
-                "source_poem_id": record_id,
-                "updated_at": now_iso,
-            }
-            for g in (record["analysis"].get("glossary") or [])
-            if str(g.get("term", "")).strip()
-        ]
+        glossary_items = self._extract_glossary_entries_from_record(record)
 
         if self.active_mode == "mongodb":
-            self.mongo_db["poems"].insert_one(dict(record, _id=record_id))
-            self._upsert_glossary_items_mongo(glossary_items)
+            self.mongo_db["poems"].insert_one(dict(record, _id=record["id"]))
         else:
             with sqlite3.connect(self.sqlite_path) as conn:
                 conn.execute(
-                    "INSERT INTO poems (id, title, poet, region, poem_text, poem_type, dominant_meter, azawan_mode, source_engine, analysis_json, music_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO poems (id, title, poet, region, poem_text, poem_type, dominant_meter, azawan_mode, "
+                    "source_engine, analysis_json, music_json, created_at, verification_state, verification_status, "
+                    "reviewed_by, reviewed_at, review_notes, search_text, search_text_flex) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         record["id"], record["title"], record["poet"], record["region"],
-                        record["poem_text"], record["poem_type"], record["dominant_meter"],
-                        "", record["source_engine"], json.dumps(record["analysis"], ensure_ascii=False),
-                        "{}", record["created_at"],
+                        record["poem_text"], record["poem_type"], record["dominant_meter"], "",
+                        record["source_engine"], json.dumps(record["analysis"], ensure_ascii=False), "{}",
+                        record["created_at"], record["verification_state"], record["verification_status"],
+                        "", "", "", record["search_text"], record["search_text_flex"],
                     ),
                 )
-                for g in glossary_items:
-                    conn.execute(
-                        "INSERT OR REPLACE INTO glossary (term, arabic_meaning, english_meaning, source_poem_title, updated_at) VALUES (?, ?, ?, ?, ?)",
-                        (g["term"], g["arabic_meaning"], g["english_meaning"], g["source_poem_title"], now_iso),
-                    )
+                self._sync_sqlite_fts(conn, record["id"], record["search_text"], record["search_text_flex"])
                 conn.commit()
+
+        self._upsert_glossary_senses(glossary_items, allow_overwrite_verified=False)
         self._invalidate_stats_cache()
-        return record_id
+        return record["id"]
 
     def save_poems_batch(self, items: List[SavePoemRequest]) -> List[str]:
         saved_ids, docs_to_insert, glossary_updates = [], [], []
@@ -870,115 +1140,139 @@ class ArchiveManager:
             record = self._prepare_poem_record(payload, fallback_title=f"قصيدة {idx}")
             saved_ids.append(record["id"])
             docs_to_insert.append(record)
-            for g in (record["analysis"].get("glossary") or []):
-                term = str(g.get("term", "")).strip()
-                if term:
-                    glossary_updates.append({
-                        "term": term,
-                        "arabic_meaning": g.get("arabic_meaning", ""),
-                        "english_meaning": g.get("english_meaning", ""),
-                        "source_poem_title": record["title"],
-                        "source_poem_id": record["id"],
-                        "updated_at": record["created_at"],
-                    })
+            glossary_updates.extend(self._extract_glossary_entries_from_record(record))
 
         if not docs_to_insert:
             return []
 
         if self.active_mode == "mongodb":
             self.mongo_db["poems"].insert_many([dict(d, _id=d["id"]) for d in docs_to_insert])
-            self._upsert_glossary_items_mongo(glossary_updates)
         else:
             with sqlite3.connect(self.sqlite_path) as conn:
                 conn.executemany(
-                    "INSERT INTO poems (id, title, poet, region, poem_text, poem_type, dominant_meter, azawan_mode, source_engine, analysis_json, music_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO poems (id, title, poet, region, poem_text, poem_type, dominant_meter, azawan_mode, "
+                    "source_engine, analysis_json, music_json, created_at, verification_state, verification_status, "
+                    "reviewed_by, reviewed_at, review_notes, search_text, search_text_flex) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     [
                         (
                             d["id"], d["title"], d["poet"], d["region"], d["poem_text"],
                             d["poem_type"], d["dominant_meter"], "", d["source_engine"],
                             json.dumps(d["analysis"], ensure_ascii=False), "{}", d["created_at"],
+                            d["verification_state"], d["verification_status"], "", "", "",
+                            d["search_text"], d["search_text_flex"],
                         )
                         for d in docs_to_insert
                     ],
                 )
-                if glossary_updates:
-                    conn.executemany(
-                        "INSERT OR REPLACE INTO glossary (term, arabic_meaning, english_meaning, source_poem_title, updated_at) VALUES (?, ?, ?, ?, ?)",
-                        [(g["term"], g["arabic_meaning"], g["english_meaning"], g["source_poem_title"], g["updated_at"]) for g in glossary_updates],
-                    )
+                for d in docs_to_insert:
+                    self._sync_sqlite_fts(conn, d["id"], d["search_text"], d["search_text_flex"])
                 conn.commit()
+
+        self._upsert_glossary_senses(glossary_updates, allow_overwrite_verified=False)
         self._invalidate_stats_cache()
         return saved_ids
 
     def get_poem(self, record_id: str) -> Optional[Dict]:
         if self.active_mode == "mongodb":
             doc = self.mongo_db["poems"].find_one({"$or": [{"_id": record_id}, {"id": record_id}]})
-            if not doc:
-                return None
-            doc["id"] = doc.get("id") or str(doc["_id"])
-            doc.pop("_id", None)
-            return doc
+            return self._normalize_poem_doc(doc, include_analysis=True) if doc else None
         with sqlite3.connect(self.sqlite_path) as conn:
             conn.row_factory = sqlite3.Row
             row = conn.execute("SELECT * FROM poems WHERE id = ?", (record_id,)).fetchone()
             if not row:
                 return None
-            return {
-                "id": row["id"], "title": row["title"], "poet": row["poet"], "region": row["region"],
-                "poem_text": row["poem_text"], "poem_type": row["poem_type"],
-                "dominant_meter": row["dominant_meter"], "source_engine": row["source_engine"],
-                "analysis": json.loads(row["analysis_json"]), "created_at": row["created_at"],
-            }
+            d = dict(row)
+            d["analysis"] = json.loads(d.pop("analysis_json", "{}") or "{}")
+            return self._normalize_poem_doc(d, include_analysis=True)
 
     def update_poem(self, record_id: str, payload: UpdatePoemRequest) -> bool:
-        clean_title, clean_poet = clean_title_and_poet(payload.title, payload.poet)
-        region = payload.region.strip() or DEFAULT_REGION_LABEL
-        poem_text = payload.poem_text.strip()
         existing = self.get_poem(record_id)
         if not existing:
             return False
+        clean_title, clean_poet = clean_title_and_poet(payload.title, payload.poet)
+        region = payload.region.strip() or DEFAULT_REGION_LABEL
+        poem_text = payload.poem_text.strip()
         dominant_meter = existing.get("dominant_meter", "قيد التدقيق العروضي")
+        s_strict, s_flex = build_search_fields(clean_title, clean_poet, region, poem_text, dominant_meter)
         updates = {
             "title": clean_title,
             "poet": clean_poet,
             "region": region,
             "poem_text": poem_text,
-            "search_text": build_poem_search_text(clean_title, clean_poet, region, poem_text, dominant_meter),
+            "search_text": s_strict,
+            "search_text_flex": s_flex,
         }
         if self.active_mode == "mongodb":
             ok = self.mongo_db["poems"].update_one({"$or": [{"_id": record_id}, {"id": record_id}]}, {"$set": updates}).matched_count > 0
         else:
             with sqlite3.connect(self.sqlite_path) as conn:
                 cur = conn.execute(
-                    "UPDATE poems SET title = ?, poet = ?, region = ?, poem_text = ? WHERE id = ?",
-                    (updates["title"], updates["poet"], updates["region"], updates["poem_text"], record_id),
+                    "UPDATE poems SET title=?, poet=?, region=?, poem_text=?, search_text=?, search_text_flex=? WHERE id=?",
+                    (clean_title, clean_poet, region, poem_text, s_strict, s_flex, record_id),
                 )
+                self._sync_sqlite_fts(conn, record_id, s_strict, s_flex)
                 conn.commit()
                 ok = cur.rowcount > 0
         if ok:
             self._invalidate_stats_cache()
         return ok
 
+    def verify_poem(self, record_id: str, payload: VerifyPoemRequest) -> Optional[Dict]:
+        """تحديث حالة التوثيق الأكاديمي (مولّد آلياً -> قيد المراجعة -> موثّق ومحكّم)."""
+        rec = self.get_poem(record_id)
+        if not rec:
+            return None
+        now_iso = datetime.now().strftime("%Y-%m-%d %H:%M")
+        label = VERIFICATION_LABELS[payload.verification_state]
+        dominant_meter = (payload.dominant_meter or "").strip() or rec["dominant_meter"]
+        poem_type = (payload.poem_type or "").strip() or rec["poem_type"]
+        analysis = dict(rec.get("analysis") or {})
+        analysis["dominant_meter"] = dominant_meter
+        analysis["poem_type"] = poem_type
+        if payload.translation_status:
+            analysis["translation_status"] = payload.translation_status
+
+        s_strict, s_flex = build_search_fields(rec["title"], rec["poet"], rec["region"], rec["poem_text"], dominant_meter)
+        updates = {
+            "verification_state": payload.verification_state,
+            "verification_status": label,
+            "reviewed_by": payload.reviewer_name.strip(),
+            "reviewed_at": now_iso,
+            "review_notes": payload.review_notes.strip(),
+            "dominant_meter": dominant_meter,
+            "poem_type": poem_type,
+            "analysis": analysis,
+            "search_text": s_strict,
+            "search_text_flex": s_flex,
+        }
+        if self.active_mode == "mongodb":
+            self.mongo_db["poems"].update_one({"$or": [{"_id": record_id}, {"id": record_id}]}, {"$set": updates})
+        else:
+            with sqlite3.connect(self.sqlite_path) as conn:
+                conn.execute(
+                    "UPDATE poems SET verification_state=?, verification_status=?, reviewed_by=?, reviewed_at=?, "
+                    "review_notes=?, dominant_meter=?, poem_type=?, analysis_json=?, search_text=?, search_text_flex=? WHERE id=?",
+                    (
+                        updates["verification_state"], updates["verification_status"], updates["reviewed_by"],
+                        updates["reviewed_at"], updates["review_notes"], dominant_meter, poem_type,
+                        json.dumps(analysis, ensure_ascii=False), s_strict, s_flex, record_id,
+                    ),
+                )
+                self._sync_sqlite_fts(conn, record_id, s_strict, s_flex)
+                conn.commit()
+        self._invalidate_stats_cache()
+        return self.get_poem(record_id)
+
     def update_poem_analysis(self, record_id: str, analysis: Dict, source_engine: str) -> bool:
         rec = self.get_poem(record_id)
         if not rec:
             return False
-        now_iso = datetime.now().strftime("%Y-%m-%d %H:%M")
         dominant_meter = analysis.get("dominant_meter", rec.get("dominant_meter", "قيد التدقيق العروضي"))
         poem_type = analysis.get("poem_type", rec.get("poem_type", "نص شعري"))
-        search_text = build_poem_search_text(rec["title"], rec["poet"], rec["region"], rec["poem_text"], dominant_meter)
-        glossary_items = [
-            {
-                "term": str(g.get("term", "")).strip(),
-                "arabic_meaning": g.get("arabic_meaning", ""),
-                "english_meaning": g.get("english_meaning", ""),
-                "source_poem_title": rec["title"],
-                "source_poem_id": record_id,
-                "updated_at": now_iso,
-            }
-            for g in (analysis.get("glossary") or [])
-            if str(g.get("term", "")).strip()
-        ]
+        s_strict, s_flex = build_search_fields(rec["title"], rec["poet"], rec["region"], rec["poem_text"], dominant_meter)
+        rec_copy = dict(rec, analysis=analysis, source_engine=source_engine, created_at=datetime.now().strftime("%Y-%m-%d %H:%M"))
+        glossary_items = self._extract_glossary_entries_from_record(rec_copy)
 
         if self.active_mode == "mongodb":
             self.mongo_db["poems"].update_one(
@@ -989,37 +1283,141 @@ class ArchiveManager:
                         "dominant_meter": dominant_meter,
                         "poem_type": poem_type,
                         "source_engine": source_engine,
-                        "verification_status": "تحليل آلي (غير مراجَع)" if source_engine.startswith("AI") else "قيد التدقيق العروضي",
-                        "search_text": search_text,
+                        "search_text": s_strict,
+                        "search_text_flex": s_flex,
                     }
                 },
             )
-            self._upsert_glossary_items_mongo(glossary_items)
         else:
             with sqlite3.connect(self.sqlite_path) as conn:
                 conn.execute(
-                    "UPDATE poems SET poem_type = ?, dominant_meter = ?, source_engine = ?, analysis_json = ? WHERE id = ?",
-                    (poem_type, dominant_meter, source_engine, json.dumps(analysis, ensure_ascii=False), record_id),
+                    "UPDATE poems SET poem_type=?, dominant_meter=?, source_engine=?, analysis_json=?, "
+                    "search_text=?, search_text_flex=? WHERE id=?",
+                    (poem_type, dominant_meter, source_engine, json.dumps(analysis, ensure_ascii=False), s_strict, s_flex, record_id),
                 )
-                for g in glossary_items:
-                    conn.execute(
-                        "INSERT OR REPLACE INTO glossary (term, arabic_meaning, english_meaning, source_poem_title, updated_at) VALUES (?, ?, ?, ?, ?)",
-                        (g["term"], g["arabic_meaning"], g["english_meaning"], g["source_poem_title"], now_iso),
-                    )
+                self._sync_sqlite_fts(conn, record_id, s_strict, s_flex)
                 conn.commit()
+        self._upsert_glossary_senses(glossary_items, allow_overwrite_verified=False)
         self._invalidate_stats_cache()
         return True
 
-    def clean_existing_archive(self, local_eng: LocalHassaniyaEngine) -> Dict[str, int]:
-        """تنظيف شامل للأرشيف الحالي: فصل الشاعر عن العنوان وإصلاح الأوزان التقديرية المكسورة."""
-        poems = self.list_poems()
-        fixed_poets = 0
-        fixed_meters = 0
-        updated_total = 0
+    def list_poems_paginated(
+        self,
+        q: str = "",
+        poem_type: str = "الكل",
+        poet: str = "",
+        meter: str = "",
+        region: str = "",
+        verification_state: str = "",
+        flexible: bool = False,
+        page: int = 1,
+        limit: int = 24,
+        include_analysis: bool = True,
+    ) -> Dict[str, Any]:
+        """استعلام مفهرس بترقيم الصفحات مباشرة من قاعدة البيانات دون تحميل المدونة كاملة في الذاكرة."""
+        offset = (page - 1) * limit
 
-        for rec in poems:
-            old_title = rec.get("title", "")
-            old_poet = rec.get("poet", "")
+        if self.active_mode == "mongodb":
+            query: Dict[str, Any] = {}
+            if poem_type and poem_type != "الكل":
+                query["poem_type"] = {"$regex": re.escape(poem_type.strip()), "$options": "i"}
+            if poet.strip():
+                query["poet"] = {"$regex": re.escape(poet.strip()), "$options": "i"}
+            if meter.strip():
+                query["dominant_meter"] = {"$regex": re.escape(meter.strip()), "$options": "i"}
+            if region.strip():
+                query["region"] = {"$regex": re.escape(region.strip()), "$options": "i"}
+            if verification_state.strip() in VERIFICATION_LABELS:
+                query["verification_state"] = verification_state.strip()
+
+            if q.strip():
+                q_norm = normalize_hassaniya(q, unify_gaf_to_kaf=flexible)
+                field = "search_text_flex" if flexible else "search_text"
+                query["$or"] = [
+                    {field: {"$regex": re.escape(q_norm)}},
+                    {"title": {"$regex": re.escape(q.strip()), "$options": "i"}},
+                    {"poem_text": {"$regex": re.escape(q.strip()), "$options": "i"}},
+                ]
+
+            col = self.mongo_db["poems"]
+            total = col.count_documents(query)
+            projection = None if include_analysis else {"analysis": 0}
+            cursor = col.find(query, projection).sort("created_at", DESCENDING).skip(offset).limit(limit)
+            items = [self._normalize_poem_doc(doc, include_analysis=include_analysis) for doc in cursor]
+        else:
+            where_clauses: List[str] = []
+            params: List[Any] = []
+            if poem_type and poem_type != "الكل":
+                where_clauses.append("poem_type LIKE ?")
+                params.append(f"%{poem_type.strip()}%")
+            if poet.strip():
+                where_clauses.append("poet LIKE ?")
+                params.append(f"%{poet.strip()}%")
+            if meter.strip():
+                where_clauses.append("dominant_meter LIKE ?")
+                params.append(f"%{meter.strip()}%")
+            if region.strip():
+                where_clauses.append("region LIKE ?")
+                params.append(f"%{region.strip()}%")
+            if verification_state.strip() in VERIFICATION_LABELS:
+                where_clauses.append("verification_state = ?")
+                params.append(verification_state.strip())
+
+            if q.strip():
+                q_norm = normalize_hassaniya(q, unify_gaf_to_kaf=flexible)
+                col_field = "search_text_flex" if flexible else "search_text"
+                where_clauses.append(f"({col_field} LIKE ? OR title LIKE ? OR poem_text LIKE ? OR poet LIKE ?)")
+                like_norm = f"%{q_norm}%"
+                like_raw = f"%{q.strip()}%"
+                params.extend([like_norm, like_raw, like_raw, like_raw])
+
+            where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+            with sqlite3.connect(self.sqlite_path) as conn:
+                conn.row_factory = sqlite3.Row
+                total = conn.execute(f"SELECT COUNT(*) FROM poems {where_sql}", params).fetchone()[0]
+                rows = conn.execute(
+                    f"SELECT * FROM poems {where_sql} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                    [*params, limit, offset],
+                ).fetchall()
+                items = []
+                for row in rows:
+                    d = dict(row)
+                    d["analysis"] = json.loads(d.pop("analysis_json", "{}") or "{}") if include_analysis else {}
+                    items.append(self._normalize_poem_doc(d, include_analysis=include_analysis))
+
+        total_pages = max(1, math.ceil(total / limit)) if total else 1
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "total_pages": total_pages,
+            "has_more": page < total_pages,
+        }
+
+    def iter_all_poems(self, q: str = "", poem_type: str = "الكل") -> Iterator[Dict]:
+        """مكرّر خفيف على الذاكرة للتصدير (DOCX / JSONL) والعمليات الإدارية."""
+        page = 1
+        while True:
+            batch = self.list_poems_paginated(q=q, poem_type=poem_type, page=page, limit=100, include_analysis=True)
+            for item in batch["items"]:
+                yield item
+            if not batch["has_more"]:
+                break
+            page += 1
+
+    def list_poem_ids_for_sitemap(self) -> List[str]:
+        """يجلب المعرّفات فقط لخريطة الموقع بدون تحميل النصوص والتحليلات."""
+        if self.active_mode == "mongodb":
+            return [str(d.get("id") or d["_id"]) for d in self.mongo_db["poems"].find({}, {"id": 1}).sort("created_at", DESCENDING)]
+        with sqlite3.connect(self.sqlite_path) as conn:
+            return [row[0] for row in conn.execute("SELECT id FROM poems ORDER BY created_at DESC").fetchall()]
+
+    def clean_existing_archive(self, local_eng: LocalHassaniyaEngine) -> Dict[str, int]:
+        scanned = fixed_poets = fixed_meters = updated_total = 0
+        for rec in self.iter_all_poems():
+            scanned += 1
+            old_title, old_poet = rec.get("title", ""), rec.get("poet", "")
             old_meter = str(rec.get("dominant_meter", ""))
             new_title, new_poet = clean_title_and_poet(old_title, old_poet)
 
@@ -1027,25 +1425,18 @@ class ArchiveManager:
             old_meter_typo = ("السغير" in old_meter) or ("البت لكبير" in old_meter)
             is_broken_meter = (
                 "وزن تقديري" in old_meter
-                or "(1 متحرك)" in old_meter
-                or "(2 متحرك)" in old_meter
-                or "(3 متحرك)" in old_meter
-                or "(4 متحرك)" in old_meter
+                or any(f"({k} متحرك)" in old_meter for k in (1, 2, 3, 4))
                 or old_meter_typo
                 or not old_meter.strip()
             )
             is_local = not str(rec.get("source_engine", "")).startswith("AI")
-
             new_analysis = rec.get("analysis") or {}
-            new_meter = old_meter
-            new_type = rec.get("poem_type", "نص شعري")
+            new_meter, new_type = old_meter, rec.get("poem_type", "نص شعري")
 
             fixed_this_meter = False
             if is_broken_meter and is_local and rec.get("poem_text"):
                 reanalyzed = local_eng.analyze(rec["poem_text"])
-                new_analysis = reanalyzed
-                new_meter = reanalyzed["dominant_meter"]
-                new_type = reanalyzed["poem_type"]
+                new_analysis, new_meter, new_type = reanalyzed, reanalyzed["dominant_meter"], reanalyzed["poem_type"]
                 fixed_meters += 1
                 fixed_this_meter = True
             elif old_meter_typo:
@@ -1058,91 +1449,46 @@ class ArchiveManager:
             if needs_poet_fix:
                 fixed_poets += 1
 
+            # تحديث حقول البحث المزدوجة في كل الأحوال إن كانت ناقصة
+            s_strict, s_flex = build_search_fields(new_title, new_poet, rec.get("region", DEFAULT_REGION_LABEL), rec.get("poem_text", ""), new_meter)
             if needs_poet_fix or fixed_this_meter:
                 updated_total += 1
-                search_text = build_poem_search_text(
-                    new_title, new_poet, rec.get("region", DEFAULT_REGION_LABEL), rec.get("poem_text", ""), new_meter
-                )
                 if self.active_mode == "mongodb":
                     self.mongo_db["poems"].update_one(
                         {"$or": [{"_id": rec["id"]}, {"id": rec["id"]}]},
-                        {
-                            "$set": {
-                                "title": new_title,
-                                "poet": new_poet,
-                                "dominant_meter": new_meter,
-                                "poem_type": new_type,
-                                "analysis": new_analysis,
-                                "search_text": search_text,
-                            }
-                        },
+                        {"$set": {
+                            "title": new_title, "poet": new_poet, "dominant_meter": new_meter,
+                            "poem_type": new_type, "analysis": new_analysis,
+                            "search_text": s_strict, "search_text_flex": s_flex,
+                        }},
                     )
                 else:
                     with sqlite3.connect(self.sqlite_path) as conn:
                         conn.execute(
-                            "UPDATE poems SET title = ?, poet = ?, poem_type = ?, dominant_meter = ?, analysis_json = ? WHERE id = ?",
-                            (new_title, new_poet, new_type, new_meter, json.dumps(new_analysis, ensure_ascii=False), rec["id"]),
+                            "UPDATE poems SET title=?, poet=?, poem_type=?, dominant_meter=?, analysis_json=?, "
+                            "search_text=?, search_text_flex=? WHERE id=?",
+                            (new_title, new_poet, new_type, new_meter, json.dumps(new_analysis, ensure_ascii=False), s_strict, s_flex, rec["id"]),
                         )
+                        self._sync_sqlite_fts(conn, rec["id"], s_strict, s_flex)
                         conn.commit()
 
         self._invalidate_stats_cache()
-        return {
-            "scanned": len(poems),
-            "updated_total": updated_total,
-            "fixed_poets_and_titles": fixed_poets,
-            "fixed_broken_meters": fixed_meters,
-        }
-
-    def list_poems(self, q: str = "", poem_type: str = "الكل", poet: str = "", meter: str = "") -> List[Dict]:
-        records: List[Dict] = []
-        if self.active_mode == "mongodb":
-            for doc in self.mongo_db["poems"].find().sort("created_at", -1):
-                doc["id"] = doc.get("id") or str(doc["_id"])
-                doc.pop("_id", None)
-                records.append(doc)
-        else:
-            with sqlite3.connect(self.sqlite_path) as conn:
-                conn.row_factory = sqlite3.Row
-                for row in conn.execute("SELECT * FROM poems ORDER BY created_at DESC").fetchall():
-                    records.append({
-                        "id": row["id"], "title": row["title"], "poet": row["poet"], "region": row["region"],
-                        "poem_text": row["poem_text"], "poem_type": row["poem_type"],
-                        "dominant_meter": row["dominant_meter"], "source_engine": row["source_engine"],
-                        "analysis": json.loads(row["analysis_json"]), "created_at": row["created_at"],
-                    })
-
-        if poem_type and poem_type != "الكل":
-            pt_norm = normalize_hassaniya(poem_type, unify_gaf_to_kaf=True)
-            records = [r for r in records if pt_norm in normalize_hassaniya(r.get("poem_type", ""), unify_gaf_to_kaf=True)]
-
-        if poet.strip():
-            poet_norm = normalize_hassaniya(poet, unify_gaf_to_kaf=True)
-            records = [r for r in records if poet_norm in normalize_hassaniya(r.get("poet", ""), unify_gaf_to_kaf=True)]
-
-        if meter.strip():
-            meter_norm = normalize_hassaniya(meter, unify_gaf_to_kaf=True)
-            records = [r for r in records if meter_norm in normalize_hassaniya(r.get("dominant_meter", ""), unify_gaf_to_kaf=True)]
-
-        if q.strip():
-            q_strict = normalize_hassaniya(q)
-            q_flex = normalize_hassaniya(q, unify_gaf_to_kaf=True)
-            filtered = []
-            for r in records:
-                hay = r.get("search_text") or build_poem_search_text(
-                    r.get("title", ""), r.get("poet", ""), r.get("region", ""), r.get("poem_text", ""), r.get("dominant_meter", "")
-                )
-                if q_strict in hay or q_flex in hay:
-                    filtered.append(r)
-            records = filtered
-        return records
+        return {"scanned": scanned, "updated_total": updated_total, "fixed_poets_and_titles": fixed_poets, "fixed_broken_meters": fixed_meters}
 
     def get_filters(self) -> Dict[str, List[str]]:
-        poems = self.list_poems()
-        poets = sorted({p.get("poet", "").strip() for p in poems if p.get("poet") and not is_default_poet(p.get("poet"))})
-        meters = sorted({p.get("dominant_meter", "").strip() for p in poems if p.get("dominant_meter")})
-        regions = sorted({p.get("region", "").strip() for p in poems if p.get("region")})
-        types_ = sorted({p.get("poem_type", "").strip() for p in poems if p.get("poem_type")})
-        return {"poets": poets, "meters": meters, "regions": regions, "poem_types": types_}
+        if self.active_mode == "mongodb":
+            col = self.mongo_db["poems"]
+            poets = sorted({str(v).strip() for v in col.distinct("poet") if v and not is_default_poet(str(v))})
+            meters = sorted({str(v).strip() for v in col.distinct("dominant_meter") if v})
+            regions = sorted({str(v).strip() for v in col.distinct("region") if v})
+            types_ = sorted({str(v).strip() for v in col.distinct("poem_type") if v})
+            return {"poets": poets, "meters": meters, "regions": regions, "poem_types": types_}
+        with sqlite3.connect(self.sqlite_path) as conn:
+            poets = sorted({r[0].strip() for r in conn.execute("SELECT DISTINCT poet FROM poems").fetchall() if r[0] and not is_default_poet(r[0])})
+            meters = sorted({r[0].strip() for r in conn.execute("SELECT DISTINCT dominant_meter FROM poems").fetchall() if r[0]})
+            regions = sorted({r[0].strip() for r in conn.execute("SELECT DISTINCT region FROM poems").fetchall() if r[0]})
+            types_ = sorted({r[0].strip() for r in conn.execute("SELECT DISTINCT poem_type FROM poems").fetchall() if r[0]})
+            return {"poets": poets, "meters": meters, "regions": regions, "poem_types": types_}
 
     def delete_poem(self, record_id: str) -> bool:
         if self.active_mode == "mongodb":
@@ -1155,6 +1501,8 @@ class ArchiveManager:
         else:
             with sqlite3.connect(self.sqlite_path) as conn:
                 cur = conn.execute("DELETE FROM poems WHERE id = ?", (record_id,))
+                if self._sqlite_fts_enabled:
+                    conn.execute("DELETE FROM poems_fts WHERE poem_id = ?", (record_id,))
                 conn.commit()
                 deleted = cur.rowcount > 0
         if deleted:
@@ -1166,12 +1514,9 @@ class ArchiveManager:
         if not clean_ids:
             return 0
         if self.active_mode == "mongodb":
-            res = self.mongo_db["poems"].delete_many(
-                {"$or": [{"_id": {"$in": clean_ids}}, {"id": {"$in": clean_ids}}]}
-            )
+            res = self.mongo_db["poems"].delete_many({"$or": [{"_id": {"$in": clean_ids}}, {"id": {"$in": clean_ids}}]})
             try:
-                rag_doc_ids = [f"poem::{rid}" for rid in clean_ids]
-                self.mongo_db[RAG_COLLECTION_NAME].delete_many({"doc_id": {"$in": rag_doc_ids}})
+                self.mongo_db[RAG_COLLECTION_NAME].delete_many({"doc_id": {"$in": [f"poem::{rid}" for rid in clean_ids]}})
             except Exception:
                 pass
             count = int(res.deleted_count)
@@ -1179,6 +1524,8 @@ class ArchiveManager:
             with sqlite3.connect(self.sqlite_path) as conn:
                 placeholders = ",".join("?" for _ in clean_ids)
                 cur = conn.execute(f"DELETE FROM poems WHERE id IN ({placeholders})", clean_ids)
+                if self._sqlite_fts_enabled:
+                    conn.execute(f"DELETE FROM poems_fts WHERE poem_id IN ({placeholders})", clean_ids)
                 conn.commit()
                 count = int(cur.rowcount)
         self._invalidate_stats_cache()
@@ -1199,43 +1546,148 @@ class ArchiveManager:
         else:
             with sqlite3.connect(self.sqlite_path) as conn:
                 deleted_poems = int(conn.execute("DELETE FROM poems").rowcount)
+                if self._sqlite_fts_enabled:
+                    conn.execute("DELETE FROM poems_fts")
                 if include_glossary:
-                    deleted_glossary = int(conn.execute("DELETE FROM glossary").rowcount)
+                    deleted_glossary = int(conn.execute("DELETE FROM glossary_senses").rowcount)
                 conn.commit()
         self._invalidate_stats_cache()
-        return {
-            "deleted_poems": deleted_poems,
-            "deleted_glossary": deleted_glossary,
-            "deleted_rag": deleted_rag,
-        }
+        return {"deleted_poems": deleted_poems, "deleted_glossary": deleted_glossary, "deleted_rag": deleted_rag}
 
-    def list_glossary(self, q: str = "") -> List[Dict]:
-        items: List[Dict] = []
+    def list_glossary_paginated(self, q: str = "", status: str = "", page: int = 1, limit: int = 50) -> Dict[str, Any]:
+        offset = (page - 1) * limit
         if self.active_mode == "mongodb":
-            for doc in self.mongo_db["glossary"].find().sort("updated_at", -1):
-                doc.pop("_id", None)
-                items.append(doc)
+            query: Dict[str, Any] = {}
+            if status in VERIFICATION_LABELS:
+                query["status"] = status
+            if q.strip():
+                q_norm = normalize_hassaniya(q)
+                query["$or"] = [
+                    {"normalized_term": {"$regex": re.escape(q_norm)}},
+                    {"term": {"$regex": re.escape(q.strip()), "$options": "i"}},
+                    {"arabic_meaning": {"$regex": re.escape(q.strip()), "$options": "i"}},
+                    {"english_meaning": {"$regex": re.escape(q.strip()), "$options": "i"}},
+                    {"source_poem_title": {"$regex": re.escape(q.strip()), "$options": "i"}},
+                ]
+            col = self.mongo_db["glossary"]
+            total = col.count_documents(query)
+            items = []
+            for doc in col.find(query).sort("updated_at", DESCENDING).skip(offset).limit(limit):
+                sense_id = doc.get("sense_id") or str(doc.get("_id", ""))
+                st = doc.get("status") or "machine_generated"
+                items.append({
+                    "sense_id": sense_id,
+                    "term": doc.get("term", ""),
+                    "arabic_meaning": doc.get("arabic_meaning", ""),
+                    "english_meaning": doc.get("english_meaning", ""),
+                    "source_poem_id": doc.get("source_poem_id", ""),
+                    "source_poem_title": doc.get("source_poem_title", ""),
+                    "attestation": doc.get("attestation", ""),
+                    "variants": doc.get("variants", []),
+                    "status": st,
+                    "status_label": VERIFICATION_LABELS.get(st, VERIFICATION_LABELS["machine_generated"]),
+                    "editor": doc.get("editor", "AI"),
+                    "updated_at": doc.get("updated_at", ""),
+                })
         else:
+            where, params = [], []
+            if status in VERIFICATION_LABELS:
+                where.append("status = ?")
+                params.append(status)
+            if q.strip():
+                q_norm = normalize_hassaniya(q)
+                where.append("(normalized_term LIKE ? OR term LIKE ? OR arabic_meaning LIKE ? OR english_meaning LIKE ? OR source_poem_title LIKE ?)")
+                raw_like = f"%{q.strip()}%"
+                params.extend([f"%{q_norm}%", raw_like, raw_like, raw_like, raw_like])
+            where_sql = f"WHERE {' AND '.join(where)}" if where else ""
             with sqlite3.connect(self.sqlite_path) as conn:
                 conn.row_factory = sqlite3.Row
-                items = [dict(r) for r in conn.execute("SELECT * FROM glossary ORDER BY updated_at DESC").fetchall()]
-        if q.strip():
-            q_flex = normalize_hassaniya(q, unify_gaf_to_kaf=True)
-            items = [
-                g for g in items
-                if any(
-                    q_flex in normalize_hassaniya(str(g.get(k, "")), unify_gaf_to_kaf=True)
-                    for k in ("term", "arabic_meaning", "english_meaning", "source_poem_title")
-                )
-            ]
-        return items
+                total = conn.execute(f"SELECT COUNT(*) FROM glossary_senses {where_sql}", params).fetchone()[0]
+                rows = conn.execute(
+                    f"SELECT * FROM glossary_senses {where_sql} ORDER BY updated_at DESC LIMIT ? OFFSET ?",
+                    [*params, limit, offset],
+                ).fetchall()
+                items = []
+                for r in rows:
+                    st = r["status"] or "machine_generated"
+                    items.append({
+                        "sense_id": r["sense_id"],
+                        "term": r["term"],
+                        "arabic_meaning": r["arabic_meaning"],
+                        "english_meaning": r["english_meaning"],
+                        "source_poem_id": r["source_poem_id"],
+                        "source_poem_title": r["source_poem_title"],
+                        "attestation": r["attestation"],
+                        "variants": json.loads(r["variants_json"] or "[]"),
+                        "status": st,
+                        "status_label": VERIFICATION_LABELS.get(st, VERIFICATION_LABELS["machine_generated"]),
+                        "editor": r["editor"],
+                        "updated_at": r["updated_at"],
+                    })
 
-    def delete_glossary_term(self, term: str) -> bool:
+        total_pages = max(1, math.ceil(total / limit)) if total else 1
+        return {"items": items, "total": total, "page": page, "limit": limit, "total_pages": total_pages, "has_more": page < total_pages}
+
+    def create_glossary_sense(self, payload: GlossarySenseCreateRequest) -> str:
+        sense_id = new_record_id(10)
+        entry = {
+            "sense_id": sense_id,
+            "term": payload.term.strip(),
+            "arabic_meaning": payload.arabic_meaning.strip(),
+            "english_meaning": payload.english_meaning.strip(),
+            "source_poem_id": payload.source_poem_id.strip(),
+            "source_poem_title": payload.source_poem_title.strip(),
+            "attestation": payload.attestation.strip(),
+            "variants": [v.strip() for v in payload.variants if v.strip()],
+            "status": payload.status,
+            "editor": payload.editor.strip() or "هيئة تحرير ALBIDAN",
+            "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        }
+        self._upsert_glossary_senses([entry], allow_overwrite_verified=True)
+        self._invalidate_stats_cache()
+        return sense_id
+
+    def update_glossary_sense(self, sense_id: str, payload: GlossarySenseUpdateRequest) -> bool:
+        now_iso = datetime.now().strftime("%Y-%m-%d %H:%M")
+        updates: Dict[str, Any] = {"updated_at": now_iso}
+        if payload.term is not None:
+            updates["term"] = payload.term.strip()
+            updates["normalized_term"] = normalize_hassaniya(payload.term)
+        if payload.arabic_meaning is not None:
+            updates["arabic_meaning"] = payload.arabic_meaning.strip()
+        if payload.english_meaning is not None:
+            updates["english_meaning"] = payload.english_meaning.strip()
+        if payload.attestation is not None:
+            updates["attestation"] = payload.attestation.strip()
+        if payload.variants is not None:
+            updates["variants"] = [v.strip() for v in payload.variants if v.strip()]
+        if payload.status is not None:
+            updates["status"] = payload.status
+        if payload.editor is not None:
+            updates["editor"] = payload.editor.strip()
+
         if self.active_mode == "mongodb":
-            ok = self.mongo_db["glossary"].delete_one({"term": term}).deleted_count > 0
+            ok = self.mongo_db["glossary"].update_one({"$or": [{"sense_id": sense_id}, {"_id": sense_id}]}, {"$set": updates}).matched_count > 0
+        else:
+            sql_updates = dict(updates)
+            if "variants" in sql_updates:
+                sql_updates["variants_json"] = json.dumps(sql_updates.pop("variants"), ensure_ascii=False)
+            cols = ", ".join(f"{k}=?" for k in sql_updates.keys())
+            with sqlite3.connect(self.sqlite_path) as conn:
+                cur = conn.execute(f"UPDATE glossary_senses SET {cols} WHERE sense_id=?", [*sql_updates.values(), sense_id])
+                conn.commit()
+                ok = cur.rowcount > 0
+        if ok:
+            self._invalidate_stats_cache()
+        return ok
+
+    def delete_glossary_term_or_sense(self, target: str) -> bool:
+        """يدعم الحذف بالمعرّف sense_id أو بالمفردة term للحفاظ على توافق الواجهة الحالية."""
+        if self.active_mode == "mongodb":
+            ok = self.mongo_db["glossary"].delete_one({"$or": [{"sense_id": target}, {"_id": target}, {"term": target}]}).deleted_count > 0
         else:
             with sqlite3.connect(self.sqlite_path) as conn:
-                cur = conn.execute("DELETE FROM glossary WHERE term = ?", (term,))
+                cur = conn.execute("DELETE FROM glossary_senses WHERE sense_id = ? OR term = ?", (target, target))
                 conn.commit()
                 ok = cur.rowcount > 0
         if ok:
@@ -1243,7 +1695,7 @@ class ArchiveManager:
         return ok
 
     def save_message(self, payload: ContactMessageRequest) -> str:
-        msg_id = str(uuid.uuid4())[:8]
+        msg_id = new_record_id(10)
         now_iso = datetime.now().strftime("%Y-%m-%d %H:%M")
         doc = {
             "id": msg_id, "name": payload.name.strip(), "contact": payload.contact.strip(),
@@ -1263,17 +1715,16 @@ class ArchiveManager:
         return msg_id
 
     def list_messages(self) -> List[Dict]:
-        items: List[Dict] = []
         if self.active_mode == "mongodb":
-            for doc in self.mongo_db["messages"].find().sort("created_at", -1):
+            items = []
+            for doc in self.mongo_db["messages"].find().sort("created_at", DESCENDING).limit(200):
                 doc["id"] = doc.get("id") or str(doc["_id"])
                 doc.pop("_id", None)
                 items.append(doc)
-        else:
-            with sqlite3.connect(self.sqlite_path) as conn:
-                conn.row_factory = sqlite3.Row
-                items = [dict(r) for r in conn.execute("SELECT * FROM messages ORDER BY created_at DESC").fetchall()]
-        return items
+            return items
+        with sqlite3.connect(self.sqlite_path) as conn:
+            conn.row_factory = sqlite3.Row
+            return [dict(r) for r in conn.execute("SELECT * FROM messages ORDER BY created_at DESC LIMIT 200").fetchall()]
 
     def delete_message(self, msg_id: str) -> bool:
         if self.active_mode == "mongodb":
@@ -1293,23 +1744,29 @@ class ArchiveManager:
             return self._stats_cache
 
         if self.active_mode == "mongodb":
-            poems_count = self.mongo_db["poems"].count_documents({})
+            poems_col = self.mongo_db["poems"]
+            poems_count = poems_col.count_documents({})
+            verified_count = poems_col.count_documents({"verification_state": "verified"})
             terms_count = self.mongo_db["glossary"].count_documents({})
             messages_count = self.mongo_db["messages"].count_documents({})
             total_lines = sum(
-                len(doc.get("analysis", {}).get("lines", [])) or len([l for l in str(doc.get("poem_text", "")).split("\n") if l.strip()])
-                for doc in self.mongo_db["poems"].find({}, {"analysis.lines": 1, "poem_text": 1})
+                len([l for l in str(doc.get("poem_text", "")).split("\n") if l.strip()])
+                for doc in poems_col.find({}, {"poem_text": 1})
             )
         else:
-            poems = self.list_poems()
-            poems_count, terms_count, messages_count = len(poems), len(self.list_glossary()), len(self.list_messages())
-            total_lines = sum(
-                len(p.get("analysis", {}).get("lines", [])) or len([l for l in str(p.get("poem_text", "")).split("\n") if l.strip()])
-                for p in poems
-            )
+            with sqlite3.connect(self.sqlite_path) as conn:
+                poems_count = conn.execute("SELECT COUNT(*) FROM poems").fetchone()[0]
+                verified_count = conn.execute("SELECT COUNT(*) FROM poems WHERE verification_state = 'verified'").fetchone()[0]
+                terms_count = conn.execute("SELECT COUNT(*) FROM glossary_senses").fetchone()[0]
+                messages_count = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+                total_lines = sum(
+                    len([l for l in str(r[0] or "").split("\n") if l.strip()])
+                    for r in conn.execute("SELECT poem_text FROM poems").fetchall()
+                )
 
         res = {
             "poems_count": poems_count,
+            "verified_poems_count": verified_count,
             "lines_count": total_lines,
             "terms_count": terms_count,
             "messages_count": messages_count,
@@ -1317,6 +1774,7 @@ class ArchiveManager:
             "db_status": self.status_message,
             "ai_ready": bool(GEMINI_API_KEY),
             "default_model": DEFAULT_GEMINI_MODEL,
+            "version": APP_VERSION,
         }
         self._stats_cache = res
         self._stats_cached_at = now
@@ -1381,27 +1839,12 @@ def run_gemini_on_media_bytes(raw_bytes: bytes, mime_type: str, suffix: str, pro
                 pass
 
 
-def analyze_with_gemini(poem_text: str, model_name: str) -> Tuple[Dict, str]:
+def analyze_with_gemini(poem_text: str, model_name: str, local_eng: LocalHassaniyaEngine) -> Tuple[Dict, str]:
     client = genai.Client(api_key=GEMINI_API_KEY)
-    sys_inst = """أنت باحث أكاديمي وعروضي متخصص في الشعر الشعبي الحساني («لغن») وبحوره («لَبْتُوتَة»، ومفردها «بَتْ»). التزم بدقة بالمنهجية التالية:
-1. أساس الوزن في «لغن»: عدّ الحروف المتحركة في الوحدة الشعرية المسماة «تافلويت» (جمعها «تيفلواتن») مع إهمال السواكن؛ فالحرف المتحرك يُعدّ واحداً، وإذا تبعه ساكن يُضمّ إليه في التقطيع الإيقاعي، مع مراعاة الابتداء بالساكن واستخدام حرف (گ) للقاف المعقودة.
-2. وحدات «لغن» وأجناسه:
-  - الطلعة: وحدة شائعة تتكوّن من ثلاث «تيفلواتن» برويّ واحد.
-  - الكاف (الگاف): وحدة تتكوّن غالباً من أربع أو ست أو ثماني «تيفلواتن».
-  - التبراع: فن نسائي يقوم غالباً على تافلويتين متفقتي القافية والوزن.
-  - الظّهر: المقام أو النغم الموسيقي الذي يرافق أداء البحر ويمنحه لحنه الخاص (اذكره في حقل zahr_mode إن أمكن تحديده).
-3. أبرز بحور «لَبْتُوتَة» المعتمدة في التصنيف:
-  - التيدوم (من أقدم البحور المعروفة في الموزون الحساني).
-  - البت الكبير (من الأبحر الجامعة، يجمع أوزاناً من مراحل سابقة، 9 متحركات فأكثر).
-  - بوعمران (7 متحركات — مشهور في الفخر والحماسة).
-  - المزارگ (موضوعات اجتماعية وشعبية).
-  - المصارع (الفخر والمآثر).
-  - إملخ واسغير (القصائد القصيرة والمواضيع العاطفية؛ اسغير 6 متحركات).
-  - الواكدي (الغزل والحب).
-  - أحويويص (بحر حماسي له تقطيع ومقاطع مميزة).
-  - الدگسري (إيقاع سريع يناسب الاحتفالات).
-  - المشكل (الألغاز الشعرية).
-  - بحور أخرى: إمريميدة، لبتيت التام (8 متحركات)، لبتيت الناقص (7 متحركات)، السروزي، الرسم، لبير (6 متحركات)، بغزز، بت اثنين، بت اثلاثة، وحثو اجراد.
+    sys_inst = """أنت باحث عروضي متخصص في الشعر الشعبي الحساني («لغن») وبحوره («لَبْتُوتَة»، ومفردها «بَتْ»). التزم بدقة بالمنهجية التالية:
+1. اضبط كل «تافلويت» بالشكل الصوتي الحساني الكامل (الفتحة والضمة والكسرة والسكون)، مع استخدام حرف (گ) للقاف المعقودة.
+2. أساس الوزن في «لغن»: عدّ الحروف المتحركة في «التافلويت» مع إهمال السواكن؛ مع مراعاة بنية البحر وأدائه (الظّهر).
+3. وحدات «لغن»: الطلعة (3 تيفلواتن بروي واحد)، الگاف/الكاف (4 أو 6 أو 8 تيفلواتن)، التبراع (تافلويتين).
 4. استخرج أهم المفردات الحسانية الأصيلة مع شرحها بالعربية الفصحى والإنجليزية.
 5. قدّم ترجمة أدبية دقيقة للإنجليزية والفرنسية."""
     cfg = types.GenerateContentConfig(
@@ -1409,15 +1852,24 @@ def analyze_with_gemini(poem_text: str, model_name: str) -> Tuple[Dict, str]:
         response_mime_type="application/json",
         response_schema=AIPoemAnalysis,
     )
-    resp, used_model = generate_content_safe(client, model_name, f"حلّل هذا النص الشعري الحساني تحليلاً أكاديمياً وعروضياً كاملاً:\n\n{poem_text}", cfg)
-    return AIPoemAnalysis.model_validate_json(resp.text).model_dump(), used_model
+    # محاولة ثانية تلقائية في حال أعاد النموذج JSON غير صالح
+    last_err = None
+    for _ in range(2):
+        resp, used_model = generate_content_safe(client, model_name, f"حلّل هذا النص الشعري الحساني تحليلاً عروضياً ولغوياً كاملاً:\n\n{poem_text}", cfg)
+        try:
+            parsed = AIPoemAnalysis.model_validate_json(resp.text).model_dump()
+            return local_eng.cross_check_ai_analysis(parsed), used_model
+        except Exception as exc:
+            logger.warning("Invalid JSON from Gemini, retrying once: %s", exc)
+            last_err = exc
+    raise last_err or RuntimeError("تعذر قراءة مخرجات JSON من Gemini.")
 
 
 def split_poems_with_gemini(raw_text: str, model_name: str, default_poet: str, default_region: str) -> Tuple[List[Dict], str]:
     client = genai.Client(api_key=GEMINI_API_KEY)
     sys_inst = """أنت باحث متخصص في تحرير وفهرسة دواوين الشعر الحساني. افصل كل قصيدة في عنصر مستقل بدقة:
-1. استخرج عنوان كل قصيدة نظيفاً بدون إلحاق اسم الشاعر بالعنوان، وإن لم يُذكر اقترح عنواناً موجزاً من مضمونها.
-2. استخرج اسم الشاعر أو الراوي وحده في حقل poet (بدون تكرار كلمة الشاعر/الراوي)، وإن لم يُذكر اتركه فارغاً.
+1. استخرج عنوان كل قصيدة نظيفاً بدون إلحاق اسم الشاعر بالعنوان.
+2. استخرج اسم الشاعر أو الراوي وحده في حقل poet، وإن لم يُذكر اتركه فارغاً.
 3. حافظ على النص الشعري الحساني حرفياً وضع كل شطر (تافلويت) في سطر مستقل."""
     cfg = types.GenerateContentConfig(
         system_instruction=sys_inst,
@@ -1472,15 +1924,15 @@ def extract_pdf_sync(raw: bytes, model_name: str) -> Tuple[str, str]:
 
 
 # =============================================================================
-# 8. تطبيق FastAPI وترويسات الأمان والـ SEO/GEO
+# 8. تطبيق FastAPI وترويسات الأمان
 # =============================================================================
-app = FastAPI(title="ALBIDAN AI Lab — Academic Hassaniya Corpus API", version="4.2.0")
+app = FastAPI(title="ALBIDAN AI Lab — Academic Hassaniya Corpus API", version=APP_VERSION)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Admin-Pin"],
 )
 
@@ -1507,7 +1959,6 @@ async def security_headers_middleware(request: Request, call_next):
     return response
 
 
-# دمج محرك البحث المعرفي الهجين السحابي (Cloud Hybrid RAG)
 try:
     from hassaniya_rag_router import router as hassaniya_rag_router
     app.include_router(hassaniya_rag_router)
@@ -1524,8 +1975,7 @@ def serve_home():
     index_file = STATIC_DIR / "index.html"
     if not index_file.exists():
         raise HTTPException(status_code=404, detail="ملف الواجهة static/index.html غير موجود.")
-    base_url = get_base_url()
-    return HTMLResponse(content=index_file.read_text(encoding="utf-8").replace("__BASE_URL__", base_url))
+    return HTMLResponse(content=index_file.read_text(encoding="utf-8").replace("__BASE_URL__", get_base_url()))
 
 
 # -----------------------------------------------------------------------------
@@ -1545,11 +1995,14 @@ def serve_poem_ssr(record_id: str):
     meter = rec.get("dominant_meter") or "—"
     ptype = rec.get("poem_type") or "شعر حساني"
     poem_text = rec.get("poem_text") or ""
+    v_status = rec.get("verification_status") or VERIFICATION_LABELS["machine_generated"]
+    reviewer_info = f" • المراجع: {rec['reviewed_by']} ({rec['reviewed_at']})" if rec.get("reviewed_by") else ""
     excerpt = " / ".join([l.strip() for l in poem_text.split("\n") if l.strip()][:2])
 
     schema_obj = {
         "@context": "https://schema.org",
         "@type": "CreativeWork",
+        "identifier": rec["id"],
         "name": title,
         "inLanguage": ["mey", "ar"],
         "genre": ptype,
@@ -1563,6 +2016,7 @@ def serve_poem_ssr(record_id: str):
 
     en_trans = analysis.get("english_translation") or ""
     fr_trans = analysis.get("french_translation") or ""
+    t_label = "مراجَعة بشرياً" if analysis.get("translation_status") == "human_reviewed" else "ترجمة آلية (AI)"
     context = analysis.get("cultural_context") or ""
 
     page_html = f"""<!DOCTYPE html>
@@ -1583,7 +2037,8 @@ def serve_poem_ssr(record_id: str):
     body{{margin:0;background:#0D0B09;color:#F4EFE6;font-family:'IBM Plex Sans Arabic',sans-serif;line-height:1.8;padding:1.5rem 1rem}}
     .wrap{{max-width:780px;margin:0 auto;background:#1A1612;border:1px solid rgba(216,178,84,.25);border-top:3px solid #D8B254;border-radius:16px;padding:1.8rem}}
     a{{color:#EBD07E;text-decoration:none}}
-    .meta{{color:#A69C8E;font-size:.88rem;margin:.4rem 0 1.2rem}}
+    .meta{{color:#A69C8E;font-size:.88rem;margin:.4rem 0 .8rem}}
+    .badge{{display:inline-block;font-size:.78rem;padding:2px 10px;border-radius:999px;background:rgba(216,178,84,.14);color:#EBD07E;border:1px solid rgba(216,178,84,.35);margin-bottom:.8rem}}
     .poem{{font-family:'Amiri',serif;font-size:1.55rem;line-height:2.25;white-space:pre-line;text-align:center;background:#151310;border:1px solid rgba(216,178,84,.2);border-radius:12px;padding:1.4rem;margin:1rem 0}}
     .box{{background:#151310;border-right:3px solid #D8B254;border-radius:10px;padding:1rem;margin-top:1rem;font-size:.92rem}}
     .ltr{{direction:ltr;text-align:left;white-space:pre-line}}
@@ -1596,11 +2051,12 @@ def serve_poem_ssr(record_id: str):
   <article class="wrap">
     <div style="font-size:.82rem"><a href="{base_url}/">← العودة إلى ديوان ومختبر البيظان (ALBIDAN)</a></div>
     <h1 style="margin:.6rem 0 .2rem;font-family:'Amiri',serif;font-size:2rem;color:#EBD07E">{html.escape(title)}</h1>
-    <div class="meta">الشاعر / الراوي: <strong>{html.escape(poet)}</strong> • المنطقة: {html.escape(region)} • الوحدة: {html.escape(ptype)} • البَتْ (البحر): {html.escape(meter)}{f" • الظّهر: {html.escape(analysis.get('zahr_mode'))}" if analysis.get('zahr_mode') else ''}</div>
+    <div class="meta">المعرّف: <code>{html.escape(rec['id'])}</code> • الشاعر / الراوي: <strong>{html.escape(poet)}</strong> • المنطقة: {html.escape(region)} • الوحدة: {html.escape(ptype)} • البَتْ: {html.escape(meter)}</div>
+    <div class="badge">حالة التوثيق: {html.escape(v_status)}{html.escape(reviewer_info)}</div>
     <div class="poem">{html.escape(poem_text)}</div>
     {f'<div class="box"><strong>السياق الثقافي والغرض:</strong><br>{html.escape(context)}</div>' if context else ''}
-    {f'<div class="box ltr"><strong>English Literary Translation:</strong><br>{html.escape(en_trans)}</div>' if en_trans else ''}
-    {f'<div class="box ltr"><strong>Traduction Française:</strong><br>{html.escape(fr_trans)}</div>' if fr_trans else ''}
+    {f'<div class="box ltr"><strong>English Translation ({html.escape(t_label)}):</strong><br>{html.escape(en_trans)}</div>' if en_trans else ''}
+    {f'<div class="box ltr"><strong>Traduction Française ({html.escape(t_label)}):</strong><br>{html.escape(fr_trans)}</div>' if fr_trans else ''}
     <div class="actions">
       <a class="btn" href="{base_url}/">تصفح الديوان والمختبر التفاعلي</a>
       <a class="btn btn-sec" href="{base_url}/api/export/poem/{quote(rec['id'])}.docx">تنزيل الوثيقة (Word)</a>
@@ -1614,10 +2070,9 @@ def serve_poem_ssr(record_id: str):
 @app.get("/sitemap.xml")
 def serve_sitemap():
     base_url = get_base_url()
-    poems = archive.list_poems()
     urls = [f"<url><loc>{base_url}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>"]
-    for p in poems:
-        urls.append(f"<url><loc>{base_url}/poem/{quote(p['id'])}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>")
+    for pid in archive.list_poem_ids_for_sitemap():
+        urls.append(f"<url><loc>{base_url}/poem/{quote(pid)}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>")
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "\n".join(urls) + "\n</urlset>"
     return Response(content=xml, media_type="application/xml")
 
@@ -1626,14 +2081,7 @@ def serve_sitemap():
 def serve_robots():
     base_url = get_base_url()
     return (
-        "User-agent: *\n"
-        "Allow: /\n"
-        "Disallow: /api/admin/\n"
-        "Disallow: /api/messages\n\n"
-        "User-agent: GPTBot\nAllow: /\n\n"
-        "User-agent: PerplexityBot\nAllow: /\n\n"
-        "User-agent: ClaudeBot\nAllow: /\n\n"
-        "User-agent: Google-Extended\nAllow: /\n\n"
+        "User-agent: *\nAllow: /\nDisallow: /api/admin/\nDisallow: /api/messages\n\n"
         f"Sitemap: {base_url}/sitemap.xml\n"
     )
 
@@ -1644,29 +2092,20 @@ def serve_llms_txt():
     stats = archive.get_stats()
     return f"""# ALBIDAN — Digital Corpus & Prosody Lab of Hassaniya Poetry (مختبر وديوان البيظان)
 
-> Open academic platform dedicated to Hassaniya Arabic (ISO 639-3: `mey`) oral and written poetry from the Moroccan Sahara, Mauritania, and the Hassaniya cultural sphere. Founded and developed by Aggar Lahbib (أڭار الحبيب).
+> Open academic platform dedicated to Hassaniya Arabic (ISO 639-3: `mey`) poetry. Founded by Aggar Lahbib (أڭار الحبيب).
 
 ## Live Corpus Statistics
-- Documented Poems: {stats['poems_count']}
-- Prosodic Hemistichs (Teflouit / تافلويت): {stats['lines_count']}
-- Growing Hassaniya Glossary Terms: {stats['terms_count']}
+- Documented Poems: {stats['poems_count']} (Human-Verified: {stats['verified_poems_count']})
+- Prosodic Hemistichs (Taflowit): {stats['lines_count']}
+- Glossary Senses: {stats['terms_count']}
 
-## Core Prosody Reference (عروض الشعر الحساني «لغن» — لَبْتُوتَة)
-- **Lebtouta (لَبْتُوتَة, sg. Bett / بَتْ):** The poetic meters of Hassaniya poetry («لغن»), measured by counting vocalized consonants (Mutaharrikat / المتحركات) while disregarding unvocalized consonants (which attach rhythmically to the preceding vocalized letter).
-- **Taflowit (تافلويت, pl. Tiflouaten / تيفلواتن):** The base poetic hemistich / prosodic unit on which meter is measured.
-- **Tal'aa (طلعة):** A common poetic unit of three Tiflouaten sharing a single rhyme.
-- **Gaf / Kaf (الكاف / الگاف):** A poetic stanza typically composed of four, six, or eight Tiflouaten.
-- **Tebraa (تبراع):** Women's lyrical form, typically two rhyming Tiflouaten.
-- **Zahr (الظّهر):** The musical mode/melody accompanying the performance of a meter and giving it its distinct tune.
-- **Primary & Classical Meters (لَبْتُوتَة):** Et-Tidoum (التيدوم), El-Bett El-Kbir (البت الكبير), Bouamrane (بوعمران — 7 mutaharrikat, pride & valor), El-Mzareg (المزارگ — social), El-Msare' (المصارع — valor), Imlakh & Esghir (إملخ واسغير — short & emotional), El-Wakedi (الواكدي — love/ghazal), Ahwiwis (أحويويص — enthusiastic), Ed-Degsri (الدگسري — fast celebratory), El-Moshkel (المشكل — riddles), plus Imrimida, Lebteit Et-tam (8), Lebteit En-naqes (7), Es-Serouzi, Er-Rasm, Lbeyr (6), Baghzez, Bett Ethnayn, Bett Ethlatha, and Hathw Ajrad.
-- **Orthography:** Uses `گ` consistently for the voiced velar Hassaniya /g/ (القاف المعقودة).
-
-## Public Academic Endpoints
-- Interactive Web Portal: {base_url}/
-- Full Poems JSON API: {base_url}/api/poems
-- Growing Hassaniya Glossary JSON API: {base_url}/api/glossary
-- Open JSONL Corpus Download: {base_url}/api/export/jsonl
-- XML Sitemap of Individual Poem Pages: {base_url}/sitemap.xml
+## Public Endpoints
+- Web Portal: {base_url}/
+- OpenAPI Docs: {base_url}/docs
+- Paginated Poems API: {base_url}/api/poems?page=1&limit=24
+- Paginated Glossary API: {base_url}/api/glossary?page=1&limit=50
+- Streaming JSONL Export: {base_url}/api/export/jsonl
+- Sitemap: {base_url}/sitemap.xml
 """
 
 
@@ -1675,7 +2114,7 @@ def serve_llms_txt():
 # -----------------------------------------------------------------------------
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "db_mode": archive.active_mode, "version": "4.2.0"}
+    return {"status": "ok", "db_mode": archive.active_mode, "version": APP_VERSION}
 
 
 @app.get("/api/stats")
@@ -1696,7 +2135,6 @@ def api_admin_verify(request: Request, x_admin_pin: Optional[str] = Header(defau
 
 @app.post("/api/admin/clean-archive")
 def api_admin_clean_archive(request: Request, x_admin_pin: Optional[str] = Header(default=None)):
-    """تنظيف تلقائي لكل القصائد المؤرشفة: فصل اسم الشاعر عن العنوان وإصلاح الأوزان المكسورة."""
     require_admin(x_admin_pin, request)
     report = archive.clean_existing_archive(local_engine)
     return {
@@ -1714,22 +2152,21 @@ async def api_admin_enrich_glossary(
     request: Request,
     x_admin_pin: Optional[str] = Header(default=None),
 ):
-    """تحليل دفعة من القصائد المحلية بـ Gemini AI لاستخراج المفردات وتغذية المعجم المتنامي."""
     require_admin(x_admin_pin, request)
     if not GEMINI_API_KEY:
         raise HTTPException(status_code=400, detail="مفتاح GEMINI_API_KEY غير مضبوط على الخادم.")
     model = req.model_name if req.model_name in ALLOWED_MODELS else DEFAULT_GEMINI_MODEL
-    all_poems = archive.list_poems()
-    candidates = [
-        p for p in all_poems
-        if (not str(p.get("source_engine", "")).startswith("AI") or not (p.get("analysis") or {}).get("glossary"))
-        and (p.get("poem_text") or "").strip()
-    ][: req.limit]
+    candidates = []
+    for p in archive.iter_all_poems():
+        if (not str(p.get("source_engine", "")).startswith("AI") or not (p.get("analysis") or {}).get("glossary")) and (p.get("poem_text") or "").strip():
+            candidates.append(p)
+            if len(candidates) >= req.limit:
+                break
 
     enriched, failed, added_terms = 0, 0, 0
     for rec in candidates:
         try:
-            analysis, used_model = await run_in_threadpool(analyze_with_gemini, rec["poem_text"], model)
+            analysis, used_model = await run_in_threadpool(analyze_with_gemini, rec["poem_text"], model, local_engine)
             archive.update_poem_analysis(rec["id"], analysis, f"AI ({used_model})")
             enriched += 1
             added_terms += len(analysis.get("glossary") or [])
@@ -1757,15 +2194,23 @@ async def api_analyze(req: AnalyzeRequest, request: Request, x_admin_pin: Option
     warning = None
     if req.use_ai and GEMINI_API_KEY:
         try:
-            analysis, used_model = await run_in_threadpool(analyze_with_gemini, text, model)
+            analysis, used_model = await run_in_threadpool(analyze_with_gemini, text, model, local_engine)
             source_engine = f"AI ({used_model})"
+            if analysis.get("deterministic_mismatches", 0) > 0:
+                warning = f"تنبيه عروضي: وُجد اختلاف في عدّ المتحركات في {analysis['deterministic_mismatches']} شطر؛ يُنصح بالمراجعة البشرية."
         except Exception as exc:
             logger.error("Analyze with Gemini failed: %s", exc)
             analysis, source_engine = local_engine.analyze(text), "Local (Fallback)"
             warning = f"تعذر الاتصال بـ Gemini ({exc})، تم العرض بالمحرك المحلي."
     else:
         analysis, source_engine = local_engine.analyze(text), "Local"
-    return {"source_engine": source_engine, "warning": warning, "analysis": analysis}
+    return {
+        "source_engine": source_engine,
+        "verification_state": "machine_generated",
+        "verification_status": VERIFICATION_LABELS["machine_generated"],
+        "warning": warning,
+        "analysis": analysis,
+    }
 
 
 @app.post("/api/transcribe")
@@ -1783,7 +2228,7 @@ async def api_transcribe(
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="الملف الصوتي فارغ.")
     if len(audio_bytes) > 20 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="حجم الصوت يتجاوز 20 ميجابايت. يُفضّل تحويله لـ MP3 مضغوط أولاً.")
+        raise HTTPException(status_code=400, detail="حجم الصوت يتجاوز 20 ميجابايت.")
     ext = Path(file.filename or "audio.mp3").suffix.lower()
     mime_type = AUDIO_MIME_MAP.get(ext, file.content_type or "audio/mp3")
     if mime_type == "application/octet-stream":
@@ -1854,13 +2299,13 @@ async def api_import_file(
         if ext == ".docx":
             return {"text": await run_in_threadpool(extract_docx_plain_text, raw), "method": "docx"}
         if ext == ".doc":
-            raise HTTPException(status_code=400, detail="صيغة Word القديمة (.doc) غير مدعومة؛ احفظ الملف بصيغة .docx ثم أعد رفعه.")
+            raise HTTPException(status_code=400, detail="صيغة Word القديمة (.doc) غير مدعومة؛ احفظ الملف بصيغة .docx.")
         if ext == ".pdf":
             text, method = await run_in_threadpool(extract_pdf_sync, raw, model_name)
             return {"text": text, "method": method}
         if ext == ".txt":
             return {"text": raw.decode("utf-8", errors="ignore").strip(), "method": "txt"}
-        raise HTTPException(status_code=400, detail="الصيغ المدعومة للاستيراد هي: Word (.docx) و PDF (.pdf) و TXT.")
+        raise HTTPException(status_code=400, detail="الصيغ المدعومة هي: Word (.docx) و PDF (.pdf) و TXT.")
     except HTTPException:
         raise
     except Exception as exc:
@@ -1892,7 +2337,7 @@ async def api_import_batch_docx(
         raise HTTPException(status_code=400, detail="حجم الملف يتجاوز 25 ميجابايت.")
     ext = Path(file.filename or "").suffix.lower()
     if ext == ".doc":
-        raise HTTPException(status_code=400, detail="احفظ الملف من Word بصيغة (.docx) الحديثة بدلاً من (.doc) القديمة.")
+        raise HTTPException(status_code=400, detail="احفظ الملف بصيغة (.docx) الحديثة بدلاً من (.doc).")
     if ext not in (".docx", ".txt"):
         raise HTTPException(status_code=400, detail="يدعم الاستيراد الجماعي ملفات Word (.docx) أو TXT فقط.")
     try:
@@ -1918,26 +2363,49 @@ async def api_import_batch_docx(
             items = []
             for i, b in enumerate(blocks, start=1):
                 c_title, c_poet = clean_title_and_poet(f"قصيدة {i}", default_poet.strip() or DEFAULT_POET_LABEL)
-                items.append({
-                    "title": c_title,
-                    "poet": c_poet,
-                    "region": default_region.strip() or DEFAULT_REGION_LABEL,
-                    "poem_text": b,
-                })
+                items.append({"title": c_title, "poet": c_poet, "region": default_region.strip() or DEFAULT_REGION_LABEL, "poem_text": b})
         if use_ai_split and len(plain_text) > 35000:
             warning = "الملف طويل جداً، تم استخدام التقسيم الهيكلي السريع لضمان عدم فقدان أي قصيدة."
     del raw
     return {"count": len(items), "method": method, "warning": warning, "items": items}
 
 
+# -----------------------------------------------------------------------------
+# مسارات القصائد بترقيم الصفحات والتوثيق الأكاديمي
+# -----------------------------------------------------------------------------
 @app.get("/api/poems")
 def api_list_poems(
     q: str = Query("", max_length=200),
     poem_type: str = Query("الكل", max_length=80),
     poet: str = Query("", max_length=120),
     meter: str = Query("", max_length=120),
+    region: str = Query("", max_length=120),
+    verification_state: str = Query("", max_length=40),
+    flexible: bool = Query(False, description="وضع البحث المرن (يدمج ق/گ/ك)"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(24, ge=1, le=200),
+    include_analysis: bool = Query(True),
 ):
-    return {"items": archive.list_poems(q=q, poem_type=poem_type, poet=poet, meter=meter)}
+    return archive.list_poems_paginated(
+        q=q,
+        poem_type=poem_type,
+        poet=poet,
+        meter=meter,
+        region=region,
+        verification_state=verification_state,
+        flexible=flexible,
+        page=page,
+        limit=limit,
+        include_analysis=include_analysis,
+    )
+
+
+@app.get("/api/poems/{record_id}")
+def api_get_single_poem(record_id: str):
+    rec = archive.get_poem(record_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="القصيدة غير موجودة.")
+    return rec
 
 
 @app.post("/api/poems")
@@ -1961,9 +2429,7 @@ def api_save_poems_batch(req: BatchSaveRequest, request: Request, x_admin_pin: O
         raise HTTPException(status_code=400, detail="لم يتم تحديد أي قصيدة للحفظ.")
     prepared = [
         SavePoemRequest(
-            title=item.title,
-            poet=item.poet,
-            region=item.region,
+            title=item.title, poet=item.poet, region=item.region,
             poem_text=item.poem_text.strip(),
             analysis=item.analysis or local_engine.analyze(item.poem_text.strip()),
             source_engine=item.source_engine,
@@ -2008,6 +2474,16 @@ def api_update_poem(record_id: str, req: UpdatePoemRequest, request: Request, x_
     return {"updated": True, "id": record_id}
 
 
+@app.patch("/api/poems/{record_id}/verify")
+def api_verify_poem(record_id: str, req: VerifyPoemRequest, request: Request, x_admin_pin: Optional[str] = Header(default=None)):
+    """مسار التحكيم والتوثيق البشري للقصيدة (مولّد آلياً -> قيد المراجعة -> موثّق ومحكّم)."""
+    require_admin(x_admin_pin, request)
+    updated = archive.verify_poem(record_id, req)
+    if not updated:
+        raise HTTPException(status_code=404, detail="القصيدة غير موجودة.")
+    return {"verified": True, "poem": updated, "message": f"تم تحديث حالة التوثيق إلى: {updated['verification_status']}"}
+
+
 @app.delete("/api/poems/{record_id}")
 def api_delete_poem(record_id: str, request: Request, x_admin_pin: Optional[str] = Header(default=None)):
     require_admin(x_admin_pin, request)
@@ -2016,19 +2492,45 @@ def api_delete_poem(record_id: str, request: Request, x_admin_pin: Optional[str]
     return {"deleted": True, "id": record_id}
 
 
+# -----------------------------------------------------------------------------
+# مسارات المعجم متعدد المعاني (Glossary Senses)
+# -----------------------------------------------------------------------------
 @app.get("/api/glossary")
-def api_list_glossary(q: str = Query("", max_length=200)):
-    return {"items": archive.list_glossary(q=q)}
+def api_list_glossary(
+    q: str = Query("", max_length=200),
+    status: str = Query("", max_length=40),
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=200),
+):
+    return archive.list_glossary_paginated(q=q, status=status, page=page, limit=limit)
 
 
-@app.delete("/api/glossary/{term}")
-def api_delete_glossary(term: str, request: Request, x_admin_pin: Optional[str] = Header(default=None)):
+@app.post("/api/glossary")
+def api_create_glossary_sense(req: GlossarySenseCreateRequest, request: Request, x_admin_pin: Optional[str] = Header(default=None)):
     require_admin(x_admin_pin, request)
-    if not archive.delete_glossary_term(term):
+    sense_id = archive.create_glossary_sense(req)
+    return {"sense_id": sense_id, "message": "تمت إضافة المعنى المعجمي الموثّق بنجاح."}
+
+
+@app.put("/api/glossary/{sense_id}")
+def api_update_glossary_sense(sense_id: str, req: GlossarySenseUpdateRequest, request: Request, x_admin_pin: Optional[str] = Header(default=None)):
+    require_admin(x_admin_pin, request)
+    if not archive.update_glossary_sense(sense_id, req):
+        raise HTTPException(status_code=404, detail="المدخل المعجمي غير موجود.")
+    return {"updated": True, "sense_id": sense_id}
+
+
+@app.delete("/api/glossary/{target}")
+def api_delete_glossary(target: str, request: Request, x_admin_pin: Optional[str] = Header(default=None)):
+    require_admin(x_admin_pin, request)
+    if not archive.delete_glossary_term_or_sense(target):
         raise HTTPException(status_code=404, detail="المفردة غير موجودة.")
-    return {"deleted": True, "term": term}
+    return {"deleted": True, "target": target}
 
 
+# -----------------------------------------------------------------------------
+# الرسائل والتصدير (Streaming JSONL + DOCX)
+# -----------------------------------------------------------------------------
 @app.post("/api/messages")
 def api_save_message(req: ContactMessageRequest, request: Request):
     rate_limiter.check_limit(request, "messages", max_requests=8, window_seconds=3600)
@@ -2055,36 +2557,31 @@ def api_delete_message(msg_id: str, request: Request, x_admin_pin: Optional[str]
 def api_export_glossary_docx(request: Request, q: str = Query("", max_length=200), x_admin_pin: Optional[str] = Header(default=None)):
     if not is_valid_admin_pin(x_admin_pin):
         rate_limiter.check_limit(request, "export_docx", max_requests=20, window_seconds=3600)
-    items = archive.list_glossary(q=q)
-    doc = create_base_arabic_doc("المعجم الحساني المتنامي", f"تاريخ التصدير: {datetime.now().strftime('%Y-%m-%d')}  |  عدد المفردات الموثقة: {len(items)}")
-    tbl = doc.add_table(rows=1, cols=4)
+    items = archive.list_glossary_paginated(q=q, page=1, limit=2000)["items"]
+    doc = create_base_arabic_doc("المعجم الحساني المتنامي", f"تاريخ التصدير: {datetime.now().strftime('%Y-%m-%d')}  |  عدد المعاني الموثقة: {len(items)}")
+    tbl = doc.add_table(rows=1, cols=5)
     tbl.style = "Table Grid"
     set_table_rtl(tbl)
-    for i, h in enumerate(["المفردة الحسانية", "المعنى بالعربية الفصحى", "English Meaning", "المصدر (القصيدة)"]):
+    for i, h in enumerate(["المفردة الحسانية", "المعنى بالعربية الفصحى", "English Meaning", "المصدر", "حالة التوثيق"]):
         cell = tbl.rows[0].cells[i]
         set_cell_shading(cell, "1B365D")
         p = cell.paragraphs[0]
         set_paragraph_rtl(p)
-        set_run_arabic(p.add_run(h), size_pt=10.5, bold=True, color_hex="FFFFFF")
+        set_run_arabic(p.add_run(h), size_pt=10, bold=True, color_hex="FFFFFF")
     for g in items:
         cells = tbl.add_row().cells
-        for i, v in enumerate([g.get("term", ""), g.get("arabic_meaning", ""), g.get("english_meaning", ""), g.get("source_poem_title", "")]):
+        for i, v in enumerate([g.get("term", ""), g.get("arabic_meaning", ""), g.get("english_meaning", ""), g.get("source_poem_title", ""), g.get("status_label", "")]):
             p = cells[i].paragraphs[0]
             set_paragraph_rtl(p)
-            set_run_arabic(p.add_run(v), size_pt=10.5, bold=(i == 0))
+            set_run_arabic(p.add_run(v), size_pt=10, bold=(i == 0))
     return doc_to_stream(doc, "albidan_hassaniya_glossary.docx")
 
 
 @app.post("/api/export/analysis.docx")
-def api_export_analysis_docx(
-    req: ExportAnalysisDocxRequest,
-    request: Request,
-    x_admin_pin: Optional[str] = Header(default=None),
-):
+def api_export_analysis_docx(req: ExportAnalysisDocxRequest, request: Request, x_admin_pin: Optional[str] = Header(default=None)):
     if not is_valid_admin_pin(x_admin_pin):
         rate_limiter.check_limit(request, "export_docx", max_requests=20, window_seconds=3600)
-    analysis_size = len(json.dumps(req.analysis, ensure_ascii=False).encode("utf-8"))
-    if analysis_size > MAX_ANALYSIS_JSON_BYTES:
+    if len(json.dumps(req.analysis, ensure_ascii=False).encode("utf-8")) > MAX_ANALYSIS_JSON_BYTES:
         raise HTTPException(status_code=413, detail="حجم بيانات التحليل المرسلة للتصدير يتجاوز الحد المسموح.")
     doc = create_base_arabic_doc("تقرير التحليل العروضي واللساني", f"تاريخ الإصدار: {datetime.now().strftime('%Y-%m-%d')}")
     append_poem_section_to_doc(doc, req.title, req.poet, req.region, req.poem_text, req.analysis)
@@ -2098,7 +2595,10 @@ def api_export_single_poem_docx(record_id: str, request: Request, x_admin_pin: O
     rec = archive.get_poem(record_id)
     if not rec:
         raise HTTPException(status_code=404, detail="القصيدة غير موجودة.")
-    doc = create_base_arabic_doc("وثيقة شعرية حسانية محقّقة", f"معرّف التوثيق: {rec['id']}  |  تاريخ الأرشفة: {rec.get('created_at', '')}")
+    doc = create_base_arabic_doc(
+        "وثيقة شعرية حسانية",
+        f"معرّف التوثيق: {rec['id']}  |  الحالة: {rec.get('verification_status', '')}  |  تاريخ الأرشفة: {rec.get('created_at', '')}",
+    )
     append_poem_section_to_doc(doc, rec["title"], rec["poet"], rec["region"], rec["poem_text"], rec.get("analysis", {}))
     return doc_to_stream(doc, f"albidan_poem_{rec['id']}.docx")
 
@@ -2112,7 +2612,7 @@ def api_export_all_poems_docx(
 ):
     if not is_valid_admin_pin(x_admin_pin):
         rate_limiter.check_limit(request, "export_docx", max_requests=10, window_seconds=3600)
-    poems = archive.list_poems(q=q, poem_type=poem_type)
+    poems = list(archive.iter_all_poems(q=q, poem_type=poem_type))
     doc = create_base_arabic_doc("المدونة الحسانية المفتوحة — ديوان النصوص الموثقة", f"تاريخ التصدير: {datetime.now().strftime('%Y-%m-%d')}  |  عدد القصائد: {len(poems)}")
     for idx, rec in enumerate(poems):
         append_poem_section_to_doc(doc, rec["title"], rec["poet"], rec["region"], rec["poem_text"], rec.get("analysis", {}))
@@ -2125,9 +2625,13 @@ def api_export_all_poems_docx(
 def api_export_jsonl(request: Request, x_admin_pin: Optional[str] = Header(default=None)):
     if not is_valid_admin_pin(x_admin_pin):
         rate_limiter.check_limit(request, "export_jsonl", max_requests=15, window_seconds=3600)
-    content = "\n".join(json.dumps(p, ensure_ascii=False) for p in archive.list_poems())
+
+    def stream_lines() -> Iterator[bytes]:
+        for p in archive.iter_all_poems():
+            yield (json.dumps(p, ensure_ascii=False) + "\n").encode("utf-8")
+
     return StreamingResponse(
-        io.BytesIO(content.encode("utf-8")),
+        stream_lines(),
         media_type="application/jsonl",
         headers={"Content-Disposition": "attachment; filename=albidan_hassaniya_corpus.jsonl"},
     )
